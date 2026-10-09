@@ -1,49 +1,36 @@
 import Foundation
+import SwiftData
 
-struct Holding: Identifiable {
-  enum TargetKind: String {
-    case buyBelow
-    case sellAbove
+/// A stock the user owns or watches. Shares of zero means it's watch-only.
+@Model
+final class Holding {
+  var symbol: String = ""
+  var name: String = ""
+  var shares: Double = 0
+  /// Average purchase price per share, or zero when unknown.
+  var averageCost: Double = 0
+  var addedAt: Date = Date.now
+  @Relationship(deleteRule: .cascade, inverse: \PriceAlert.holding)
+  var alerts: [PriceAlert]? = []
+
+  init(symbol: String, name: String, shares: Double = 0, averageCost: Double = 0) {
+    self.symbol = symbol
+    self.name = name
+    self.shares = shares
+    self.averageCost = averageCost
   }
 
-  var id: String { symbol }
-  var symbol: String
-  var name: String
-  var shares: Double
-  var target: Double
-  var targetKind: TargetKind
-  /// Daily closing prices, oldest first. The last value is the current price.
-  var history: [Double]
-
-  var price: Double { history.last ?? 0 }
-  var value: Double { shares * price }
-
-  var dayChange: Double {
-    guard history.count >= 2, history[history.count - 2] != 0 else { return 0 }
-    return price / history[history.count - 2] - 1
+  var activeAlerts: [PriceAlert] {
+    (alerts ?? []).filter(\.isActive).sorted { $0.targetPrice < $1.targetPrice }
   }
 
-  /// Fractional distance from the current price to the target (0 means the target is hit).
-  var distanceToTarget: Double {
-    guard price > 0 else { return 0 }
-    switch targetKind {
-    case .buyBelow: return max(0, (price - target) / price)
-    case .sellAbove: return max(0, (target - price) / price)
-    }
-  }
+  var isOwned: Bool { shares > 0 }
 
-  /// Progress toward the target on a 0–1 scale, treating 20% away as the starting point.
-  var targetProgress: Double {
-    1 - min(distanceToTarget / 0.2, 1)
-  }
+  func value(at price: Double) -> Double { shares * price }
 
-  var isNearTarget: Bool { distanceToTarget < 0.035 }
-
-  var targetDescription: String {
-    let formatted = target.formatted(.currency(code: "USD"))
-    switch targetKind {
-    case .buyBelow: return "Buy below \(formatted)"
-    case .sellAbove: return "Sell above \(formatted)"
-    }
+  /// Unrealized gain as a fraction of cost, when the cost is known.
+  func gain(at price: Double) -> Double? {
+    guard averageCost > 0, shares > 0 else { return nil }
+    return price / averageCost - 1
   }
 }

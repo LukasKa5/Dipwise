@@ -1,0 +1,19 @@
+DEFINE SCHEMA
+
+    RECORD TYPE FlockAlert (
+        "___createTime"  TIMESTAMP,
+        "___createdBy"   REFERENCE,
+        "___etag"        STRING,
+        "___modTime"     TIMESTAMP,
+        "___modifiedBy"  REFERENCE,
+        "___recordID"    REFERENCE QUERYABLE,
+        symbol           STRING QUERYABLE,
+        kind             STRING,
+        target           DOUBLE,
+        priceAtCreation  DOUBLE,
+        createdAt        TIMESTAMP QUERYABLE SORTABLE,
+        active           INT64 QUERYABLE,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );

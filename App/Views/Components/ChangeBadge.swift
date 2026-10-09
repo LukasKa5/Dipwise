@@ -4,6 +4,7 @@ struct ChangeBadge: View {
   var change: Double
   var caption: String? = nil
   var positiveColor: Color = Palette.green
+  var negativeColor: Color = Palette.loss
 
   var body: some View {
     HStack(spacing: 4) {
@@ -17,6 +18,7 @@ struct ChangeBadge: View {
       }
     }
     .font(.subheadline.weight(.semibold))
-    .foregroundStyle(change >= 0 ? positiveColor : .red)
+    .foregroundStyle(change >= 0 ? positiveColor : negativeColor)
+    .accessibilityElement(children: .combine)
   }
 }

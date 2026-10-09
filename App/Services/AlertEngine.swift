@@ -1,0 +1,34 @@
+import Foundation
+
+/// Decides which alerts have been reached or are getting close, and updates their state.
+enum AlertEngine {
+  struct Event {
+    enum Kind {
+      case reached
+      case approaching
+    }
+
+    var kind: Kind
+    var alert: PriceAlert
+    var quote: Quote
+  }
+
+  /// Evaluates active alerts against the latest quotes. Mutates alert state and returns what to notify about.
+  static func evaluate(_ alerts: [PriceAlert], quotes: [String: Quote], headsUpThreshold: Double?, now: Date = .now) -> [Event] {
+    var events: [Event] = []
+    for alert in alerts where alert.isActive {
+      guard let quote = quotes[alert.symbol] else { continue }
+      if alert.kind.isReached(price: quote.price, target: alert.targetPrice) {
+        alert.isActive = false
+        alert.triggeredAt = now
+        alert.triggeredPrice = quote.price
+        events.append(Event(kind: .reached, alert: alert, quote: quote))
+      } else if let headsUpThreshold, alert.headsUpSentAt == nil,
+                alert.distance(from: quote.price) <= headsUpThreshold {
+        alert.headsUpSentAt = now
+        events.append(Event(kind: .approaching, alert: alert, quote: quote))
+      }
+    }
+    return events
+  }
+}

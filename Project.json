@@ -17,6 +17,10 @@
         {
           "embed": true,
           "target": "Dipwise Watch"
+        },
+        {
+          "embed": true,
+          "target": "Dipwise Widget Extension"
         }
       ],
       "deploymentTarget": "26.0",
@@ -29,11 +33,21 @@
           "ITSAppUsesNonExemptEncryption": false,
           "UILaunchScreen": {},
           "UISupportedInterfaceOrientations": [
+            "UIInterfaceOrientationPortrait"
+          ],
+          "UIBackgroundModes": [
+            "fetch"
+          ],
+          "BGTaskSchedulerPermittedIdentifiers": [
+            "dipwise.refresh"
+          ],
+          "UISupportedInterfaceOrientations~ipad": [
             "UIInterfaceOrientationPortrait",
             "UIInterfaceOrientationPortraitUpsideDown",
             "UIInterfaceOrientationLandscapeLeft",
             "UIInterfaceOrientationLandscapeRight"
-          ]
+          ],
+          "LSApplicationCategoryType": "public.app-category.finance"
         }
       },
       "platform": "iOS",
@@ -50,9 +64,20 @@
       "sources": [
         {
           "path": "App"
+        },
+        {
+          "path": "Shared"
         }
       ],
-      "type": "application"
+      "type": "application",
+      "entitlements": {
+        "path": "App/App.entitlements",
+        "properties": {
+          "com.apple.security.application-groups": [
+            "group.app.bitrig.new.15b8fdf3-82a6-4223-97a2-c5cc5f8ba55e"
+          ]
+        }
+      }
     },
     "Dipwise Watch": {
       "deploymentTarget": "26.0",
@@ -83,9 +108,52 @@
         },
         {
           "path": "App/Assets.xcassets"
+        },
+        {
+          "path": "Shared"
         }
       ],
       "type": "application"
+    },
+    "Dipwise Widget Extension": {
+      "type": "app-extension",
+      "platform": "iOS",
+      "deploymentTarget": "26.0",
+      "sources": [
+        {
+          "path": "Widget Extension"
+        },
+        {
+          "path": "Shared"
+        }
+      ],
+      "info": {
+        "path": "Widget Extension/Info.plist",
+        "properties": {
+          "CFBundleDisplayName": "Dipwise Widget Extension",
+          "CFBundleShortVersionString": "1.0",
+          "CFBundleVersion": "1",
+          "NSExtension": {
+            "NSExtensionPointIdentifier": "com.apple.widgetkit-extension"
+          }
+        }
+      },
+      "settings": {
+        "CURRENT_PROJECT_VERSION": "1",
+        "MARKETING_VERSION": "1.0",
+        "PRODUCT_BUNDLE_IDENTIFIER": "app.bitrig.new.15b8fdf3-82a6-4223-97a2-c5cc5f8ba55e.widget-extension",
+        "PRODUCT_NAME": "$(TARGET_NAME)",
+        "SWIFT_VERSION": "5.0",
+        "TARGETED_DEVICE_FAMILY": "1,2"
+      },
+      "entitlements": {
+        "path": "Widget Extension/Widget Extension.entitlements",
+        "properties": {
+          "com.apple.security.application-groups": [
+            "group.app.bitrig.new.15b8fdf3-82a6-4223-97a2-c5cc5f8ba55e"
+          ]
+        }
+      }
     }
   }
 }

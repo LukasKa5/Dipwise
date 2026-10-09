@@ -1,0 +1,33 @@
+import Foundation
+import Observation
+
+enum AppTab: Hashable {
+  case home
+  case alerts
+  case flock
+  case settings
+}
+
+/// App-wide navigation state, so notifications and widgets can open a specific stock.
+@MainActor
+@Observable
+final class Router {
+  static let shared = Router()
+
+  var selectedTab: AppTab = .home
+  var homePath: [String] = []
+
+  func open(symbol: String) {
+    selectedTab = .home
+    homePath = [symbol]
+  }
+
+  func handle(url: URL) {
+    guard url.scheme == "dipwise" else { return }
+    if url.host() == "stock", let symbol = url.pathComponents.dropFirst().first {
+      open(symbol: symbol)
+    } else if url.host() == "alerts" {
+      selectedTab = .alerts
+    }
+  }
+}

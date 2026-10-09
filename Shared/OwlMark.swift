@@ -28,12 +28,12 @@ struct OwlMark: View {
       path.addCurve(to: CGPoint(x: 346, y: 296), control1: CGPoint(x: 298, y: 466), control2: CGPoint(x: 308, y: 380))
       path.closeSubpath()
     }
-    context.fill(body, with: .color(Palette.owlWhite))
+    context.fill(body, with: .color(Brand.owlWhite))
 
     var inner = context
     inner.clip(to: body)
-    inner.fill(Path(ellipseIn: CGRect(x: 214, y: 470, width: 196, height: 330)), with: .color(Palette.owlWing))
-    inner.fill(Path(ellipseIn: CGRect(x: 614, y: 470, width: 196, height: 330)), with: .color(Palette.owlWing))
+    inner.fill(Path(ellipseIn: CGRect(x: 214, y: 470, width: 196, height: 330)), with: .color(Brand.owlWing))
+    inner.fill(Path(ellipseIn: CGRect(x: 614, y: 470, width: 196, height: 330)), with: .color(Brand.owlWing))
     inner.fill(Path(ellipseIn: circle(at: CGPoint(x: 442, y: 472), radius: 96)), with: .color(.white))
     inner.fill(Path(ellipseIn: circle(at: CGPoint(x: 582, y: 472), radius: 96)), with: .color(.white))
 
@@ -47,12 +47,12 @@ struct OwlMark: View {
         }
       }
     }
-    context.stroke(feathers, with: .color(Palette.owlFeather), style: StrokeStyle(lineWidth: 10, lineCap: .round, lineJoin: .round))
+    context.stroke(feathers, with: .color(Brand.owlFeather), style: StrokeStyle(lineWidth: 10, lineCap: .round, lineJoin: .round))
 
     for x in [CGFloat(442), 582] {
-      context.fill(Path(ellipseIn: circle(at: CGPoint(x: x, y: 472), radius: 60)), with: .color(Palette.owlInk))
-      context.fill(Path(ellipseIn: circle(at: CGPoint(x: x, y: 472), radius: 40)), with: .color(Palette.glowAmber))
-      context.fill(Path(ellipseIn: circle(at: CGPoint(x: x, y: 472), radius: 20)), with: .color(Palette.owlInk))
+      context.fill(Path(ellipseIn: circle(at: CGPoint(x: x, y: 472), radius: 60)), with: .color(Brand.owlInk))
+      context.fill(Path(ellipseIn: circle(at: CGPoint(x: x, y: 472), radius: 40)), with: .color(Brand.amber))
+      context.fill(Path(ellipseIn: circle(at: CGPoint(x: x, y: 472), radius: 20)), with: .color(Brand.owlInk))
       context.fill(Path(ellipseIn: circle(at: CGPoint(x: x - 15, y: 456), radius: 9)), with: .color(.white))
     }
 
@@ -62,8 +62,8 @@ struct OwlMark: View {
       path.addLine(to: CGPoint(x: 512, y: 578))
       path.closeSubpath()
     }
-    context.fill(beak, with: .color(Palette.glowAmber))
-    context.stroke(beak, with: .color(Palette.glowAmber), style: StrokeStyle(lineWidth: 14, lineJoin: .round))
+    context.fill(beak, with: .color(Brand.amber))
+    context.stroke(beak, with: .color(Brand.amber), style: StrokeStyle(lineWidth: 14, lineJoin: .round))
 
     let talons = Path { path in
       for x in [CGFloat(468), 556] {
@@ -73,7 +73,7 @@ struct OwlMark: View {
         }
       }
     }
-    context.stroke(talons, with: .color(Palette.glowAmber), style: StrokeStyle(lineWidth: 12, lineCap: .round))
+    context.stroke(talons, with: .color(Brand.amber), style: StrokeStyle(lineWidth: 12, lineCap: .round))
   }
 
   private func circle(at center: CGPoint, radius: CGFloat) -> CGRect {
