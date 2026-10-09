@@ -14,7 +14,7 @@ final class Portfolio {
   var totalValue: Double { holdings.reduce(0) { $0 + $1.value } }
 
   var dayChange: Double {
-    let previous = holdings.reduce(0) { $0 + $1.value / (1 + $1.dayChange) }
+    let previous = history.dropLast().last ?? 0
     return previous == 0 ? 0 : totalValue / previous - 1
   }
 
@@ -26,22 +26,29 @@ final class Portfolio {
     }
   }
 
+  /// The lowest point of the history, where the owl perches.
+  var dip: (index: Int, value: Double)? {
+    history.enumerated().min { $0.element < $1.element }.map { ($0.offset, $0.element) }
+  }
+
   /// Holdings sorted so the ones closest to their targets come first.
   var nearestTargets: [Holding] {
     holdings.sorted { $0.distanceToTarget < $1.distanceToTarget }
   }
+
+  var nearTargetCount: Int { holdings.filter(\.isNearTarget).count }
 }
 
 extension Portfolio {
   static let sampleHoldings: [Holding] = [
-    Holding(symbol: "NVDA", name: "NVIDIA", shares: 12, price: 182.40, dayChange: -0.031, target: 178, targetKind: .buyBelow,
-            history: [196, 194, 197, 191, 188, 190, 185, 183, 186, 182.4]),
-    Holding(symbol: "AAPL", name: "Apple", shares: 20, price: 241.10, dayChange: 0.008, target: 255, targetKind: .sellAbove,
-            history: [228, 230, 229, 233, 236, 234, 238, 240, 239, 241.1]),
-    Holding(symbol: "MSFT", name: "Microsoft", shares: 8, price: 512.30, dayChange: 0.004, target: 560, targetKind: .sellAbove,
-            history: [498, 502, 505, 501, 507, 510, 506, 509, 511, 512.3]),
-    Holding(symbol: "TSLA", name: "Tesla", shares: 10, price: 268.90, dayChange: -0.052, target: 230, targetKind: .buyBelow,
-            history: [305, 298, 301, 290, 284, 287, 279, 275, 281, 268.9]),
+    Holding(symbol: "NVDA", name: "NVIDIA", shares: 12, target: 178, targetKind: .buyBelow,
+            history: [191, 188, 184, 179, 175.5, 177, 180, 183, 185.2, 182.4]),
+    Holding(symbol: "AAPL", name: "Apple", shares: 20, target: 255, targetKind: .sellAbove,
+            history: [236, 233, 229, 226, 224, 227, 231, 235, 243, 247.3]),
+    Holding(symbol: "MSFT", name: "Microsoft", shares: 8, target: 560, targetKind: .sellAbove,
+            history: [505, 500, 494, 489, 486, 491, 498, 503, 508, 512.3]),
+    Holding(symbol: "TSLA", name: "Tesla", shares: 10, target: 230, targetKind: .buyBelow,
+            history: [292, 284, 276, 268, 259, 262, 270, 276, 281, 279.6]),
   ]
 
   static let sampleInsights: [CrowdInsight] = [
@@ -49,5 +56,7 @@ extension Portfolio {
                  summary: "62% of holders are waiting to buy more below $175."),
     CrowdInsight(symbol: "AAPL", holdersWithTarget: 0.48, medianTarget: 260,
                  summary: "Your sell target is more patient than 71% of holders."),
+    CrowdInsight(symbol: "TSLA", holdersWithTarget: 0.55, medianTarget: 240,
+                 summary: "Most holders plan to buy the dip around $240."),
   ]
 }

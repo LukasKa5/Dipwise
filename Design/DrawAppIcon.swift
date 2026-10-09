@@ -32,14 +32,14 @@ for y in stride(from: CGFloat(176), through: 900, by: 144) {
 ctx.strokePath()
 
 // Scale the scene up so the owl fills the icon
-ctx.translateBy(x: 540, y: 560); ctx.scaleBy(x: 1.16, y: 1.16); ctx.translateBy(x: -512, y: -580)
+ctx.translateBy(x: 556, y: 548); ctx.scaleBy(x: 1.36, y: 1.36); ctx.translateBy(x: -512, y: -580)
 
 // Price line: falls into a dip, then climbs past where it started
-let end = P(806, 300)
+let end = P(752, 336)
 let line = CGMutablePath()
 line.move(to: P(-40, 520))
 line.addCurve(to: P(442, 772), control1: P(150, 520), control2: P(220, 772))
-line.addCurve(to: end, control1: P(640, 772), control2: P(700, 300))
+line.addCurve(to: end, control1: P(610, 772), control2: P(670, 336))
 
 // Area fill under the line
 let area = line.mutableCopy()!
@@ -62,9 +62,9 @@ ctx.strokePath()
 ctx.restoreGState()
 
 // Live price dot
-ctx.setFillColor(c(0x2FE6A0, 0.22)); ctx.fillEllipse(in: circle(end, 62))
-ctx.setFillColor(mint); ctx.fillEllipse(in: circle(end, 30))
-ctx.setFillColor(c(0xFFFFFF)); ctx.fillEllipse(in: circle(end, 12))
+ctx.setFillColor(c(0x2FE6A0, 0.22)); ctx.fillEllipse(in: circle(end, 50))
+ctx.setFillColor(mint); ctx.fillEllipse(in: circle(end, 27))
+ctx.setFillColor(c(0xFFFFFF)); ctx.fillEllipse(in: circle(end, 11))
 
 // Owl, perched at the bottom of the dip
 ctx.saveGState()
