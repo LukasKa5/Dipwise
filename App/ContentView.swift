@@ -1,7 +1,9 @@
 import SwiftUI
 
 struct ContentView: View {
+  @State private var portfolio = Portfolio()
+
   var body: some View {
-    EmptyView()
+    DashboardView(portfolio: portfolio)
   }
 }

@@ -16,7 +16,7 @@
       "dependencies": [
         {
           "embed": true,
-          "target": "New Project Watch"
+          "target": "Dipwise Watch"
         }
       ],
       "deploymentTarget": "26.0",
@@ -54,7 +54,7 @@
       ],
       "type": "application"
     },
-    "New Project Watch": {
+    "Dipwise Watch": {
       "deploymentTarget": "26.0",
       "info": {
         "path": "Watch/Info.plist",
