@@ -12,7 +12,7 @@
     "CODE_SIGN_IDENTITY": "-"
   },
   "targets": {
-    "New Project": {
+    "Dipwise": {
       "dependencies": [
         {
           "embed": true,
@@ -21,7 +21,7 @@
       ],
       "deploymentTarget": "26.0",
       "info": {
-        "path": "App\/Info.plist",
+        "path": "App/Info.plist",
         "properties": {
           "CFBundleDisplayName": "New Project",
           "CFBundleShortVersionString": "1.0",
@@ -57,7 +57,7 @@
     "New Project Watch": {
       "deploymentTarget": "26.0",
       "info": {
-        "path": "Watch\/Info.plist",
+        "path": "Watch/Info.plist",
         "properties": {
           "CFBundleDisplayName": "New Project",
           "CFBundleShortVersionString": "1.0",
@@ -82,7 +82,7 @@
           "path": "Watch"
         },
         {
-          "path": "App\/Assets.xcassets"
+          "path": "App/Assets.xcassets"
         }
       ],
       "type": "application"
