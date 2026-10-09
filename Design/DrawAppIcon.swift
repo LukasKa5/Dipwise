@@ -32,14 +32,15 @@ for y in stride(from: CGFloat(176), through: 900, by: 144) {
 ctx.strokePath()
 
 // Scale the scene up so the owl fills the icon
-ctx.translateBy(x: 556, y: 548); ctx.scaleBy(x: 1.36, y: 1.36); ctx.translateBy(x: -512, y: -580)
+ctx.translateBy(x: 520, y: 548); ctx.scaleBy(x: 1.26, y: 1.26); ctx.translateBy(x: -512, y: -580)
 
 // Price line: falls into a dip, then climbs past where it started
-let end = P(752, 336)
+let end = P(800, 300)
 let line = CGMutablePath()
-line.move(to: P(-40, 520))
-line.addCurve(to: P(442, 772), control1: P(150, 520), control2: P(220, 772))
-line.addCurve(to: end, control1: P(610, 772), control2: P(670, 336))
+line.move(to: P(-80, 470))
+line.addCurve(to: P(330, 774), control1: P(110, 470), control2: P(200, 774))
+line.addLine(to: P(560, 774))
+line.addCurve(to: end, control1: P(690, 774), control2: P(700, 300))
 
 // Area fill under the line
 let area = line.mutableCopy()!
@@ -51,7 +52,7 @@ ctx.drawLinearGradient(grad([c(0x2FE6A0, 0.32), c(0x2FE6A0, 0)]), start: P(0, 30
 ctx.restoreGState()
 // Fade the fill out toward its right edge
 ctx.setBlendMode(.destinationOut)
-ctx.drawLinearGradient(grad([c(0x000000, 0), c(0x000000, 1)]), start: P(640, 0), end: P(end.x, 0), options: [.drawsAfterEndLocation])
+ctx.drawLinearGradient(grad([c(0x000000, 0), c(0x000000, 1)]), start: P(680, 0), end: P(end.x, 0), options: [.drawsAfterEndLocation])
 ctx.setBlendMode(.normal)
 ctx.endTransparencyLayer()
 
@@ -68,7 +69,7 @@ ctx.setFillColor(c(0xFFFFFF)); ctx.fillEllipse(in: circle(end, 11))
 
 // Owl, perched at the bottom of the dip
 ctx.saveGState()
-ctx.translateBy(x: -70, y: 0)
+ctx.translateBy(x: -67, y: 0)
 
 // Owl body
 let owl = CGMutablePath()
