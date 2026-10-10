@@ -13,6 +13,9 @@ struct SettingsView: View {
   @AppStorage(AlertSettings.cashBalanceKey) private var cash = 0.0
   @AppStorage(AlertSettings.quietHoursKey) private var quietAlerts = false
   @Environment(QuoteStore.self) private var quotes
+  @Environment(ProgressStore.self) private var progress
+  @AppStorage(AlertSettings.briefReminderKey) private var briefReminder = true
+  @AppStorage(AlertSettings.briefReminderMinutesKey) private var briefMinutes = 8 * 60 + 30
   @Environment(SubscriptionManager.self) private var subscription
   @Environment(FlockService.self) private var flock
   @Environment(\.modelContext) private var modelContext
@@ -34,6 +37,7 @@ struct SettingsView: View {
       Form {
         subscriptionSection
         notificationsSection
+        briefSection
         portfolioSection
         flockSection
         appearanceSection
@@ -148,6 +152,36 @@ struct SettingsView: View {
            ? "Notifications are off, so Dipwise can't tell you when a target is reached."
            : "Dipwise checks prices in the background several times an hour. iOS decides the exact timing. Quiet delivery won't break through Focus.")
     }
+  }
+
+  private var briefTime: Binding<Date> {
+    Binding {
+      Calendar.current.date(bySettingHour: briefMinutes / 60, minute: briefMinutes % 60, second: 0, of: .now) ?? .now
+    } set: { date in
+      let components = Calendar.current.dateComponents([.hour, .minute], from: date)
+      briefMinutes = (components.hour ?? 8) * 60 + (components.minute ?? 30)
+    }
+  }
+
+  private var briefSection: some View {
+    Section {
+      Toggle(isOn: $briefReminder) {
+        Label("Daily brief reminder", systemImage: "flame")
+      }
+      if briefReminder {
+        DatePicker("Time", selection: briefTime, displayedComponents: .hourAndMinute)
+      }
+    } header: {
+      Text("Daily Brief")
+    } footer: {
+      Text("A one-minute check-in that keeps your streak alive. You're on a \(progress.streak)-day streak.")
+    }
+    .onChange(of: briefReminder) { reschedule() }
+    .onChange(of: briefMinutes) { reschedule() }
+  }
+
+  private func reschedule() {
+    Task { await NotificationManager.scheduleBriefReminders(streak: progress.streak, skipToday: progress.isBriefDoneToday) }
   }
 
   private var portfolioSection: some View {

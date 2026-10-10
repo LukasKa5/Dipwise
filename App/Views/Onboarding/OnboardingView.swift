@@ -92,6 +92,7 @@ struct OnboardingView: View {
       .font(.title3.weight(.semibold))
       .opacity(page > 0 && page < pageCount - 1 ? 1 : 0)
       .disabled(page == 0 || page == pageCount - 1)
+      .accessibilityHidden(page == 0 || page == pageCount - 1)
       GeometryReader { geometry in
         ZStack(alignment: .leading) {
           Capsule().fill(.white.opacity(0.15))
@@ -107,6 +108,8 @@ struct OnboardingView: View {
         .font(.subheadline.weight(.semibold))
         .foregroundStyle(.white.opacity(0.7))
         .opacity(page < pageCount - 1 ? 1 : 0)
+        .disabled(page == pageCount - 1)
+        .accessibilityHidden(page == pageCount - 1)
     }
     .padding(.horizontal, 24)
     .padding(.top, 12)
