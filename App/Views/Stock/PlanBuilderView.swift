@@ -41,6 +41,7 @@ struct PlanBuilderView: View {
   var body: some View {
     NavigationStack {
       Form {
+        Group {
         Section {
           ScrollView(.horizontal) {
             HStack(spacing: 10) {
@@ -160,7 +161,10 @@ struct PlanBuilderView: View {
         } header: {
           Text("Smart alerts")
         }
+        }
+        .dipwiseRows()
       }
+      .dipwiseListStyle()
       .navigationTitle("Plan \(holding.symbol)")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {

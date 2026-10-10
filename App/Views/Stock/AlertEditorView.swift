@@ -48,6 +48,7 @@ struct AlertEditorView: View {
   var body: some View {
     NavigationStack {
       Form {
+        Group {
         Section {
           AlertKindPicker(selection: $kind, isPro: subscription.isPro)
             .listRowInsets(EdgeInsets(top: 12, leading: 0, bottom: 12, trailing: 0))
@@ -104,7 +105,10 @@ struct AlertEditorView: View {
             Button("Delete Alert", systemImage: "trash", role: .destructive) { showsDeleteConfirmation = true }
           }
         }
+        }
+        .dipwiseRows()
       }
+      .dipwiseListStyle()
       .navigationTitle(alert == nil ? "New Alert" : "Edit Alert")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {

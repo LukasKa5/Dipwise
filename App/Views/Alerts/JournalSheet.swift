@@ -12,6 +12,7 @@ struct JournalSheet: View {
   var body: some View {
     NavigationStack {
       Form {
+        Group {
         Section {
           LabeledContent(alert.symbol, value: alert.summary(for: quote))
           if let triggered = alert.triggeredPrice {
@@ -47,7 +48,10 @@ struct JournalSheet: View {
             Text("Dipwise compares this with today's price so you can see how your decisions worked out.")
           }
         }
+        }
+        .dipwiseRows()
       }
+      .dipwiseListStyle()
       .navigationTitle("Dip Journal")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {

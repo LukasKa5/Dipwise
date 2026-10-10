@@ -81,6 +81,7 @@ struct AlertsView: View {
   var body: some View {
     NavigationStack {
       List {
+        Group {
         Section {
           Picker("Filter", selection: $filter.animation(.snappy)) {
             ForEach(Filter.allCases) { Text($0.rawValue).tag($0) }
@@ -124,7 +125,10 @@ struct AlertsView: View {
               .foregroundStyle(.secondary)
           }
         }
+        }
+        .dipwiseRows()
       }
+      .dipwiseListStyle()
       .listStyle(.insetGrouped)
       .scrollContentBackground(.hidden)
       .background(Palette.canvas)

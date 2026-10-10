@@ -9,6 +9,7 @@ struct PositionEditorView: View {
   var body: some View {
     NavigationStack {
       Form {
+        Group {
         Section {
           LabeledContent("Shares") {
             TextField("0", value: $shares, format: .number)
@@ -23,7 +24,10 @@ struct PositionEditorView: View {
         } footer: {
           Text("Set shares to 0 to just watch \(holding.symbol). Dipwise never connects to your broker.")
         }
+        }
+        .dipwiseRows()
       }
+      .dipwiseListStyle()
       .navigationTitle("Position")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {

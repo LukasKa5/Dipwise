@@ -156,7 +156,7 @@ struct StockDetailView: View {
       .pickerStyle(.segmented)
     }
     .padding(20)
-    .cardStyle(cornerRadius: 28)
+    .heroCardStyle()
     .padding(.top, 8)
   }
 

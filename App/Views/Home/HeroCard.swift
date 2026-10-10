@@ -50,7 +50,7 @@ struct HeroCard: View {
       .onTapGesture { openDetails?() }
     }
     .padding(20)
-    .cardStyle(cornerRadius: 28)
+    .heroCardStyle()
   }
 
   private var header: some View {

@@ -28,6 +28,7 @@ struct StockSetupView: View {
 
   var body: some View {
     Form {
+      Group {
       Section {
         HStack(spacing: 14) {
           TickerBadge(symbol: match.symbol, size: 50)
@@ -87,7 +88,10 @@ struct StockSetupView: View {
       } footer: {
         Text("Drag the handles to the range where you'd happily buy more. You can add a sell zone and smart alerts later.")
       }
+      }
+      .dipwiseRows()
     }
+    .dipwiseListStyle()
     .navigationTitle(match.symbol)
     .navigationBarTitleDisplayMode(.inline)
     .toolbar {

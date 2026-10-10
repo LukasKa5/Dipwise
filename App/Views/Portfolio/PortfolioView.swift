@@ -99,7 +99,7 @@ struct PortfolioView: View {
         .pickerStyle(.segmented)
       }
       .padding(18)
-      .cardStyle(cornerRadius: 28)
+      .heroCardStyle()
     }
   }
 
@@ -429,6 +429,7 @@ private struct CashEditorView: View {
   var body: some View {
     NavigationStack {
       Form {
+        Group {
         Section {
           TextField("Cash available", value: $draft, format: .currency(code: currency))
             .keyboardType(.decimalPad)
@@ -436,7 +437,10 @@ private struct CashEditorView: View {
         } footer: {
           Text("The cash you keep ready at your broker for buying dips.")
         }
+        }
+        .dipwiseRows()
       }
+      .dipwiseListStyle()
       .navigationTitle("Cash")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {

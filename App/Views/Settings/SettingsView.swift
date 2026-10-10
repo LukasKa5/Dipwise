@@ -35,6 +35,7 @@ struct SettingsView: View {
   var body: some View {
     NavigationStack {
       Form {
+        Group {
         subscriptionSection
         notificationsSection
         briefSection
@@ -46,7 +47,10 @@ struct SettingsView: View {
         #if DEBUG
         developerSection
         #endif
+        }
+        .dipwiseRows()
       }
+      .dipwiseListStyle()
       .navigationTitle("Settings")
       .sheet(isPresented: $showsPaywall) { PaywallView() }
       .manageSubscriptionsSheet(isPresented: $showsManageSubscription)

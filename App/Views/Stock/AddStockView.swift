@@ -25,6 +25,7 @@ struct AddStockView: View {
   var body: some View {
     NavigationStack {
       List {
+        Group {
         if query.isEmpty {
           Section("Popular") {
             ForEach(Self.popular) { row(for: $0) }
@@ -36,7 +37,10 @@ struct AddStockView: View {
         } else {
           ForEach(results) { row(for: $0) }
         }
+        }
+        .dipwiseRows()
       }
+      .dipwiseListStyle()
       .overlay {
         if isSearching && results.isEmpty { ProgressView() }
       }
