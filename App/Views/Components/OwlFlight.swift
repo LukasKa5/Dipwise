@@ -64,32 +64,69 @@ extension EnvironmentValues {
   @Entry var owlWingSpread: Double = 0
 }
 
-/// An owl that blinks now and then, opens its wings during flights, and hops when tapped.
+/// An owl that feels alive: it breathes, blinks, looks around, stretches its wings, and hops when tapped.
 struct LivelyOwl: View {
   var lookOffset: CGSize = .zero
   var hopsOnTap = true
   @Environment(\.owlWingSpread) private var wingSpread
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @State private var hops = 0
+  @State private var taps = 0
+  @State private var blink = 0.0
+  @State private var look = CGSize.zero
+  @State private var stretch = 0.0
+  @State private var breathing = false
 
   var body: some View {
-    Group {
-      if reduceMotion {
-        OwlMark(wingSpread: wingSpread, lookOffset: lookOffset)
-      } else {
-        PhaseAnimator([0.0, 1.0, 0.0, 0.0]) { blink in
-          OwlMark(wingSpread: wingSpread, blink: blink, lookOffset: lookOffset)
-        } animation: { phase in
-          phase == 1 ? .linear(duration: 0.12) : .linear(duration: phase == 0 ? 0.1 : 3.4)
-        }
+    OwlMark(wingSpread: max(wingSpread, stretch), blink: blink, lookOffset: lookOffset == .zero ? look : lookOffset)
+      .scaleEffect(x: 1, y: breathing ? 1.025 : 1, anchor: .bottom)
+      .contentShape(.rect)
+      .onTapGesture {
+        guard hopsOnTap else { return }
+        hops += 1
+        taps += 1
+        blinkOnce()
+      }
+      .owlFlight(trigger: hops, direction: hops.isMultiple(of: 2) ? 1 : -1, height: 22, isEnabled: !reduceMotion)
+      .sensoryFeedback(.impact(weight: .light), trigger: taps)
+      .onAppear {
+        guard !reduceMotion else { return }
+        withAnimation(.easeInOut(duration: 1.8).repeatForever(autoreverses: true)) { breathing = true }
+      }
+      .task {
+        guard !reduceMotion else { return }
+        await liveForever()
+      }
+  }
+
+  private func blinkOnce() {
+    withAnimation(.easeIn(duration: 0.07)) { blink = 1 }
+    withAnimation(.easeOut(duration: 0.12).delay(0.1)) { blink = 0 }
+  }
+
+  /// Small, random idle behaviors, like a real owl on a branch.
+  private func liveForever() async {
+    while !Task.isCancelled {
+      try? await Task.sleep(for: .seconds(Double.random(in: 1.6...3.8)))
+      switch Int.random(in: 0..<20) {
+      case 0..<9:
+        blinkOnce()
+      case 9..<11:
+        blinkOnce()
+        try? await Task.sleep(for: .seconds(0.3))
+        blinkOnce()
+      case 11..<16:
+        let direction = CGSize(width: [-1.0, 1.0].randomElement() ?? 1, height: Double.random(in: -0.4...0.3))
+        withAnimation(.snappy(duration: 0.3)) { look = direction }
+        try? await Task.sleep(for: .seconds(Double.random(in: 0.9...1.6)))
+        withAnimation(.snappy(duration: 0.35)) { look = .zero }
+      case 16..<18:
+        withAnimation(.easeOut(duration: 0.35)) { stretch = 0.55 }
+        try? await Task.sleep(for: .seconds(0.45))
+        withAnimation(.easeIn(duration: 0.3)) { stretch = 0 }
+      default:
+        if hopsOnTap { hops += 1 } else { blinkOnce() }
       }
     }
-    .contentShape(.rect)
-    .onTapGesture {
-      guard hopsOnTap else { return }
-      hops += 1
-    }
-    .owlFlight(trigger: hops, direction: hops.isMultiple(of: 2) ? 1 : -1, height: 22, isEnabled: !reduceMotion)
-    .sensoryFeedback(.impact(weight: .light), trigger: hops)
   }
 }

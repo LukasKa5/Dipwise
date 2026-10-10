@@ -9,6 +9,7 @@ struct ProgressHubView: View {
   @Environment(QuoteStore.self) private var quotes
   @Environment(Router.self) private var router
   @Environment(\.dismiss) private var dismiss
+  @State private var selectedAchievement: Achievement?
 
   private var journal: [PriceAlert] { alerts.filter { $0.journalAction != nil && $0.holding != nil } }
 
@@ -27,6 +28,10 @@ struct ProgressHubView: View {
       }
       .background(Palette.canvas)
       .navigationTitle("Your Progress")
+      .sheet(item: $selectedAchievement) { item in
+        AchievementDetailView(achievement: item)
+          .presentationDetents([.medium])
+      }
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .confirmationAction) {
@@ -50,12 +55,6 @@ struct ProgressHubView: View {
             .foregroundStyle(.secondary)
         }
         Spacer()
-        if progress.freezes > 0 {
-          Label("\(progress.freezes)", systemImage: "snowflake")
-            .font(.headline)
-            .foregroundStyle(.cyan)
-            .accessibilityLabel("\(progress.freezes) streak freezes")
-        }
       }
       WeekStrip(progress: progress)
       if !progress.isBriefDoneToday {
@@ -107,6 +106,9 @@ struct ProgressHubView: View {
       SectionHeader(title: "Achievements", subtitle: "\(items.filter(\.isUnlocked).count) of \(items.count) unlocked")
       LazyVGrid(columns: [GridItem(.adaptive(minimum: 100), spacing: 12)], spacing: 12) {
         ForEach(items) { item in
+          Button {
+            selectedAchievement = item
+          } label: {
           VStack(spacing: 8) {
             ZStack {
               Circle()
@@ -131,7 +133,9 @@ struct ProgressHubView: View {
           .cardStyle(cornerRadius: 18)
           .accessibilityElement(children: .ignore)
           .accessibilityLabel(item.title)
-          .accessibilityValue(item.isUnlocked ? "Unlocked" : "\(item.detail). \(item.progress.formatted(.percent.precision(.fractionLength(0)))) done")
+          .accessibilityValue(item.isUnlocked ? "Unlocked" : "\(item.detail). \(item.progressLabel)")
+          }
+          .buttonStyle(.plain)
         }
       }
     }
@@ -185,7 +189,7 @@ struct ProgressHubView: View {
   }
 }
 
-/// The last seven days, marked with flames, freezes, or empty circles.
+/// The last seven days, marked with flames or empty circles.
 private struct WeekStrip: View {
   var progress: ProgressStore
 
@@ -201,8 +205,6 @@ private struct WeekStrip: View {
           Group {
             if progress.wasCheckedIn(on: day) {
               Image(systemName: "flame.fill").foregroundStyle(Palette.amber)
-            } else if progress.wasFrozen(on: day) {
-              Image(systemName: "snowflake").foregroundStyle(.cyan)
             } else {
               Image(systemName: "circle").foregroundStyle(.quaternary)
             }
@@ -212,8 +214,63 @@ private struct WeekStrip: View {
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(day.formatted(.dateTime.weekday(.wide)))
-        .accessibilityValue(progress.wasCheckedIn(on: day) ? "Done" : progress.wasFrozen(on: day) ? "Frozen" : "Missed")
+        .accessibilityValue(progress.wasCheckedIn(on: day) ? "Done" : "Missed")
       }
     }
+  }
+}
+
+/// What an achievement means and how far along the user is.
+private struct AchievementDetailView: View {
+  var achievement: Achievement
+  @Environment(\.dismiss) private var dismiss
+
+  var body: some View {
+    VStack(spacing: 18) {
+      ZStack {
+        Circle()
+          .stroke(.quaternary, lineWidth: 6)
+        Circle()
+          .trim(from: 0, to: achievement.progress)
+          .stroke(Palette.amber, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+          .rotationEffect(.degrees(-90))
+        Circle()
+          .fill(achievement.isUnlocked ? AnyShapeStyle(Palette.amber.gradient) : AnyShapeStyle(.quaternary))
+          .padding(10)
+        Image(systemName: achievement.systemImage)
+          .font(.system(size: 38))
+          .foregroundStyle(achievement.isUnlocked ? AnyShapeStyle(.white) : AnyShapeStyle(.secondary))
+          .symbolEffect(.bounce, value: achievement.isUnlocked)
+      }
+      .frame(width: 110, height: 110)
+      .padding(.top, 28)
+
+      VStack(spacing: 6) {
+        Text(achievement.title)
+          .font(.title2.bold())
+        Text(achievement.detail)
+          .font(.headline)
+          .foregroundStyle(Palette.amber)
+          .multilineTextAlignment(.center)
+      }
+      Text(achievement.explanation)
+        .font(.body)
+        .foregroundStyle(.secondary)
+        .multilineTextAlignment(.center)
+        .padding(.horizontal, 28)
+
+      VStack(spacing: 6) {
+        ProgressView(value: achievement.progress)
+          .tint(Palette.amber)
+        Text(achievement.progressLabel)
+          .font(.subheadline.weight(.semibold))
+          .foregroundStyle(achievement.isUnlocked ? Palette.buy : .secondary)
+      }
+      .padding(.horizontal, 40)
+      Spacer()
+    }
+    .frame(maxWidth: .infinity)
+    .background(Palette.canvas)
+    .accessibilityElement(children: .combine)
   }
 }

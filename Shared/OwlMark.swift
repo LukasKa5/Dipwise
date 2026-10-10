@@ -2,10 +2,19 @@ import SwiftUI
 
 /// The Dipwise owl, drawn with the same geometry as the app icon.
 /// `wingSpread` (0–1) opens the wings for flight; `blink` (0–1) closes the eyes.
-struct OwlMark: View {
+struct OwlMark: View, Animatable {
   var wingSpread: Double = 0
   var blink: Double = 0
   var lookOffset: CGSize = .zero
+
+  var animatableData: AnimatablePair<AnimatablePair<Double, Double>, AnimatablePair<CGFloat, CGFloat>> {
+    get { AnimatablePair(AnimatablePair(wingSpread, blink), AnimatablePair(lookOffset.width, lookOffset.height)) }
+    set {
+      wingSpread = newValue.first.first
+      blink = newValue.first.second
+      lookOffset = CGSize(width: newValue.second.first, height: newValue.second.second)
+    }
+  }
 
   /// The owl's body (including feet), in icon coordinates.
   private static let bounds = CGRect(x: 298, y: 290, width: 428, height: 492)

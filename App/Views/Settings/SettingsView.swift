@@ -15,6 +15,7 @@ struct SettingsView: View {
   @Environment(QuoteStore.self) private var quotes
   @Environment(ProgressStore.self) private var progress
   @AppStorage(AlertSettings.briefReminderKey) private var briefReminder = true
+  @AppStorage(AlertSettings.showsBriefKey) private var showsBrief = true
   @AppStorage(AlertSettings.briefReminderMinutesKey) private var briefMinutes = 8 * 60 + 30
   @Environment(SubscriptionManager.self) private var subscription
   @Environment(FlockService.self) private var flock
@@ -169,18 +170,24 @@ struct SettingsView: View {
 
   private var briefSection: some View {
     Section {
-      Toggle(isOn: $briefReminder) {
-        Label("Daily brief reminder", systemImage: "flame")
+      Toggle(isOn: $showsBrief) {
+        Label("Show Daily Brief", systemImage: "flame")
       }
-      if briefReminder {
-        DatePicker("Time", selection: briefTime, displayedComponents: .hourAndMinute)
+      if showsBrief {
+        Toggle(isOn: $briefReminder) {
+          Label("Reminder", systemImage: "bell")
+        }
+        if briefReminder {
+          DatePicker("Time", selection: briefTime, displayedComponents: .hourAndMinute)
+        }
       }
     } header: {
       Text("Daily Brief")
     } footer: {
-      Text("A one-minute check-in that keeps your streak alive. You're on a \(progress.streak)-day streak.")
+      Text(showsBrief ? "A one-minute check-in that keeps your streak alive. You're on a \(progress.streak)-day streak." : "The brief and streak are hidden. Turn them back on any time.")
     }
     .onChange(of: briefReminder) { reschedule() }
+    .onChange(of: showsBrief) { reschedule() }
     .onChange(of: briefMinutes) { reschedule() }
   }
 

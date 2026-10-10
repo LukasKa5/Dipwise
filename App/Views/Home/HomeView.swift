@@ -9,6 +9,8 @@ struct HomeView: View {
   @Environment(\.modelContext) private var modelContext
   @Environment(ProgressStore.self) private var progress
   @State private var showsProgress = false
+  @AppStorage(AlertSettings.showsBriefKey) private var showsBrief = true
+  @AppStorage(AlertSettings.briefHiddenDayKey) private var briefHiddenDay = ""
   @State private var showsAddStock = false
   @State private var showsPortfolio = false
   @State private var range: ChartRange = .month
@@ -25,7 +27,17 @@ struct HomeView: View {
           if holdings.isEmpty {
             WelcomeCard { showsAddStock = true }
           } else {
-            BriefBanner(streak: progress.streak, isDone: progress.isBriefDoneToday) { router.showsBrief = true }
+            if showsBrief && !progress.isBriefDoneToday && briefHiddenDay != Self.today {
+              BriefBanner(streak: progress.streak) {
+                router.showsBrief = true
+              } dismissForToday: {
+                withAnimation(.smooth) { briefHiddenDay = Self.today }
+              } turnOff: {
+                withAnimation(.smooth) { showsBrief = false }
+                Task { await NotificationManager.scheduleBriefReminders(streak: 0, skipToday: true) }
+              }
+              .transition(.move(edge: .top).combined(with: .opacity))
+            }
             hero
             nearTargets
             dipRadar
@@ -44,11 +56,13 @@ struct HomeView: View {
       .navigationTitle("Dipwise")
       .refreshable { await MarketMonitor.refresh(context: modelContext, quotes: quotes, flock: flock) }
       .toolbar {
-        ToolbarItem(placement: .topBarLeading) {
-          Button {
-            showsProgress = true
-          } label: {
-            StreakChip(streak: progress.streak, isDoneToday: progress.isBriefDoneToday)
+        if showsBrief {
+          ToolbarItem(placement: .topBarLeading) {
+            Button {
+              showsProgress = true
+            } label: {
+              StreakChip(streak: progress.streak, isDoneToday: progress.isBriefDoneToday)
+            }
           }
         }
         ToolbarItem(placement: .topBarTrailing) {
@@ -71,6 +85,8 @@ struct HomeView: View {
       .task { await flock.loadOverview() }
     }
   }
+
+  private static var today: String { Date.now.formatted(.iso8601.year().month().day()) }
 
   // MARK: Sections
 

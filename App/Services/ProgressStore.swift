@@ -2,7 +2,7 @@ import Foundation
 import Observation
 import WidgetKit
 
-/// Duolingo-style progress: daily streak with freezes, wisdom points (XP), levels, and counters for achievements.
+/// Duolingo-style progress: daily streak, wisdom points (XP), levels, and counters for achievements.
 @MainActor
 @Observable
 final class ProgressStore {
@@ -31,10 +31,7 @@ final class ProgressStore {
 
   private struct Stored: Codable {
     var checkIns: Set<String> = []
-    var frozenDays: Set<String> = []
     var xp = 0
-    var freezes = 0
-    var freezeRefillMonth = ""
     var longestStreak = 0
     var votes = 0
     var journalEntries = 0
@@ -81,41 +78,18 @@ final class ProgressStore {
 
   private func isActive(on date: Date) -> Bool {
     let key = Self.key(for: date)
-    return stored.checkIns.contains(key) || stored.frozenDays.contains(key)
+    return stored.checkIns.contains(key)
   }
 
   func wasCheckedIn(on date: Date) -> Bool { stored.checkIns.contains(Self.key(for: date)) }
-  func wasFrozen(on date: Date) -> Bool { stored.frozenDays.contains(Self.key(for: date)) }
 
   var isBriefDoneToday: Bool { stored.lastBrief.map { Calendar.current.isDateInToday($0) } ?? false }
   var longestStreak: Int { max(stored.longestStreak, streak) }
-  var freezes: Int { stored.freezes }
 
-  /// Marks today as done. A missed day is covered by a streak freeze when one is available.
-  private func checkIn(isPro: Bool) {
-    let calendar = Calendar.current
-    let today = Date.now
-    refillFreezes(isPro: isPro)
-    if let yesterday = calendar.date(byAdding: .day, value: -1, to: today),
-       let dayBefore = calendar.date(byAdding: .day, value: -2, to: today),
-       !isActive(on: yesterday), isActive(on: dayBefore), stored.freezes > 0 {
-      stored.freezes -= 1
-      stored.frozenDays.insert(Self.key(for: yesterday))
-    }
-    let wasNew = stored.checkIns.insert(Self.key(for: today)).inserted
-    if wasNew, streak > 0, streak.isMultiple(of: 7) {
-      // Every week of streak earns a freeze, up to two.
-      stored.freezes = min(2, stored.freezes + 1)
-    }
+  /// Marks today as done.
+  private func checkIn() {
+    stored.checkIns.insert(Self.key(for: .now))
     stored.longestStreak = max(stored.longestStreak, streak)
-  }
-
-  private func refillFreezes(isPro: Bool) {
-    let month = Date.now.formatted(.dateTime.year().month(.twoDigits))
-    if isPro, stored.freezeRefillMonth != month {
-      stored.freezes = 2
-      stored.freezeRefillMonth = month
-    }
   }
 
   // MARK: XP and levels
@@ -130,17 +104,17 @@ final class ProgressStore {
     return titles[min(level - 1, titles.count - 1)]
   }
 
-  func record(_ event: Event, isPro: Bool = AlertSettings.isPro) {
+  func record(_ event: Event) {
     stored.xp += event.points
     switch event {
     case .brief:
       stored.briefs += 1
       stored.lastBrief = .now
-      checkIn(isPro: isPro)
+      checkIn()
     case .alertCreated: stored.alertsCreated += 1
     case .vote: stored.votes += 1
     case .journal: stored.journalEntries += 1
-    case .onboarding: checkIn(isPro: isPro)
+    case .onboarding: checkIn()
     }
     lastGain = Gain(points: event.points)
     save()

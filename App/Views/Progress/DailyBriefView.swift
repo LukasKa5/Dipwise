@@ -214,11 +214,6 @@ struct DailyBriefView: View {
       }
       .padding(18)
       .cardStyle()
-      if progress.freezes > 0 {
-        Label("\(progress.freezes) streak \(progress.freezes == 1 ? "freeze" : "freezes") ready if you miss a day", systemImage: "snowflake")
-          .font(.subheadline)
-          .foregroundStyle(.cyan)
-      }
     }
     .frame(maxWidth: .infinity)
   }

@@ -12,9 +12,12 @@ enum AlertSettings {
   static let briefReminderKey = "briefReminderEnabled"
   static let briefReminderMinutesKey = "briefReminderMinutes"
   static let investorStyleKey = "investorStyle"
+  static let showsBriefKey = "showsDailyBrief"
+  static let briefHiddenDayKey = "briefHiddenDay"
 
   static var briefReminderEnabled: Bool {
-    UserDefaults.standard.object(forKey: briefReminderKey) as? Bool ?? true
+    let showsBrief = UserDefaults.standard.object(forKey: showsBriefKey) as? Bool ?? true
+    return showsBrief && (UserDefaults.standard.object(forKey: briefReminderKey) as? Bool ?? true)
   }
 
   /// Minutes after midnight for the daily brief reminder.

@@ -5,35 +5,69 @@ struct Achievement: Identifiable {
   var id: String
   var title: String
   var detail: String
+  /// Why this habit matters, shown when the badge is tapped.
+  var explanation: String
   var systemImage: String
-  var progress: Double
+  var current: Double
+  var goal: Double
+  var unit: String = ""
 
+  var progress: Double { goal == 0 ? 0 : min(1, current / goal) }
   var isUnlocked: Bool { progress >= 1 }
+
+  var progressLabel: String {
+    if isUnlocked { return "Unlocked" }
+    if goal == 1 { return "Not yet" }
+    return "\(Int(current.rounded(.down))) of \(Int(goal))\(unit.isEmpty ? "" : " \(unit)")"
+  }
 
   /// Every achievement and how close the user is to it.
   @MainActor
   static func all(progress: ProgressStore, holdings: [Holding], quotes: [String: Quote]) -> [Achievement] {
     let alerts = holdings.flatMap { $0.alerts ?? [] }
-    func ratio(_ value: Int, of goal: Int) -> Double { min(1, Double(value) / Double(goal)) }
-    let maxBuyTiers = holdings.map { holding in holding.activeAlerts.filter { $0.kind == .buyZone }.count }.max() ?? 0
+    let maxBuyTiers = holdings.map { $0.buyZones.count }.max() ?? 0
     let hasFullPlan = holdings.contains { $0.buyZone != nil && $0.sellZone != nil }
     let caughtDip = alerts.contains { $0.kind.side == .buy && $0.triggeredAt != nil }
     let oldestActiveDays = alerts.filter(\.isActive).map { Date.now.timeIntervalSince($0.createdAt) / 86_400 }.max() ?? 0
     let earnsDividends = holdings.contains { $0.isOwned && (quotes[$0.symbol]?.trailingAnnualDividend ?? 0) > 0 }
 
     return [
-      Achievement(id: "first-plan", title: "First Plan", detail: "Set your first alert", systemImage: "scope", progress: ratio(progress.alertsCreated, of: 1)),
-      Achievement(id: "full-plan", title: "Full Plan", detail: "Set a buy zone and a sell zone on one stock", systemImage: "arrow.up.and.down", progress: hasFullPlan ? 1 : 0),
-      Achievement(id: "ladder", title: "Ladder Builder", detail: "Plan three buy tiers on one stock", systemImage: "chart.bar.fill", progress: ratio(maxBuyTiers, of: 3)),
-      Achievement(id: "diversified", title: "Diversified", detail: "Watch five stocks", systemImage: "square.grid.2x2.fill", progress: ratio(holdings.count, of: 5)),
-      Achievement(id: "dip-catcher", title: "Dip Catcher", detail: "Have a buy alert fire", systemImage: "checkmark.seal.fill", progress: caughtDip ? 1 : 0),
-      Achievement(id: "patient", title: "Patient Owl", detail: "Keep an alert waiting for 30 days", systemImage: "hourglass", progress: min(1, oldestActiveDays / 30)),
-      Achievement(id: "streak-7", title: "On Fire", detail: "Reach a 7-day streak", systemImage: "flame.fill", progress: ratio(progress.longestStreak, of: 7)),
-      Achievement(id: "streak-30", title: "Unstoppable", detail: "Reach a 30-day streak", systemImage: "bolt.fill", progress: ratio(progress.longestStreak, of: 30)),
-      Achievement(id: "flock-voice", title: "Flock Voice", detail: "Vote 10 times", systemImage: "person.3.fill", progress: ratio(progress.votes, of: 10)),
-      Achievement(id: "journal", title: "Journal Keeper", detail: "Log 5 decisions in your Dip Journal", systemImage: "book.closed.fill", progress: ratio(progress.journalEntries, of: 5)),
-      Achievement(id: "income", title: "Income Seeker", detail: "Own a stock that pays dividends", systemImage: "leaf.fill", progress: earnsDividends ? 1 : 0),
-      Achievement(id: "wise", title: "Wise Owl", detail: "Reach level 6", systemImage: "graduationcap.fill", progress: min(1, Double(progress.level) / 6)),
+      Achievement(id: "first-plan", title: "First Plan", detail: "Set your first alert.",
+                  explanation: "Every good investment starts with a plan. Deciding your price before the market moves keeps emotions out of it.",
+                  systemImage: "scope", current: Double(progress.alertsCreated), goal: 1),
+      Achievement(id: "full-plan", title: "Full Plan", detail: "Set a buy zone and a sell zone on the same stock.",
+                  explanation: "Knowing where you'd buy more and where you'd take profit turns a hunch into a complete plan.",
+                  systemImage: "arrow.up.and.down", current: hasFullPlan ? 1 : 0, goal: 1),
+      Achievement(id: "ladder", title: "Ladder Builder", detail: "Plan three buy tiers on one stock.",
+                  explanation: "Buying in tiers lowers your average price if a dip deepens, without betting everything on one level.",
+                  systemImage: "chart.bar.fill", current: Double(maxBuyTiers), goal: 3, unit: "tiers"),
+      Achievement(id: "diversified", title: "Diversified", detail: "Watch five different stocks.",
+                  explanation: "Spreading attention across several companies means one bad day doesn't define your portfolio.",
+                  systemImage: "square.grid.2x2.fill", current: Double(holdings.count), goal: 5, unit: "stocks"),
+      Achievement(id: "dip-catcher", title: "Dip Catcher", detail: "Have one of your buy alerts fire.",
+                  explanation: "Your patience paid off: the price came to you instead of you chasing it.",
+                  systemImage: "checkmark.seal.fill", current: caughtDip ? 1 : 0, goal: 1),
+      Achievement(id: "patient", title: "Patient Owl", detail: "Keep an alert waiting for 30 days.",
+                  explanation: "The best prices rarely arrive on schedule. Letting a plan wait is a superpower most investors lack.",
+                  systemImage: "hourglass", current: oldestActiveDays, goal: 30, unit: "days"),
+      Achievement(id: "streak-7", title: "On Fire", detail: "Reach a 7-day streak.",
+                  explanation: "A daily one-minute check-in builds the habit of reviewing your plan calmly instead of reacting.",
+                  systemImage: "flame.fill", current: Double(progress.longestStreak), goal: 7, unit: "days"),
+      Achievement(id: "streak-30", title: "Unstoppable", detail: "Reach a 30-day streak.",
+                  explanation: "A month of daily check-ins. You're investing with routine, not emotion.",
+                  systemImage: "bolt.fill", current: Double(progress.longestStreak), goal: 30, unit: "days"),
+      Achievement(id: "flock-voice", title: "Flock Voice", detail: "Vote on 10 stocks with the flock.",
+                  explanation: "Your votes make the crowd's mood more accurate for everyone, including you.",
+                  systemImage: "person.3.fill", current: Double(progress.votes), goal: 10, unit: "votes"),
+      Achievement(id: "journal", title: "Journal Keeper", detail: "Log 5 decisions in your Dip Journal.",
+                  explanation: "Writing down what you did, and later seeing how it worked out, is the fastest way to improve.",
+                  systemImage: "book.closed.fill", current: Double(progress.journalEntries), goal: 5, unit: "entries"),
+      Achievement(id: "income", title: "Income Seeker", detail: "Own a stock that pays dividends.",
+                  explanation: "Dividends pay you to wait. Reinvested, they've historically made up a big part of long-term returns.",
+                  systemImage: "leaf.fill", current: earnsDividends ? 1 : 0, goal: 1),
+      Achievement(id: "wise", title: "Wise Owl", detail: "Reach level 6.",
+                  explanation: "Earned through steady habits: briefs, plans, votes, and journaling. Ollie is proud.",
+                  systemImage: "graduationcap.fill", current: Double(progress.level), goal: 6, unit: "levels"),
     ]
   }
 }
