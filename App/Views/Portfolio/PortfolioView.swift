@@ -87,7 +87,7 @@ struct PortfolioView: View {
               .font(.subheadline)
               .foregroundStyle(.secondary)
           } else if let first = history.values.first, let last = history.values.last, first > 0 {
-            ChangeBadge(change: last / first - 1, caption: "over \(range.title)", positiveColor: Brand.mint, negativeColor: Brand.loss)
+            ChangeBadge(change: last / first - 1, caption: "over \(range.title)", positiveColor: Palette.gain, negativeColor: Palette.loss)
           }
         }
         .frame(height: 30, alignment: .leading)
@@ -99,8 +99,7 @@ struct PortfolioView: View {
         .pickerStyle(.segmented)
       }
       .padding(18)
-      .background(Brand.nightGradient, in: .rect(cornerRadius: 28))
-      .environment(\.colorScheme, .dark)
+      .cardStyle(cornerRadius: 28)
     }
   }
 
@@ -119,7 +118,7 @@ struct PortfolioView: View {
     case .type: summary.allocationByType
     case .currency: summary.allocationByCurrency
     }
-    let palette: [Color] = [Brand.mint, Brand.amber, .teal, .indigo, .pink, .orange, .cyan, .purple, .yellow, .gray]
+    let palette: [Color] = [Palette.buy, Palette.amber, .teal, .indigo, .pink, .orange, .cyan, .purple, .yellow, .gray]
     return VStack(alignment: .leading, spacing: 14) {
       SectionHeader(title: "Allocation")
       VStack(spacing: 18) {
@@ -314,7 +313,7 @@ struct PortfolioView: View {
           Spacer()
           VStack(alignment: .trailing, spacing: 4) {
             Text("Planned in buy alerts").font(.caption).foregroundStyle(.secondary)
-            Text(money(summary.plannedBuys)).font(.title3.bold().monospacedDigit()).foregroundStyle(Palette.amber)
+            Text(money(summary.plannedBuys)).font(.title3.bold().monospacedDigit()).foregroundStyle(Palette.buy)
           }
         }
         if summary.plannedBuys > 0 {

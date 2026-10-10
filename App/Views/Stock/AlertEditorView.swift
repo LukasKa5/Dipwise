@@ -12,6 +12,7 @@ struct AlertEditorView: View {
   @Environment(QuoteStore.self) private var quotes
   @Environment(FlockService.self) private var flock
   @Environment(SubscriptionManager.self) private var subscription
+  @Environment(ProgressStore.self) private var progress
   @State private var kind: AlertKind = .buyZone
   @State private var lower: Double = 0
   @State private var upper: Double = 0
@@ -172,7 +173,7 @@ struct AlertEditorView: View {
               Spacer()
               Text(percent, format: .percent.precision(.fractionLength(0)))
                 .font(.title3.bold().monospacedDigit())
-                .foregroundStyle(Palette.amber)
+                .foregroundStyle(kind.side.color)
             }
             Slider(value: $percent, in: percentRange) {
               Text("Percentage")
@@ -212,7 +213,7 @@ struct AlertEditorView: View {
       .keyboardType(.decimalPad)
       .multilineTextAlignment(.trailing)
       .font(.body.weight(.semibold).monospacedDigit())
-      .foregroundStyle(kind.side == .sell ? Palette.green : Palette.amber)
+      .foregroundStyle(kind.side.color)
   }
 
   private func presets(for quote: Quote) -> some View {
@@ -228,8 +229,8 @@ struct AlertEditorView: View {
           .font(.subheadline.weight(.semibold))
           .padding(.horizontal, 12)
           .padding(.vertical, 6)
-          .background((kind.side == .sell ? Palette.green : Palette.amber).opacity(0.14), in: .capsule)
-          .foregroundStyle(kind.side == .sell ? Palette.green : Palette.amber)
+          .background((kind.side.color).opacity(0.14), in: .capsule)
+          .foregroundStyle(kind.side.color)
           .buttonStyle(.plain)
         }
       }
@@ -368,6 +369,7 @@ struct AlertEditorView: View {
       let alert = PriceAlert(rule: rule, priceAtCreation: current)
       alert.holding = holding
       modelContext.insert(alert)
+      progress.record(.alertCreated)
       Task {
         await NotificationManager.requestAuthorization()
         await flock.share(alert)
@@ -453,7 +455,7 @@ struct AlertKindPicker: View {
       HStack(spacing: 10) {
         ForEach(AlertKind.allCases) { kind in
           let isSelected = kind == selection
-          let tint: Color = kind.side == .sell ? Palette.green : Palette.amber
+          let tint: Color = kind.side.color
           Button {
             withAnimation(.snappy) { selection = kind }
           } label: {
@@ -508,7 +510,7 @@ struct FlockComparisonRow: View {
         LabeledContent("Crowd \(side == .buy ? "buy" : "sell") zone") {
           Text("\(format(zone.lowerBound))–\(format(zone.upperBound))")
             .monospacedDigit()
-            .foregroundStyle(side == .buy ? Palette.amber : Palette.green)
+            .foregroundStyle(side.color)
         }
       }
       if isPro {

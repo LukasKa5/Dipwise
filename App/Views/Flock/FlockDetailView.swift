@@ -10,6 +10,7 @@ struct FlockDetailView: View {
   @Environment(FlockService.self) private var flock
   @Environment(SubscriptionManager.self) private var subscription
   @Environment(\.modelContext) private var modelContext
+  @Environment(ProgressStore.self) private var progress
   @State private var quote: Quote?
   @State private var showsAddStock = false
   @State private var showsPaywall = false
@@ -37,7 +38,9 @@ struct FlockDetailView: View {
           if report.hasEnoughData {
             conviction(report)
             VoteCard(symbol: symbol, votes: report.votes, userVote: flock.userVote(for: symbol)) { bullish in
+              let isFirst = flock.userVote(for: symbol) == nil
               Task { await flock.vote(symbol: symbol, bullish: bullish) }
+              if isFirst { progress.record(.vote) }
             }
             crowdZone(report)
             distribution(report)
@@ -131,7 +134,7 @@ struct FlockDetailView: View {
         VStack(alignment: .leading, spacing: 6) {
           Text(report.convictionLabel)
             .font(.title3.bold())
-            .foregroundStyle(report.conviction >= 55 ? Palette.amber : (report.conviction < 45 ? Palette.green : .primary))
+            .foregroundStyle(report.conviction >= 55 ? Palette.buy : (report.conviction < 45 ? Palette.sell : .primary))
           Text(report.convictionBlurb)
             .font(.footnote)
             .foregroundStyle(.secondary)
@@ -176,10 +179,10 @@ struct FlockDetailView: View {
         ZoneLegend()
         VStack(spacing: 8) {
           if let zone = report.buyZone {
-            zoneRow(title: "Buy zone", zone: zone, count: report.buyLevels.count, color: Palette.amber)
+            zoneRow(title: "Buy zone", zone: zone, count: report.buyLevels.count, color: Palette.buy)
           }
           if let zone = report.sellZone {
-            zoneRow(title: "Sell zone", zone: zone, count: report.sellLevels.count, color: Palette.green)
+            zoneRow(title: "Sell zone", zone: zone, count: report.sellLevels.count, color: Palette.sell)
           }
         }
         if let zone = report.buyZone {
@@ -192,7 +195,7 @@ struct FlockDetailView: View {
               .padding(.vertical, 8)
           }
           .buttonStyle(.bordered)
-          .tint(Palette.amber)
+          .tint(Palette.buy)
         }
       }
       .proLocked(!zoneUnlocked, message: "Watch \(symbol) to unlock its crowd zones for free, or go Pro for every stock")
@@ -280,14 +283,14 @@ struct FlockDetailView: View {
         ForEach(report.mix, id: \.kind) { item in
           HStack(spacing: 10) {
             Image(systemName: item.kind.systemImage)
-              .foregroundStyle(item.kind.side == .sell ? Palette.green : Palette.amber)
+              .foregroundStyle(item.kind.side.color)
               .frame(width: 20)
             Text(item.kind.title)
               .font(.subheadline)
               .frame(width: 120, alignment: .leading)
             GeometryReader { geometry in
               Capsule()
-                .fill((item.kind.side == .sell ? Palette.green : Palette.amber).opacity(0.6))
+                .fill((item.kind.side.color).opacity(0.6))
                 .frame(width: max(4, geometry.size.width * Double(item.count) / Double(maxCount)), height: 8)
                 .frame(maxHeight: .infinity)
             }
@@ -365,14 +368,14 @@ struct FlockDetailView: View {
             .font(.headline)
           Text("Every stock, every chart, the live feed, and track records.")
             .font(.subheadline)
-            .foregroundStyle(.white.opacity(0.7))
+            .foregroundStyle(.secondary)
         }
         Spacer()
         Image(systemName: "chevron.forward")
+          .foregroundStyle(.tertiary)
       }
-      .foregroundStyle(.white)
       .padding(18)
-      .background(Brand.nightGradient, in: .rect(cornerRadius: 24))
+      .cardStyle()
     }
     .buttonStyle(.plain)
   }

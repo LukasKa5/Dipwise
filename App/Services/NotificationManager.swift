@@ -74,6 +74,36 @@ enum NotificationManager {
     }
   }
 
+  /// Schedules the daily brief reminder for the next week, skipping today once the brief is done.
+  static func scheduleBriefReminders(streak: Int, skipToday: Bool) async {
+    let center = UNUserNotificationCenter.current()
+    let identifiers = (0..<8).map { "brief-\($0)" }
+    center.removePendingNotificationRequests(withIdentifiers: identifiers)
+    guard AlertSettings.briefReminderEnabled else { return }
+    let minutes = AlertSettings.briefReminderMinutes
+    let calendar = Calendar.current
+    for offset in 0..<8 {
+      guard let day = calendar.date(byAdding: .day, value: offset, to: .now) else { continue }
+      if offset == 0 && skipToday { continue }
+      var components = calendar.dateComponents([.year, .month, .day], from: day)
+      components.hour = minutes / 60
+      components.minute = minutes % 60
+      guard let date = calendar.date(from: components), date > .now else { continue }
+      let content = UNMutableNotificationContent()
+      if streak > 0 {
+        content.title = "Keep your streak going"
+        content.body = "Your daily brief is ready. One minute with the owl keeps your plan sharp."
+      } else {
+        content.title = "Your daily brief is ready"
+        content.body = "See how your stocks moved and how close they are to your zones."
+      }
+      content.sound = .default
+      content.userInfo = ["brief": true]
+      let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+      try? await center.add(UNNotificationRequest(identifier: "brief-\(offset)", content: content, trigger: trigger))
+    }
+  }
+
   static func sendTest() async {
     let content = UNMutableNotificationContent()
     content.title = "NVDA entered your buy zone"

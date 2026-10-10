@@ -7,7 +7,7 @@ struct AlertCard: View {
 
   private var distance: Double? { quote.flatMap { alert.distance(for: $0) } }
   private var isClose: Bool { (distance ?? 1) < 0.035 }
-  private var tint: Color { alert.kind.side == .sell ? Palette.green : Palette.amber }
+  private var tint: Color { alert.kind.side.color }
 
   var body: some View {
     VStack(alignment: .leading, spacing: 14) {

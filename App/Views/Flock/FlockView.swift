@@ -65,13 +65,12 @@ struct FlockView: View {
         VStack(alignment: .leading, spacing: 6) {
           Text("This week in the flock")
             .font(.subheadline.weight(.semibold))
-            .foregroundStyle(.white.opacity(0.65))
+            .foregroundStyle(.secondary)
           Text("\(overview.investors.formatted()) investors")
             .font(.title.bold())
-            .foregroundStyle(.white)
           Text("set \(overview.alertsThisWeek.formatted()) new alerts")
             .font(.headline)
-            .foregroundStyle(Brand.mint)
+            .foregroundStyle(.tint)
         }
         Spacer()
         LivelyOwl()
@@ -81,27 +80,26 @@ struct FlockView: View {
         HStack {
           Text("Market mood")
             .font(.subheadline.weight(.semibold))
-            .foregroundStyle(.white)
           Spacer()
           Text(overview.mood.bullShare >= 0.5 ? "Optimistic" : "Cautious")
             .font(.subheadline.weight(.bold))
-            .foregroundStyle(overview.mood.bullShare >= 0.5 ? Brand.mint : Brand.loss)
+            .foregroundStyle(overview.mood.bullShare >= 0.5 ? Palette.gain : Palette.loss)
         }
         GeometryReader { geometry in
           HStack(spacing: 3) {
-            Capsule().fill(Brand.mint).frame(width: max(6, (geometry.size.width - 3) * overview.mood.bullShare))
-            Capsule().fill(Brand.loss)
+            Capsule().fill(Palette.gain).frame(width: max(6, (geometry.size.width - 3) * overview.mood.bullShare))
+            Capsule().fill(Palette.loss)
           }
         }
         .frame(height: 10)
         Text("\(overview.mood.bullShare.formatted(.percent.precision(.fractionLength(0)))) expect stocks they vote on to rise over the next 30 days")
           .font(.caption)
-          .foregroundStyle(.white.opacity(0.6))
+          .foregroundStyle(.secondary)
       }
       .accessibilityElement(children: .combine)
     }
-    .padding(22)
-    .background(Brand.nightGradient, in: .rect(cornerRadius: 30))
+    .padding(20)
+    .cardStyle(cornerRadius: 28)
     .padding(.top, 8)
   }
 
@@ -267,7 +265,7 @@ private struct TrendingRow: View {
           BuySellBar(buyShare: item.buyShare)
           Text("\(item.buyShare, format: .percent.precision(.fractionLength(0))) buy")
             .font(.caption.weight(.semibold))
-            .foregroundStyle(Palette.amber)
+            .foregroundStyle(Palette.buy)
             .frame(width: 64, alignment: .trailing)
         }
       }
@@ -299,7 +297,7 @@ private struct FlockSnapshotCard: View {
       if let report, report.hasEnoughData {
         Text(report.convictionLabel)
           .font(.caption.weight(.semibold))
-          .foregroundStyle(Palette.amber)
+          .foregroundStyle(Palette.buy)
         BuySellBar(buyShare: report.buyShare)
         Text("\(report.watcherCount) investors")
           .font(.caption)

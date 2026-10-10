@@ -14,7 +14,7 @@ struct ZoneEditorChart: View {
   @State private var fixedDomain: ClosedRange<Double>?
   @State private var dragStart: (lower: Double, upper: Double)?
 
-  private var tint: Color { side == .sell ? Palette.green : Palette.amber }
+  private var tint: Color { side.color }
   private var upperValue: Double { upper?.wrappedValue ?? lower }
 
   var body: some View {

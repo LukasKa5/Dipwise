@@ -7,6 +7,8 @@ struct HomeView: View {
   @Environment(FlockService.self) private var flock
   @Environment(Router.self) private var router
   @Environment(\.modelContext) private var modelContext
+  @Environment(ProgressStore.self) private var progress
+  @State private var showsProgress = false
   @State private var showsAddStock = false
   @State private var showsPortfolio = false
   @State private var range: ChartRange = .month
@@ -23,6 +25,7 @@ struct HomeView: View {
           if holdings.isEmpty {
             WelcomeCard { showsAddStock = true }
           } else {
+            BriefBanner(streak: progress.streak, isDone: progress.isBriefDoneToday) { router.showsBrief = true }
             hero
             nearTargets
             dipRadar
@@ -41,10 +44,19 @@ struct HomeView: View {
       .navigationTitle("Dipwise")
       .refreshable { await MarketMonitor.refresh(context: modelContext, quotes: quotes, flock: flock) }
       .toolbar {
+        ToolbarItem(placement: .topBarLeading) {
+          Button {
+            showsProgress = true
+          } label: {
+            StreakChip(streak: progress.streak, isDoneToday: progress.isBriefDoneToday)
+          }
+        }
         ToolbarItem(placement: .topBarTrailing) {
           Button("Add Stock", systemImage: "plus") { showsAddStock = true }
         }
       }
+      .sheet(isPresented: $showsProgress) { ProgressHubView() }
+      .fullScreenCover(isPresented: $router.showsBrief) { DailyBriefView() }
       .navigationDestination(for: String.self) { symbol in
         StockDetailView(symbol: symbol)
       }
@@ -76,9 +88,9 @@ struct HomeView: View {
         values: history.values,
         dates: history.dates,
         stats: [
-          HeroStat(value: (summary.dayChangeAmount >= 0 ? "+" : "") + format(summary.dayChangeAmount), label: "Today", systemImage: "sun.max.fill", tint: summary.dayChangeAmount >= 0 ? Brand.mint : Brand.loss),
-          HeroStat(value: summary.totalReturn.map { $0.formatted(.percent.precision(.fractionLength(1)).sign(strategy: .always())) } ?? "—", label: "Total return", systemImage: "chart.line.uptrend.xyaxis", tint: Brand.mint),
-          HeroStat(value: format(summary.annualDividendIncome), label: "Dividends / yr", systemImage: "leaf.fill", tint: Brand.amber),
+          HeroStat(value: (summary.dayChangeAmount >= 0 ? "+" : "") + format(summary.dayChangeAmount), label: "Today", systemImage: "sun.max.fill", tint: summary.dayChangeAmount >= 0 ? Palette.gain : Palette.loss),
+          HeroStat(value: summary.totalReturn.map { $0.formatted(.percent.precision(.fractionLength(1)).sign(strategy: .always())) } ?? "—", label: "Total return", systemImage: "chart.line.uptrend.xyaxis", tint: Palette.gain),
+          HeroStat(value: format(summary.annualDividendIncome), label: "Dividends / yr", systemImage: "leaf.fill", tint: Palette.amber),
         ],
         format: format,
         range: $range,
@@ -96,9 +108,9 @@ struct HomeView: View {
       values: recent?.values ?? [],
       dates: recent?.dates ?? [],
       stats: [
-        HeroStat(value: "\(summary.activeAlerts.count)", label: "Alerts", systemImage: "scope", tint: Brand.mint),
-        HeroStat(value: "\(summary.closeAlertCount())", label: "Close", systemImage: "bell.badge.fill", tint: Brand.amber),
-        HeroStat(value: "\(holdings.count)", label: "Watching", systemImage: "binoculars.fill", tint: .white),
+        HeroStat(value: "\(summary.activeAlerts.count)", label: "Alerts", systemImage: "scope", tint: Palette.buy),
+        HeroStat(value: "\(summary.closeAlertCount())", label: "Close", systemImage: "bell.badge.fill", tint: Palette.amber),
+        HeroStat(value: "\(holdings.count)", label: "Watching", systemImage: "binoculars.fill", tint: .primary),
       ],
       format: { quote?.formatted($0) ?? $0.formatted() },
       range: $range,
@@ -208,10 +220,9 @@ private struct WelcomeCard: View {
       VStack(spacing: 8) {
         Text("Your owl is ready to watch")
           .font(.title2.bold())
-          .foregroundStyle(.white)
         Text("Add the stocks you own or want to buy, set buy and sell zones, and Dipwise will tell you when it's time.")
           .font(.subheadline)
-          .foregroundStyle(.white.opacity(0.7))
+          .foregroundStyle(.secondary)
           .multilineTextAlignment(.center)
       }
       Button(action: addStock) {
@@ -221,12 +232,10 @@ private struct WelcomeCard: View {
           .padding(.vertical, 6)
       }
       .buttonStyle(.borderedProminent)
-      .tint(Brand.mint)
-      .foregroundStyle(Brand.owlInk)
     }
     .padding(28)
     .frame(maxWidth: .infinity)
-    .background(Brand.nightGradient, in: .rect(cornerRadius: 32))
+    .cardStyle(cornerRadius: 28)
   }
 }
 

@@ -7,6 +7,7 @@ struct InteractiveChart: View {
   struct Level: Identifiable {
     var id = UUID()
     var price: Double
+    var side: TradeSide
     var label: String
   }
 
@@ -20,8 +21,9 @@ struct InteractiveChart: View {
 
   var values: [Double]
   var dates: [Date]
-  var lineColor: Color = Brand.mint
-  var gridColor: Color = .white.opacity(0.08)
+  /// Defaults to green when the period is up and red when it's down.
+  var lineColor: Color?
+  var gridColor: Color = .secondary.opacity(0.18)
   var levels: [Level] = []
   var zones: [Zone] = []
   var showsOwl = true
@@ -52,8 +54,15 @@ struct InteractiveChart: View {
     perches.min { values[$0] < values[$1] }
   }
 
+  private var trendColor: Color {
+    if let lineColor { return lineColor }
+    guard let first = values.first, let last = values.last else { return Palette.gain }
+    return last >= first ? Palette.gain : Palette.loss
+  }
+
   var body: some View {
-    Chart {
+    let lineColor = trendColor
+    return Chart {
       ForEach(zones) { zone in
         RectangleMark(
           xStart: .value("Start", -0.5),
@@ -61,11 +70,11 @@ struct InteractiveChart: View {
           yStart: .value("Low", zone.range.lowerBound),
           yEnd: .value("High", zone.range.upperBound)
         )
-        .foregroundStyle((zone.side == .buy ? Palette.amber : Brand.mint).opacity(zone.isCrowd ? 0.08 : 0.18))
+        .foregroundStyle((zone.side.color).opacity(zone.isCrowd ? 0.08 : 0.18))
         .annotation(position: .overlay, alignment: .leading) {
           Text(zone.label)
             .font(.caption2.bold())
-            .foregroundStyle(zone.side == .buy ? Palette.amber : Brand.mint)
+            .foregroundStyle(zone.side.color)
             .padding(.leading, 4)
         }
       }
@@ -76,34 +85,33 @@ struct InteractiveChart: View {
           yStart: .value("Floor", yDomain.lowerBound),
           yEnd: .value("Price", point.element)
         )
-        .foregroundStyle(LinearGradient(colors: [lineColor.opacity(0.3), lineColor.opacity(0)], startPoint: .top, endPoint: .bottom))
+        .foregroundStyle(LinearGradient(colors: [lineColor.opacity(0.16), lineColor.opacity(0)], startPoint: .top, endPoint: .bottom))
         .interpolationMethod(.monotone)
 
         LineMark(x: .value("Session", point.offset), y: .value("Price", point.element))
           .foregroundStyle(lineColor)
           .lineStyle(StrokeStyle(lineWidth: 3.5, lineCap: .round, lineJoin: .round))
           .interpolationMethod(.monotone)
-          .shadow(color: lineColor.opacity(0.6), radius: 6)
       }
 
       ForEach(levels) { level in
         RuleMark(y: .value("Level", level.price))
-          .foregroundStyle(Palette.amber.opacity(0.9))
+          .foregroundStyle(level.side.color.opacity(0.9))
           .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [4, 5]))
           .annotation(position: .top, alignment: .trailing, spacing: 2) {
             Text(level.label)
               .font(.caption2.bold())
-              .foregroundStyle(Palette.amber)
+              .foregroundStyle(level.side.color)
           }
       }
 
       if let selectedIndex, values.indices.contains(selectedIndex) {
         RuleMark(x: .value("Selected", selectedIndex))
-          .foregroundStyle(.white.opacity(0.5))
+          .foregroundStyle(.primary.opacity(0.35))
           .lineStyle(StrokeStyle(lineWidth: 1))
         PointMark(x: .value("Selected", selectedIndex), y: .value("Price", values[selectedIndex]))
           .symbolSize(140)
-          .foregroundStyle(.white)
+          .foregroundStyle(.primary)
       } else if let last = points.last {
         PointMark(x: .value("Session", last.offset), y: .value("Price", last.element))
           .symbolSize(420)

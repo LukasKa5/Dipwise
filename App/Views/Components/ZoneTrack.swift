@@ -38,7 +38,7 @@ struct ZoneTrack: View {
             .offset(y: 25)
 
           ForEach(bands) { band in
-            let color = band.side == .buy ? Palette.amber : Palette.green
+            let color = band.side.color
             let start = x(band.range.lowerBound)
             let bandWidth = max(6, x(band.range.upperBound) - start)
             if band.isCrowd {
@@ -89,8 +89,8 @@ struct ZoneLegend: View {
 
   var body: some View {
     HStack(spacing: 14) {
-      legend(color: Palette.amber, text: "Buy", dashed: false)
-      legend(color: Palette.green, text: "Sell", dashed: false)
+      legend(color: Palette.buy, text: "Buy", dashed: false)
+      legend(color: Palette.sell, text: "Sell", dashed: false)
       if showsCrowd {
         legend(color: .secondary, text: "Crowd", dashed: true)
       }

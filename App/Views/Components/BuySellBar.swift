@@ -7,9 +7,9 @@ struct BuySellBar: View {
   var body: some View {
     GeometryReader { geometry in
       HStack(spacing: 2) {
-        Capsule().fill(Palette.amber)
+        Capsule().fill(Palette.buy)
           .frame(width: max(4, (geometry.size.width - 2) * buyShare))
-        Capsule().fill(Palette.green)
+        Capsule().fill(Palette.sell)
       }
     }
     .frame(height: 6)

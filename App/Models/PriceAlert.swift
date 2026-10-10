@@ -28,6 +28,10 @@ final class PriceAlert {
   /// The anonymous flock record mirroring this alert, when shared.
   var flockRecordName: String?
   var holding: Holding?
+  /// Dip Journal: what the user did after the alert fired.
+  var journalActionRaw: String?
+  var journalPrice: Double = 0
+  var journalDate: Date?
 
   init(rule: AlertRule, priceAtCreation: Double, note: String = "") {
     self.priceAtCreation = priceAtCreation
@@ -72,6 +76,11 @@ final class PriceAlert {
   var plannedShares: Double? {
     guard budget > 0, let price = rule.referencePrice, price > 0 else { return nil }
     return budget / price
+  }
+
+  var journalAction: JournalAction? {
+    get { journalActionRaw.flatMap(JournalAction.init(rawValue:)) }
+    set { journalActionRaw = newValue?.rawValue }
   }
 
   var isExpired: Bool { expiresAt.map { $0 < .now } ?? false }

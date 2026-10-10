@@ -9,6 +9,7 @@ struct DipwiseApp: App {
   @State private var quotes = QuoteStore()
   @State private var subscription = SubscriptionManager()
   @State private var flock = FlockService()
+  @State private var progress = ProgressStore()
 
   static let container: ModelContainer = {
     do {
@@ -24,6 +25,7 @@ struct DipwiseApp: App {
         .environment(quotes)
         .environment(subscription)
         .environment(flock)
+        .environment(progress)
         .environment(Router.shared)
         .task { subscription.start() }
     }
@@ -51,8 +53,14 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
   }
 
   func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
-    if let symbol = response.notification.request.content.userInfo["symbol"] as? String {
+    let info = response.notification.request.content.userInfo
+    if let symbol = info["symbol"] as? String {
       await MainActor.run { Router.shared.open(symbol: symbol) }
+    } else if info["brief"] != nil {
+      await MainActor.run {
+        Router.shared.selectedTab = .home
+        Router.shared.showsBrief = true
+      }
     }
   }
 }

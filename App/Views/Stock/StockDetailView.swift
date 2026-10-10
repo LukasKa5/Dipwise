@@ -17,6 +17,8 @@ struct StockDetailView: View {
   @State private var showsPositionEditor = false
   @State private var showsRemoveConfirmation = false
   @State private var showsPaywall = false
+  @State private var showsPlanBuilder = false
+  @State private var journalAlert: PriceAlert?
 
   init(symbol: String) {
     self.symbol = symbol
@@ -52,6 +54,10 @@ struct StockDetailView: View {
       if let holding { PositionEditorView(holding: holding) }
     }
     .sheet(isPresented: $showsPaywall) { PaywallView() }
+    .sheet(isPresented: $showsPlanBuilder) {
+      if let holding { PlanBuilderView(holding: holding) }
+    }
+    .sheet(item: $journalAlert) { alert in JournalSheet(alert: alert, quote: quote) }
     .task(id: range) {
       guard range == .fiveYears, fiveYearQuote == nil else { return }
       fiveYearQuote = try? await QuoteService().quote(for: symbol, fiveYears: true)
@@ -104,23 +110,22 @@ struct StockDetailView: View {
       VStack(alignment: .leading, spacing: 4) {
         Text(selection.flatMap { series.dates.indices.contains($0) ? series.dates[$0].formatted(date: .abbreviated, time: .omitted) : nil } ?? holding.name)
           .font(.subheadline.weight(.semibold))
-          .foregroundStyle(selection == nil ? .white.opacity(0.65) : Brand.mint)
+          .foregroundStyle(selection == nil ? AnyShapeStyle(.secondary) : AnyShapeStyle(.tint))
           .lineLimit(1)
         Text(selection.map { format(series.values[$0]) } ?? quote.map { format($0.price) } ?? "—")
           .font(.system(size: 40, weight: .bold, design: .rounded))
           .monospacedDigit()
-          .foregroundStyle(.white)
           .contentTransition(.numericText())
         if let quote {
           if let selection, series.values[selection] > 0 {
-            ChangeBadge(change: quote.price / series.values[selection] - 1, caption: "since then", positiveColor: Brand.mint, negativeColor: Brand.loss)
+            ChangeBadge(change: quote.price / series.values[selection] - 1, caption: "since then", positiveColor: Palette.gain, negativeColor: Palette.loss)
           } else if range == .week || range == .month, let first = series.values.first, first > 0 {
             HStack(spacing: 12) {
-              ChangeBadge(change: quote.change, caption: "today", positiveColor: Brand.mint, negativeColor: Brand.loss)
-              ChangeBadge(change: quote.price / first - 1, caption: range.title, positiveColor: Brand.mint, negativeColor: Brand.loss)
+              ChangeBadge(change: quote.change, caption: "today", positiveColor: Palette.gain, negativeColor: Palette.loss)
+              ChangeBadge(change: quote.price / first - 1, caption: range.title, positiveColor: Palette.gain, negativeColor: Palette.loss)
             }
           } else if let first = series.values.first, first > 0 {
-            ChangeBadge(change: quote.price / first - 1, caption: range.title, positiveColor: Brand.mint, negativeColor: Brand.loss)
+            ChangeBadge(change: quote.price / first - 1, caption: range.title, positiveColor: Palette.gain, negativeColor: Palette.loss)
           }
         }
       }
@@ -130,7 +135,7 @@ struct StockDetailView: View {
           values: series.values,
           dates: series.dates,
           levels: holding.activeAlerts.filter { !$0.kind.isZone }.compactMap { alert in
-            quote.flatMap { alert.rule.triggerLevel(for: $0) }.map { InteractiveChart.Level(price: $0, label: alert.kind.title) }
+            quote.flatMap { alert.rule.triggerLevel(for: $0) }.map { InteractiveChart.Level(price: $0, side: alert.kind.side, label: alert.kind.title) }
           },
           zones: holding.activeAlerts.filter(\.kind.isZone).map { alert in
             InteractiveChart.Zone(range: alert.targetPrice...max(alert.targetPrice, alert.upperPrice), side: alert.kind.side,
@@ -142,7 +147,6 @@ struct StockDetailView: View {
         .frame(height: 230)
       } else {
         ProgressView()
-          .tint(.white)
           .frame(maxWidth: .infinity, minHeight: 230)
       }
 
@@ -152,8 +156,7 @@ struct StockDetailView: View {
       .pickerStyle(.segmented)
     }
     .padding(20)
-    .background(Brand.nightGradient, in: .rect(cornerRadius: 32))
-    .environment(\.colorScheme, .dark)
+    .cardStyle(cornerRadius: 28)
     .padding(.top, 8)
   }
 
@@ -161,31 +164,44 @@ struct StockDetailView: View {
 
   private func planSection(for holding: Holding) -> some View {
     VStack(alignment: .leading, spacing: 14) {
-      SectionHeader(title: "Your Plan", subtitle: "Where you'd buy more and take profit")
+      SectionHeader(title: "Your Plan", subtitle: "Green is where you buy, red is where you sell") {
+        Button("Build", systemImage: "wand.and.stars") { showsPlanBuilder = true }
+          .font(.subheadline.weight(.semibold))
+      }
       VStack(alignment: .leading, spacing: 16) {
         if let quote {
           let report = flock.reports[symbol]
           ZoneTrack(
             price: quote.price,
-            bands: [
-              holding.buyZone.map { ZoneTrack.Band(range: $0.targetPrice...max($0.targetPrice, $0.upperPrice), side: .buy, isCrowd: false) },
-              holding.sellZone.map { ZoneTrack.Band(range: $0.targetPrice...max($0.targetPrice, $0.upperPrice), side: .sell, isCrowd: false) },
-              report?.buyZone.map { ZoneTrack.Band(range: $0, side: .buy, isCrowd: true) },
-              report?.sellZone.map { ZoneTrack.Band(range: $0, side: .sell, isCrowd: true) },
-            ].compactMap { $0 },
+            bands: (holding.buyZones + holding.sellZones).map { ZoneTrack.Band(range: $0.targetPrice...max($0.targetPrice, $0.upperPrice), side: $0.kind.side, isCrowd: false) }
+              + [report?.buyZone.map { ZoneTrack.Band(range: $0, side: .buy, isCrowd: true) },
+                 report?.sellZone.map { ZoneTrack.Band(range: $0, side: .sell, isCrowd: true) }].compactMap { $0 },
             low: quote.low52,
             high: quote.high52,
             format: format
           )
           ZoneLegend(showsCrowd: report?.buyZone != nil || report?.sellZone != nil)
         }
-        HStack(spacing: 12) {
-          ZoneButton(title: "Buy zone", alert: holding.buyZone, side: .buy, quote: quote) {
-            if let alert = holding.buyZone { editor = AlertEditorTarget(alert: alert) } else { addAlert(AlertRule(kind: .buyZone)) }
+
+        if holding.buyZones.isEmpty && holding.sellZones.isEmpty {
+          Button {
+            showsPlanBuilder = true
+          } label: {
+            Label("Build your plan in one step", systemImage: "wand.and.stars")
+              .font(.headline)
+              .frame(maxWidth: .infinity)
+              .padding(.vertical, 6)
           }
-          ZoneButton(title: "Sell zone", alert: holding.sellZone, side: .sell, quote: quote) {
-            if let alert = holding.sellZone { editor = AlertEditorTarget(alert: alert) } else { addAlert(AlertRule(kind: .sellZone)) }
-          }
+          .buttonStyle(.borderedProminent)
+        }
+
+        tierList(title: "Buy", zones: holding.buyZones, side: .buy)
+        tierList(title: "Sell", zones: holding.sellZones, side: .sell)
+
+        if let ladder = holding.ladder {
+          Label("If every funded buy tier fills: \(ladder.shares.formatted(.number.precision(.fractionLength(0...2)))) shares at an average of \(format(ladder.averagePrice)) for \(format(ladder.budget)).", systemImage: "equal.circle.fill")
+            .font(.footnote)
+            .foregroundStyle(.secondary)
         }
       }
       .padding(18)
@@ -193,9 +209,71 @@ struct StockDetailView: View {
     }
   }
 
+  private func tierList(title: String, zones: [PriceAlert], side: TradeSide) -> some View {
+    VStack(spacing: 8) {
+      ForEach(Array(zones.enumerated()), id: \.element.id) { index, alert in
+        Button {
+          editor = AlertEditorTarget(alert: alert)
+        } label: {
+          HStack(spacing: 10) {
+            Text(zones.count > 1 ? "\(title) \(index + 1)" : "\(title) zone")
+              .font(.subheadline.weight(.bold))
+              .foregroundStyle(side.color)
+              .frame(width: 64, alignment: .leading)
+            VStack(alignment: .leading, spacing: 2) {
+              Text("\(format(alert.targetPrice))–\(format(alert.upperPrice))")
+                .font(.subheadline.weight(.semibold).monospacedDigit())
+              if alert.budget > 0 {
+                Text("Budget \(format(alert.budget))")
+                  .font(.caption)
+                  .foregroundStyle(.secondary)
+              }
+            }
+            Spacer()
+            if let quote, let distance = alert.distance(for: quote) {
+              Text(distance == 0 ? "In zone" : "\(distance.formatted(.percent.precision(.fractionLength(1)))) away")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(distance == 0 ? side.color : .secondary)
+            }
+            Image(systemName: "chevron.forward")
+              .font(.caption.weight(.semibold))
+              .foregroundStyle(.tertiary)
+          }
+          .padding(12)
+          .background(side.color.opacity(0.1), in: .rect(cornerRadius: 14))
+          .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+      }
+      if !zones.isEmpty || side == .buy {
+        Button {
+          addAlert(AlertRule(kind: side == .buy ? .buyZone : .sellZone))
+        } label: {
+          Label(zones.isEmpty ? "Add \(title.lowercased()) zone" : "Add \(title.lowercased()) tier", systemImage: "plus")
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(side.color)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 4)
+      } else {
+        Button {
+          addAlert(AlertRule(kind: .sellZone))
+        } label: {
+          Label("Add sell zone", systemImage: "plus")
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(side.color)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 4)
+      }
+    }
+  }
+
   private func otherAlerts(for holding: Holding) -> some View {
     let alerts = (holding.alerts ?? [])
-      .filter { !($0.isActive && ($0.id == holding.buyZone?.id || $0.id == holding.sellZone?.id)) }
+      .filter { !($0.isActive && $0.kind.isZone) }
       .sorted { ($0.isActive ? 0 : 1, $0.createdAt) < ($1.isActive ? 0 : 1, $1.createdAt) }
     return VStack(alignment: .leading, spacing: 14) {
       SectionHeader(title: "Alerts") {
@@ -207,12 +285,20 @@ struct StockDetailView: View {
         EmptyHint(systemImage: "bell.badge", text: "Add price levels or smart alerts like a dip from the 52-week high, a trailing stop, or a big daily move.")
       } else {
         ForEach(alerts) { alert in
-          Button {
-            editor = AlertEditorTarget(alert: alert)
-          } label: {
-            AlertCard(alert: alert, quote: quote)
+          VStack(spacing: 8) {
+            Button {
+              editor = AlertEditorTarget(alert: alert)
+            } label: {
+              AlertCard(alert: alert, quote: quote)
+            }
+            .buttonStyle(.plain)
+            if alert.triggeredAt != nil && !alert.isActive && alert.journalAction == nil {
+              Button("Log what you did", systemImage: "book.closed") { journalAlert = alert }
+                .font(.subheadline.weight(.semibold))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 6)
+            }
           }
-          .buttonStyle(.plain)
         }
       }
     }
@@ -330,53 +416,5 @@ struct DetailRow: View {
     }
     .padding(16)
     .accessibilityElement(children: .combine)
-  }
-}
-
-private struct ZoneButton: View {
-  var title: String
-  var alert: PriceAlert?
-  var side: TradeSide
-  var quote: Quote?
-  var action: () -> Void
-
-  private var tint: Color { side == .buy ? Palette.amber : Palette.green }
-
-  var body: some View {
-    Button(action: action) {
-      VStack(alignment: .leading, spacing: 6) {
-        HStack {
-          Image(systemName: side == .buy ? "arrow.down.to.line.compact" : "arrow.up.to.line.compact")
-          Text(title)
-          Spacer()
-          Image(systemName: alert == nil ? "plus" : "pencil")
-            .font(.caption.bold())
-        }
-        .font(.subheadline.weight(.semibold))
-        .foregroundStyle(tint)
-        if let alert, let quote {
-          Text("\(quote.formatted(alert.targetPrice))–\(quote.formatted(alert.upperPrice))")
-            .font(.headline.monospacedDigit())
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
-          if let distance = alert.distance(for: quote) {
-            Text(distance == 0 ? "Price is in the zone" : "\(distance.formatted(.percent.precision(.fractionLength(1)))) away")
-              .font(.caption)
-              .foregroundStyle(.secondary)
-          }
-        } else {
-          Text("Not set")
-            .font(.headline)
-            .foregroundStyle(.secondary)
-          Text("Tap to plan")
-            .font(.caption)
-            .foregroundStyle(.secondary)
-        }
-      }
-      .frame(maxWidth: .infinity, alignment: .leading)
-      .padding(14)
-      .background(tint.opacity(0.1), in: .rect(cornerRadius: 18))
-    }
-    .buttonStyle(.plain)
   }
 }

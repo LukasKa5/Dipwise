@@ -9,6 +9,18 @@ enum AlertSettings {
   static let baseCurrencyKey = "baseCurrency"
   static let cashBalanceKey = "cashBalance"
   static let quietHoursKey = "quietHoursEnabled"
+  static let briefReminderKey = "briefReminderEnabled"
+  static let briefReminderMinutesKey = "briefReminderMinutes"
+  static let investorStyleKey = "investorStyle"
+
+  static var briefReminderEnabled: Bool {
+    UserDefaults.standard.object(forKey: briefReminderKey) as? Bool ?? true
+  }
+
+  /// Minutes after midnight for the daily brief reminder.
+  static var briefReminderMinutes: Int {
+    UserDefaults.standard.object(forKey: briefReminderMinutesKey) as? Int ?? 8 * 60 + 30
+  }
 
   static var headsUpEnabled: Bool {
     UserDefaults.standard.object(forKey: headsUpEnabledKey) as? Bool ?? true

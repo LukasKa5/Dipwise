@@ -8,9 +8,9 @@ struct ConvictionGauge: View {
 
   private var color: Color {
     switch score {
-    case 55...: Palette.amber
+    case 55...: Palette.buy
     case 45..<55: .secondary
-    default: Palette.green
+    default: Palette.sell
     }
   }
 
@@ -64,7 +64,7 @@ struct RadarCard: View {
       VStack(alignment: .leading, spacing: 4) {
         Label(item.buyZone.contains(item.price) ? "In the crowd's buy zone" : "Just above the buy zone", systemImage: "scope")
           .font(.caption.weight(.semibold))
-          .foregroundStyle(Palette.amber)
+          .foregroundStyle(Palette.buy)
         Text("\(format(item.buyZone.lowerBound))–\(format(item.buyZone.upperBound)) · \(item.watchers) investors")
           .font(.caption)
           .foregroundStyle(.secondary)
@@ -85,7 +85,7 @@ struct FeedRow: View {
   var showsSymbol = true
 
   private var tint: Color {
-    event.entry.kind.side == .sell ? Palette.green : (event.entry.kind.side == .buy ? Palette.amber : .secondary)
+    event.entry.kind.side.color
   }
 
   var body: some View {
@@ -135,19 +135,19 @@ struct FlockHistogram: View {
         }
       ForEach(userLevels, id: \.self) { level in
         RuleMark(x: .value("Distance", level / report.currentPrice - 1))
-          .foregroundStyle(Palette.green)
+          .foregroundStyle(Palette.amber)
           .lineStyle(StrokeStyle(lineWidth: 2, dash: [3, 3]))
           .annotation(position: .top) {
             Image(systemName: "person.fill")
               .font(.caption2.bold())
               .foregroundStyle(.white)
               .padding(4)
-              .background(Palette.green, in: .circle)
+              .background(Palette.amber, in: .circle)
               .accessibilityLabel("Your level")
           }
       }
     }
-    .chartForegroundStyleScale(["Buy": Palette.amber, "Sell": Palette.green])
+    .chartForegroundStyleScale(["Buy": Palette.buy, "Sell": Palette.sell])
     .chartXScale(domain: FlockReport.offsetRange)
     .chartXAxis {
       AxisMarks(values: [-0.3, -0.2, -0.1, 0, 0.1, 0.2, 0.3]) { value in
@@ -236,7 +236,7 @@ struct ActivityBars: View {
   var body: some View {
     Chart(Array(counts.enumerated()), id: \.offset) { index, count in
       BarMark(x: .value("Week", index), y: .value("Alerts", count))
-        .foregroundStyle(index == counts.count - 1 ? Palette.amber : Palette.amber.opacity(0.4))
+        .foregroundStyle(index == counts.count - 1 ? Palette.buy : Palette.buy.opacity(0.4))
         .cornerRadius(3)
     }
     .chartXAxis(.hidden)
@@ -277,7 +277,7 @@ struct FlockTeaser: View {
             if let zone = report.buyZone, let quote {
               Label("Crowd buys between \(quote.formatted(zone.lowerBound)) and \(quote.formatted(zone.upperBound))", systemImage: "scope")
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Palette.amber)
+                .foregroundStyle(Palette.buy)
             }
             HStack {
               Text("Open full crowd report")

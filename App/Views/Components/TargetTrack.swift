@@ -4,7 +4,7 @@ import SwiftUI
 struct TargetTrack: View {
   var progress: Double
   var isReached = false
-  var tint: Color = Palette.amber
+  var tint: Color = Palette.buy
 
   var body: some View {
     GeometryReader { geometry in

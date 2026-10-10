@@ -108,7 +108,7 @@ struct PaywallView: View {
       .frame(maxWidth: .infinity)
     }
     .foregroundStyle(.white)
-    .background(Brand.nightGradient.ignoresSafeArea())
+    .background(Brand.nightMiddle.ignoresSafeArea())
     .environment(\.colorScheme, .dark)
     .overlay(alignment: .topTrailing) {
       Button("Close", systemImage: "xmark") { dismiss() }

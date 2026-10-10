@@ -10,6 +10,7 @@ struct StockSetupView: View {
   @Environment(QuoteStore.self) private var quotes
   @Environment(SubscriptionManager.self) private var subscription
   @Environment(FlockService.self) private var flock
+  @Environment(ProgressStore.self) private var progress
   @State private var quote: Quote?
   @State private var ownsIt = false
   @State private var shares: Double?
@@ -123,6 +124,7 @@ struct StockSetupView: View {
       let alert = PriceAlert(rule: AlertRule(kind: .buyZone, lower: lower, upper: upper), priceAtCreation: quote.price)
       alert.holding = holding
       modelContext.insert(alert)
+      progress.record(.alertCreated)
       Task {
         await NotificationManager.requestAuthorization()
         await flock.share(alert)

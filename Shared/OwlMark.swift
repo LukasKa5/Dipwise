@@ -80,6 +80,7 @@ struct OwlMark: View {
     context.stroke(feet, with: .color(Brand.amber), style: StrokeStyle(lineWidth: 14, lineCap: .round))
 
     context.fill(body, with: .color(Brand.owlWhite))
+    context.stroke(body, with: .color(Brand.owlFeather.opacity(0.9)), style: StrokeStyle(lineWidth: 8, lineJoin: .round))
 
     var inner = context
     inner.clip(to: body)

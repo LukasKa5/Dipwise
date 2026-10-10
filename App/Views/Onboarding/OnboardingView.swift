@@ -11,7 +11,7 @@ struct OnboardingView: View {
 
   var body: some View {
     ZStack {
-      Brand.nightGradient.ignoresSafeArea()
+      Brand.nightMiddle.ignoresSafeArea()
       VStack(spacing: 0) {
         Group {
           switch page {

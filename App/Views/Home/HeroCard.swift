@@ -49,20 +49,8 @@ struct HeroCard: View {
       .contentShape(.rect)
       .onTapGesture { openDetails?() }
     }
-    .padding(22)
-    .background {
-      ZStack {
-        Brand.nightGradient
-        RadialGradient(colors: [Brand.mint.opacity(0.18), .clear], center: .bottomTrailing, startRadius: 0, endRadius: 320)
-      }
-    }
-    .clipShape(.rect(cornerRadius: 32))
-    .overlay {
-      RoundedRectangle(cornerRadius: 32)
-        .strokeBorder(.white.opacity(0.08))
-    }
-    .shadow(color: Brand.nightBottom.opacity(0.25), radius: 24, y: 12)
-    .environment(\.colorScheme, .dark)
+    .padding(20)
+    .cardStyle(cornerRadius: 28)
   }
 
   private var header: some View {
@@ -74,29 +62,27 @@ struct HeroCard: View {
           if let selection {
             Text(selection.date?.formatted(date: .abbreviated, time: .omitted) ?? "")
               .font(.subheadline.weight(.semibold))
-              .foregroundStyle(Brand.mint)
+              .foregroundStyle(.tint)
             Text(format(selection.value))
               .font(.system(size: 40, weight: .bold, design: .rounded))
               .monospacedDigit()
-              .foregroundStyle(.white)
               .minimumScaleFactor(0.6)
               .lineLimit(1)
             if let last = values.last, selection.value > 0 {
-              ChangeBadge(change: last / selection.value - 1, caption: "since then", positiveColor: Brand.mint, negativeColor: Brand.loss)
+              ChangeBadge(change: last / selection.value - 1, caption: "since then", positiveColor: Palette.gain, negativeColor: Palette.loss)
             }
           } else {
             Text(title)
               .font(.subheadline.weight(.semibold))
-              .foregroundStyle(.white.opacity(0.65))
+              .foregroundStyle(.secondary)
             Text(value)
               .font(.system(size: 40, weight: .bold, design: .rounded))
               .monospacedDigit()
-              .foregroundStyle(.white)
               .minimumScaleFactor(0.6)
               .lineLimit(1)
               .contentTransition(.numericText())
             if let change {
-              ChangeBadge(change: change, caption: changeCaption, positiveColor: Brand.mint, negativeColor: Brand.loss)
+              ChangeBadge(change: change, caption: changeCaption, positiveColor: Palette.gain, negativeColor: Palette.loss)
             }
           }
         }
@@ -104,7 +90,7 @@ struct HeroCard: View {
         if openDetails != nil {
           Image(systemName: "chevron.forward")
             .font(.headline)
-            .foregroundStyle(.white.opacity(0.5))
+            .foregroundStyle(.tertiary)
             .padding(.top, 4)
             .accessibilityHidden(true)
         }
@@ -136,19 +122,18 @@ private struct HeroStatTile: View {
         .foregroundStyle(stat.tint)
       Text(stat.value)
         .font(.title3.bold())
-        .foregroundStyle(.white)
         .lineLimit(1)
         .minimumScaleFactor(0.6)
         .contentTransition(.numericText())
       Text(stat.label)
         .font(.caption.weight(.medium))
-        .foregroundStyle(.white.opacity(0.6))
+        .foregroundStyle(.secondary)
         .lineLimit(1)
         .minimumScaleFactor(0.8)
     }
     .frame(maxWidth: .infinity, alignment: .leading)
     .padding(14)
-    .background(.white.opacity(0.07), in: .rect(cornerRadius: 18))
+    .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 16))
     .accessibilityElement(children: .combine)
   }
 }
