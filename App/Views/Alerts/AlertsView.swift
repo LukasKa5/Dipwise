@@ -134,6 +134,13 @@ struct AlertsView: View {
       .background(Palette.canvas)
       .navigationTitle("Alerts")
       .toolbar {
+        ToolbarItem(placement: .topBarLeading) {
+          NavigationLink {
+            AlertInsightsView()
+          } label: {
+            Label("Insights", systemImage: "chart.bar.xaxis")
+          }
+        }
         ToolbarItem(placement: .topBarTrailing) {
           Menu("Sort", systemImage: "arrow.up.arrow.down") {
             Picker("Sort by", selection: $sortRaw) {
@@ -163,7 +170,7 @@ struct AlertsView: View {
     Button {
       if alert.isActive { editor = (holding, alert) } else { journalAlert = alert }
     } label: {
-      AlertListRow(alert: alert, quote: quotes[alert.symbol], showsSymbol: showsSymbol)
+      AlertListRow(alert: alert, quote: quotes[alert.symbol], showsSymbol: showsSymbol, showsOdds: subscription.isPro)
     }
     .buttonStyle(.plain)
     .swipeActions {
@@ -286,6 +293,7 @@ private struct AlertListRow: View {
   var alert: PriceAlert
   var quote: Quote?
   var showsSymbol: Bool
+  var showsOdds: Bool
 
   private var tint: Color { alert.kind.side.color }
 
@@ -313,6 +321,13 @@ private struct AlertListRow: View {
         }
         if alert.isActive {
           TargetTrack(progress: quote.map { alert.progress(for: $0) } ?? 0, isReached: quote.flatMap { alert.distance(for: $0) } == 0, tint: tint)
+          if showsOdds, let quote, let odds = AlertOdds(rule: alert.rule, quote: quote), (alert.distance(for: quote) ?? 1) > 0 {
+            Label("\(odds.headline) · \(odds.lastTriggeredText.lowercased())", systemImage: "dice")
+              .font(.caption)
+              .foregroundStyle(Palette.amber)
+              .lineLimit(1)
+              .minimumScaleFactor(0.8)
+          }
         } else if let price = alert.triggeredPrice {
           HStack(spacing: 6) {
             Text("Fired at \(quote?.formatted(price) ?? price.formatted())")

@@ -140,8 +140,10 @@ struct HomeView: View {
     let alerts = Array(summary.nearestAlerts.prefix(4))
     VStack(alignment: .leading, spacing: 14) {
       SectionHeader(title: "Your Plans", subtitle: alerts.isEmpty ? nil : "Closest to triggering first") {
-        if summary.activeAlerts.count > alerts.count {
-          Button("See All") { router.selectedTab = .alerts }
+        NavigationLink {
+          AlertInsightsView()
+        } label: {
+          Label("Insights", systemImage: "chart.bar.xaxis")
             .font(.subheadline.weight(.semibold))
         }
       }
