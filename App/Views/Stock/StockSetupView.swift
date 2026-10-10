@@ -1,7 +1,7 @@
 import SwiftData
 import SwiftUI
 
-/// Second step of adding a stock: optional position details and a first price target.
+/// Second step of adding a stock: optional position details and a first buy zone.
 struct StockSetupView: View {
   var match: SymbolMatch
   var onAdded: (String) -> Void
@@ -14,15 +14,16 @@ struct StockSetupView: View {
   @State private var ownsIt = false
   @State private var shares: Double?
   @State private var averageCost: Double?
-  @State private var addsAlert = true
-  @State private var kind: TargetKind = .buyBelow
-  @State private var target: Double?
-  @State private var note = ""
+  @State private var addsZone = true
+  @State private var lower: Double = 0
+  @State private var upper: Double = 0
   @State private var showsPaywall = false
 
   private var canAddAlert: Bool {
     AlertLimits.canAddAlert(in: modelContext, isPro: subscription.isPro)
   }
+
+  private func format(_ value: Double) -> String { quote?.formatted(value) ?? value.formatted() }
 
   var body: some View {
     Form {
@@ -63,28 +64,27 @@ struct StockSetupView: View {
           }
         }
       } footer: {
-        Text("Leave this off to simply watch the stock.")
+        Text("Leave this off to simply watch the stock. Dipwise never connects to your broker.")
       }
 
       Section {
         if canAddAlert {
-          Toggle("Set a price target", isOn: $addsAlert.animation(.smooth))
-          if addsAlert {
-            Picker("Alert type", selection: $kind) {
-              ForEach(TargetKind.allCases) { Text($0.title).tag($0) }
-            }
-            .pickerStyle(.segmented)
-            .onChange(of: kind) { prefillTarget(force: true) }
-            TargetPriceField(price: $target, kind: kind, quote: quote)
-            TextField("Why this price? (shown in the alert)", text: $note, axis: .vertical)
+          Toggle("Set a buy zone", isOn: $addsZone.animation(.smooth))
+          if addsZone, let quote {
+            ZoneEditorChart(values: quote.recent(64).values, side: .buy, lower: $lower, upper: $upper,
+                            crowdZone: flock.reports[match.symbol]?.buyZone, format: format)
+              .frame(height: 220)
+            LabeledContent("Zone", value: "\(format(lower))–\(format(upper))")
           }
         } else {
-          UpgradeRow(text: "The free plan includes \(FreeTier.maxActiveAlerts) active alerts. Upgrade to set unlimited targets.") {
+          UpgradeRow(text: "The free plan includes \(FreeTier.maxActiveAlerts) active alerts. Upgrade to plan every stock.") {
             showsPaywall = true
           }
         }
       } header: {
-        Text("Price target")
+        Text("Your plan")
+      } footer: {
+        Text("Drag the handles to the range where you'd happily buy more. You can add a sell zone and smart alerts later.")
       }
     }
     .navigationTitle(match.symbol)
@@ -92,7 +92,7 @@ struct StockSetupView: View {
     .toolbar {
       ToolbarItem(placement: .confirmationAction) {
         Button("Start Watching", action: save)
-          .disabled(quote == nil || (addsAlert && canAddAlert && (target ?? 0) <= 0))
+          .disabled(quote == nil)
       }
     }
     .sheet(isPresented: $showsPaywall) { PaywallView() }
@@ -102,15 +102,12 @@ struct StockSetupView: View {
         quote = fresh
         quotes.store(fresh)
       }
-      prefillTarget(force: false)
+      if let quote, lower == 0 {
+        lower = (quote.price * 0.90 * 100).rounded() / 100
+        upper = (quote.price * 0.95 * 100).rounded() / 100
+        await flock.load(symbol: match.symbol, currentPrice: quote.price)
+      }
     }
-  }
-
-  /// Suggests a target 10% away so the user can save with one tap.
-  private func prefillTarget(force: Bool) {
-    guard let quote, force || target == nil else { return }
-    let offset = kind == .buyBelow ? -0.10 : 0.10
-    target = (quote.price * (1 + offset) * 100).rounded() / 100
   }
 
   private func save() {
@@ -122,8 +119,8 @@ struct StockSetupView: View {
       averageCost: ownsIt ? (averageCost ?? 0) : 0
     )
     modelContext.insert(holding)
-    if addsAlert, canAddAlert, let target, target > 0 {
-      let alert = PriceAlert(kind: kind, targetPrice: target, priceAtCreation: quote.price, note: note)
+    if addsZone, canAddAlert, upper > lower, lower > 0 {
+      let alert = PriceAlert(rule: AlertRule(kind: .buyZone, lower: lower, upper: upper), priceAtCreation: quote.price)
       alert.holding = holding
       modelContext.insert(alert)
       Task {

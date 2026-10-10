@@ -8,7 +8,8 @@ import StoreKit
 final class SubscriptionManager {
   static let monthlyID = "dipwise.pro.monthly"
   static let yearlyID = "dipwise.pro.yearly"
-  static let productIDs = [monthlyID, yearlyID]
+  static let lifetimeID = "dipwise.pro.lifetime"
+  static let productIDs = [yearlyID, monthlyID, lifetimeID]
 
   private(set) var hasActiveSubscription = AlertSettings.isPro
   #if DEBUG

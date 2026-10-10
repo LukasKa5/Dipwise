@@ -1,61 +1,35 @@
 import SwiftUI
 
-/// First-launch introduction: what Dipwise does, notification permission, and the Pro offer.
+/// An interactive first-launch tour: meet the owl, scrub a chart, drag a zone, and vote with the flock.
 struct OnboardingView: View {
   var onFinish: () -> Void
 
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @State private var page = 0
   @State private var showsPaywall = false
-  private let pageCount = 4
+  private let pageCount = 5
 
   var body: some View {
     ZStack {
       Brand.nightGradient.ignoresSafeArea()
       VStack(spacing: 0) {
-        TabView(selection: $page) {
-          OnboardingPage(
-            title: "Meet your calm investing assistant",
-            message: "Dipwise watches your stocks day and night, so you don't have to stare at charts."
-          ) {
-            DipChart(values: [100, 97, 93, 89, 86, 85.5, 88, 93, 99, 104, 108], owlSize: 74)
-              .frame(height: 230)
+        Group {
+          switch page {
+          case 0: WelcomePage()
+          case 1: ScrubPage()
+          case 2: ZonePage()
+          case 3: FlockPage()
+          default: NotificationsPage()
           }
-          .tag(0)
-
-          OnboardingPage(
-            title: "Set targets, not alarms",
-            message: "Choose the price you'd buy or sell at. Add a note so future you remembers why."
-          ) {
-            OnboardingTargetsIllustration()
-          }
-          .tag(1)
-
-          OnboardingPage(
-            title: "Invest with the flock",
-            message: "See where other investors are waiting to buy and sell, shared anonymously."
-          ) {
-            OnboardingFlockIllustration()
-          }
-          .tag(2)
-
-          OnboardingPage(
-            title: "Never miss your dip",
-            message: "Allow notifications and Dipwise will tap you on the shoulder the moment a target is reached."
-          ) {
-            Image(systemName: "bell.badge.fill")
-              .font(.system(size: 96))
-              .symbolRenderingMode(.palette)
-              .foregroundStyle(Brand.amber, .white)
-              .frame(height: 230)
-          }
-          .tag(3)
         }
-        .tabViewStyle(.page(indexDisplayMode: .never))
+        .id(page)
+        .transition(.asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity), removal: .move(edge: .leading).combined(with: .opacity)))
+        .frame(maxWidth: 560, maxHeight: .infinity)
 
         PageDots(count: pageCount, current: page)
-          .padding(.bottom, 24)
+          .padding(.bottom, 20)
 
-        VStack(spacing: 12) {
+        VStack(spacing: 10) {
           Button(action: advance) {
             Text(page == pageCount - 1 ? "Allow Notifications" : "Continue")
               .font(.headline)
@@ -66,13 +40,18 @@ struct OnboardingView: View {
           .tint(Brand.mint)
           .foregroundStyle(Brand.owlInk)
 
-          if page == pageCount - 1 {
-            Button("Not Now") { showsPaywall = true }
-              .foregroundStyle(.white.opacity(0.7))
+          HStack {
+            if page > 0 {
+              Button("Back") { withAnimation(.smooth) { page -= 1 } }
+            }
+            Spacer()
+            Button(page == pageCount - 1 ? "Not Now" : "Skip") { showsPaywall = true }
           }
+          .font(.subheadline.weight(.semibold))
+          .foregroundStyle(.white.opacity(0.7))
         }
         .padding(.horizontal, 28)
-        .padding(.bottom, 16)
+        .padding(.bottom, 12)
         .frame(maxWidth: 520)
       }
     }
@@ -85,7 +64,7 @@ struct OnboardingView: View {
 
   private func advance() {
     if page < pageCount - 1 {
-      withAnimation(.smooth) { page += 1 }
+      withAnimation(reduceMotion ? .easeInOut : .smooth) { page += 1 }
     } else {
       Task {
         await NotificationManager.requestAuthorization()
@@ -95,29 +74,202 @@ struct OnboardingView: View {
   }
 }
 
-private struct OnboardingPage<Illustration: View>: View {
+// MARK: - Pages
+
+private struct PageText: View {
   var title: String
   var message: String
-  @ViewBuilder var illustration: Illustration
+
+  var body: some View {
+    VStack(spacing: 10) {
+      Text(title)
+        .font(.largeTitle.bold())
+        .multilineTextAlignment(.center)
+      Text(message)
+        .font(.title3)
+        .foregroundStyle(.white.opacity(0.7))
+        .multilineTextAlignment(.center)
+    }
+    .padding(.horizontal, 28)
+  }
+}
+
+private struct WelcomePage: View {
+  @State private var taps = 0
+  @State private var arrived = false
+  private let lines = [
+    "Hoo! Tap me.",
+    "I'm your stock-watching owl.",
+    "I watch your stocks day and night…",
+    "…so you can live your life.",
+    "Okay, okay. Let's get started!",
+  ]
+
+  var body: some View {
+    VStack(spacing: 26) {
+      Spacer()
+      SpeechBubble(text: lines[min(taps, lines.count - 1)])
+        .animation(.snappy, value: taps)
+      LivelyOwl()
+        .frame(width: 170, height: 195)
+        .simultaneousGesture(TapGesture().onEnded { taps += 1 })
+        .offset(y: arrived ? 0 : -500)
+        .rotationEffect(.degrees(arrived ? 0 : -25))
+        .onAppear {
+          withAnimation(.spring(duration: 1.1, bounce: 0.35)) { arrived = true }
+        }
+        .accessibilityLabel("Dipwise owl")
+        .accessibilityAddTraits(.isButton)
+      PageText(title: "Meet your investing owl", message: "Dipwise is the calm assistant between you and your broker.")
+      Spacer()
+    }
+  }
+}
+
+private struct ScrubPage: View {
+  @State private var selectedIndex: Int?
+  @State private var scrubs = 0
+
+  private static let values: [Double] = (0..<60).map { index in
+    let x = Double(index) / 59
+    return 100 + 14 * sin(x * .pi * 2.4) - 18 * x * (1 - x) * 4 + 22 * x
+  }
+  private static let dates: [Date] = (0..<60).map { Date.now.addingTimeInterval(Double($0 - 59) * 86_400) }
+
+  var body: some View {
+    VStack(spacing: 24) {
+      Spacer()
+      VStack(alignment: .leading, spacing: 6) {
+        if let selectedIndex {
+          Text(Self.dates[selectedIndex], format: .dateTime.day().month(.abbreviated))
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(Brand.mint)
+          Text(Self.values[selectedIndex], format: .currency(code: "USD"))
+            .font(.system(size: 36, weight: .bold, design: .rounded).monospacedDigit())
+        } else {
+          Text("Slide your finger along the chart")
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(.white.opacity(0.7))
+          Text(Self.values.last ?? 0, format: .currency(code: "USD"))
+            .font(.system(size: 36, weight: .bold, design: .rounded).monospacedDigit())
+        }
+      }
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .padding(.horizontal, 28)
+
+      InteractiveChart(values: Self.values, dates: Self.dates, owlSize: 56, selectedIndex: $selectedIndex)
+        .frame(height: 240)
+        .padding(.horizontal, 20)
+        .onChange(of: selectedIndex) { _, index in if index != nil { scrubs += 1 } }
+
+      PageText(
+        title: scrubs > 15 ? "You startled the owl!" : "Glance, don't stare",
+        message: scrubs > 15 ? "It always flies off to find the next dip. That's its job." : "Read any day's price at a touch. Get too close to the owl and see what happens."
+      )
+      .animation(.smooth, value: scrubs > 15)
+      Spacer()
+    }
+  }
+}
+
+private struct ZonePage: View {
+  @State private var lower = 92.0
+  @State private var upper = 97.0
+
+  private static let values: [Double] = (0..<50).map { index in
+    let x = Double(index) / 49
+    return 104 + 6 * sin(x * .pi * 3) - 4 * x
+  }
+
+  var body: some View {
+    VStack(spacing: 24) {
+      Spacer()
+      ZoneEditorChart(values: Self.values, side: .buy, lower: $lower, upper: $upper, crowdZone: 90...95,
+                      format: { $0.formatted(.currency(code: "USD").precision(.fractionLength(0))) })
+        .frame(height: 260)
+        .padding(.horizontal, 20)
+      Label("You'd buy between \(lower.formatted(.currency(code: "USD"))) and \(upper.formatted(.currency(code: "USD")))", systemImage: "scope")
+        .font(.headline)
+        .foregroundStyle(Brand.amber)
+        .contentTransition(.numericText())
+      PageText(title: "Plan your zones", message: "Drag the handles to set where you'd buy and sell. The shaded band shows where the crowd plans to buy.")
+      Spacer()
+    }
+  }
+}
+
+private struct FlockPage: View {
+  @State private var vote: Bool?
+  @State private var flights = 0
+
+  var body: some View {
+    VStack(spacing: 24) {
+      Spacer()
+      LivelyOwl(hopsOnTap: false)
+        .frame(width: 90, height: 104)
+        .owlFlight(trigger: flights, height: 40)
+      VoteCard(symbol: "NVDA", votes: FlockVotes(bullish: vote == true ? 613 : 612, bearish: vote == false ? 289 : 288), userVote: vote) { bullish in
+        vote = bullish
+        flights += 1
+      }
+      .environment(\.colorScheme, .dark)
+      .padding(.horizontal, 20)
+      PageText(
+        title: "Invest with the flock",
+        message: vote == nil ? "Vote, then see what thousands of investors think, all anonymous." : "See where the crowd buys and sells every stock, and how their dip-buys worked out."
+      )
+      .animation(.smooth, value: vote)
+      Spacer()
+    }
+  }
+}
+
+private struct NotificationsPage: View {
+  @State private var rings = 0
 
   var body: some View {
     VStack(spacing: 28) {
-      Spacer(minLength: 12)
-      illustration
-        .padding(.horizontal, 28)
-      VStack(spacing: 12) {
-        Text(title)
-          .font(.largeTitle.bold())
-          .multilineTextAlignment(.center)
-        Text(message)
-          .font(.title3)
-          .foregroundStyle(.white.opacity(0.7))
-          .multilineTextAlignment(.center)
+      Spacer()
+      ZStack(alignment: .topTrailing) {
+        LivelyOwl()
+          .frame(width: 150, height: 172)
+        Image(systemName: "bell.badge.fill")
+          .font(.system(size: 44))
+          .symbolRenderingMode(.palette)
+          .foregroundStyle(Brand.amber, .white)
+          .symbolEffect(.wiggle, value: rings)
+          .offset(x: 30, y: -10)
       }
-      .padding(.horizontal, 32)
-      Spacer(minLength: 12)
+      .onTapGesture { rings += 1 }
+      .task {
+        while !Task.isCancelled {
+          try? await Task.sleep(for: .seconds(2.5))
+          rings += 1
+        }
+      }
+      PageText(title: "Never miss your dip", message: "The owl taps you on the shoulder the moment a stock enters your zone, with your plan and your note.")
+      Spacer()
     }
-    .frame(maxWidth: 560)
+  }
+}
+
+private struct SpeechBubble: View {
+  var text: String
+
+  var body: some View {
+    Text(text)
+      .font(.headline)
+      .foregroundStyle(Brand.owlInk)
+      .padding(.horizontal, 18)
+      .padding(.vertical, 12)
+      .background(.white, in: .rect(cornerRadius: 18))
+      .overlay(alignment: .bottom) {
+        Image(systemName: "arrowtriangle.down.fill")
+          .foregroundStyle(.white)
+          .offset(y: 12)
+      }
+      .id(text)
+      .transition(.scale(scale: 0.8).combined(with: .opacity))
   }
 }
 
@@ -136,65 +288,5 @@ private struct PageDots: View {
     .animation(.smooth, value: current)
     .accessibilityElement()
     .accessibilityLabel("Page \(current + 1) of \(count)")
-  }
-}
-
-private struct OnboardingTargetsIllustration: View {
-  var body: some View {
-    VStack(spacing: 12) {
-      ExampleTarget(symbol: "NVDA", title: "Buy below $178.00", progress: 0.88, note: "Waiting for a pullback")
-      ExampleTarget(symbol: "AAPL", title: "Sell above $255.00", progress: 0.6, note: "Take some profit")
-    }
-    .frame(height: 230)
-  }
-}
-
-private struct ExampleTarget: View {
-  var symbol: String
-  var title: String
-  var progress: Double
-  var note: String
-
-  var body: some View {
-    VStack(alignment: .leading, spacing: 10) {
-      HStack {
-        TickerBadge(symbol: symbol, size: 34)
-        Text(symbol).font(.headline)
-        Spacer()
-        Text(title)
-          .font(.footnote.weight(.semibold))
-          .foregroundStyle(Brand.amber)
-      }
-      TargetTrack(progress: progress)
-      Text("\u{201C}\(note)\u{201D}")
-        .font(.footnote)
-        .italic()
-        .foregroundStyle(.white.opacity(0.6))
-    }
-    .padding(16)
-    .background(.white.opacity(0.08), in: .rect(cornerRadius: 20))
-    .accessibilityHidden(true)
-  }
-}
-
-private struct OnboardingFlockIllustration: View {
-  private let heights: [Double] = [0.15, 0.3, 0.55, 0.9, 1, 0.7, 0.4, 0.2, 0, 0.15, 0.35, 0.6, 0.45, 0.25, 0.1]
-
-  var body: some View {
-    HStack(alignment: .bottom, spacing: 5) {
-      ForEach(Array(heights.enumerated()), id: \.offset) { index, height in
-        RoundedRectangle(cornerRadius: 4)
-          .fill(index < 8 ? Brand.amber : Brand.mint)
-          .frame(height: max(4, 180 * height))
-      }
-    }
-    .overlay(alignment: .bottom) {
-      Rectangle()
-        .fill(.white.opacity(0.7))
-        .frame(width: 2, height: 210)
-        .offset(x: 21)
-    }
-    .frame(height: 230, alignment: .bottom)
-    .accessibilityHidden(true)
   }
 }

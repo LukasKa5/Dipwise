@@ -9,10 +9,31 @@ DEFINE SCHEMA
         "___recordID"    REFERENCE QUERYABLE,
         symbol           STRING QUERYABLE,
         kind             STRING,
-        target           DOUBLE,
+        lower            DOUBLE,
+        upper            DOUBLE,
+        percent          DOUBLE,
         priceAtCreation  DOUBLE,
         createdAt        TIMESTAMP QUERYABLE SORTABLE,
+        triggeredAt      TIMESTAMP,
+        triggeredPrice   DOUBLE,
         active           INT64 QUERYABLE,
+        installID        STRING QUERYABLE,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE FlockVote (
+        "___createTime"  TIMESTAMP,
+        "___createdBy"   REFERENCE,
+        "___etag"        STRING,
+        "___modTime"     TIMESTAMP,
+        "___modifiedBy"  REFERENCE,
+        "___recordID"    REFERENCE QUERYABLE,
+        symbol           STRING QUERYABLE,
+        week             STRING QUERYABLE,
+        bullish          INT64,
+        installID        STRING,
         GRANT WRITE TO "_creator",
         GRANT CREATE TO "_icloud",
         GRANT READ TO "_world"

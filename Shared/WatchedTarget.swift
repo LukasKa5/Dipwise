@@ -5,14 +5,13 @@ struct WatchedTarget: Codable, Hashable, Identifiable {
   var id: UUID
   var symbol: String
   var name: String
-  var kind: TargetKind
-  var target: Double
+  var rule: AlertRule
 }
 
 /// Reads and writes the alert snapshot and cached quotes in the shared App Group.
 enum TargetSnapshotStore {
-  private static let targetsKey = "watchedTargets"
-  private static let quotesKey = "cachedQuotes"
+  private static let targetsKey = "watchedTargets.v2"
+  private static let quotesKey = "cachedQuotes.v2"
 
   static func loadTargets() -> [WatchedTarget] {
     guard let data = AppGroup.defaults.data(forKey: targetsKey) else { return [] }
@@ -39,8 +38,12 @@ struct TargetStatus: Identifiable, Hashable {
   var quote: Quote?
 
   var id: UUID { target.id }
-  var distance: Double? { quote.map { target.kind.distance(from: $0.price, to: target.target) } }
-  var progress: Double { quote.map { target.kind.progress(from: $0.price, to: target.target) } ?? 0 }
+  var distance: Double? { quote.flatMap { target.rule.distance(for: $0) } }
+  var progress: Double { quote.map { target.rule.progress(for: $0) } ?? 0 }
+
+  var summary: String {
+    target.rule.summary { value in quote?.formatted(value) ?? value.formatted(.number.precision(.fractionLength(2))) }
+  }
 
   static func sorted(targets: [WatchedTarget], quotes: [String: Quote]) -> [TargetStatus] {
     targets

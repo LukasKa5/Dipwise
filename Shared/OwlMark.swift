@@ -37,7 +37,7 @@ struct OwlMark: View {
     let body = Path { path in
       path.move(to: CGPoint(x: 346, y: 296))
       path.addCurve(to: CGPoint(x: 512, y: 352), control1: CGPoint(x: 396, y: 324), control2: CGPoint(x: 452, y: 352))
-      path.addCurve(to: CGPoint(x: 678, y: 296), control1: CGPoint(x: 572, y: 324), control2: CGPoint(x: 628, y: 324))
+      path.addCurve(to: CGPoint(x: 678, y: 296), control1: CGPoint(x: 572, y: 352), control2: CGPoint(x: 628, y: 324))
       path.addCurve(to: CGPoint(x: 716, y: 556), control1: CGPoint(x: 716, y: 380), control2: CGPoint(x: 726, y: 466))
       path.addCurve(to: CGPoint(x: 512, y: 752), control1: CGPoint(x: 704, y: 680), control2: CGPoint(x: 626, y: 752))
       path.addCurve(to: CGPoint(x: 308, y: 556), control1: CGPoint(x: 398, y: 752), control2: CGPoint(x: 320, y: 680))
@@ -51,7 +51,7 @@ struct OwlMark: View {
         var wingContext = context
         let shoulder = CGPoint(x: 512 + side * 180, y: 540)
         wingContext.translateBy(x: shoulder.x, y: shoulder.y)
-        wingContext.rotate(by: .degrees(Double(side) * (25 + 85 * wingSpread)))
+        wingContext.rotate(by: .degrees(-Double(side) * (25 + 85 * wingSpread)))
         let wing = Path { path in
           path.move(to: .zero)
           path.addQuadCurve(to: CGPoint(x: side * 30, y: 250), control: CGPoint(x: side * 110, y: 90))

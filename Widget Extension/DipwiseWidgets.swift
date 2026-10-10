@@ -52,15 +52,15 @@ struct TargetsProvider: TimelineProvider {
 
   static let sample: [TargetStatus] = [
     TargetStatus(
-      target: WatchedTarget(id: UUID(), symbol: "NVDA", name: "NVIDIA", kind: .buyBelow, target: 178),
+      target: WatchedTarget(id: UUID(), symbol: "NVDA", name: "NVIDIA", rule: AlertRule(kind: .buyZone, lower: 170, upper: 178)),
       quote: Quote(symbol: "NVDA", name: "NVIDIA", currency: "USD", price: 182.4, previousClose: 185.2, closes: [], updatedAt: .now)
     ),
     TargetStatus(
-      target: WatchedTarget(id: UUID(), symbol: "AAPL", name: "Apple", kind: .sellAbove, target: 255),
+      target: WatchedTarget(id: UUID(), symbol: "AAPL", name: "Apple", rule: AlertRule(kind: .sellZone, lower: 255, upper: 265)),
       quote: Quote(symbol: "AAPL", name: "Apple", currency: "USD", price: 247.3, previousClose: 243, closes: [], updatedAt: .now)
     ),
     TargetStatus(
-      target: WatchedTarget(id: UUID(), symbol: "MSFT", name: "Microsoft", kind: .sellAbove, target: 560),
+      target: WatchedTarget(id: UUID(), symbol: "MSFT", name: "Microsoft", rule: AlertRule(kind: .priceAbove, lower: 560)),
       quote: Quote(symbol: "MSFT", name: "Microsoft", currency: "USD", price: 512.3, previousClose: 508, closes: [], updatedAt: .now)
     ),
   ]

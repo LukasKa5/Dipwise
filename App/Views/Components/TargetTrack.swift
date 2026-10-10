@@ -1,9 +1,10 @@
 import SwiftUI
 
-/// A track showing how close the price is to its target, ending in an amber target marker.
+/// A track showing how close the price is to triggering, ending in a target marker.
 struct TargetTrack: View {
   var progress: Double
   var isReached = false
+  var tint: Color = Palette.amber
 
   var body: some View {
     GeometryReader { geometry in
@@ -13,18 +14,18 @@ struct TargetTrack: View {
           .fill(.quaternary)
           .frame(height: 8)
         Capsule()
-          .fill(LinearGradient(colors: [Palette.amber.opacity(0.35), Palette.amber], startPoint: .leading, endPoint: .trailing))
-          .frame(width: max(8, width * progress + 11), height: 8)
+          .fill(LinearGradient(colors: [tint.opacity(0.35), tint], startPoint: .leading, endPoint: .trailing))
+          .frame(width: max(8, width * (isReached ? 1 : progress) + 11), height: 8)
         if !isReached {
           Circle()
             .fill(Palette.card)
-            .stroke(Palette.amber, lineWidth: 3)
+            .stroke(tint, lineWidth: 3)
             .frame(width: 16, height: 16)
             .offset(x: width * progress + 3)
         }
         Image(systemName: isReached ? "checkmark.circle.fill" : "scope")
           .font(.system(size: 16, weight: .bold))
-          .foregroundStyle(Palette.amber)
+          .foregroundStyle(tint)
           .frame(width: 22, height: 22)
           .offset(x: width)
       }

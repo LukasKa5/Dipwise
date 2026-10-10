@@ -21,12 +21,17 @@ final class Holding {
   }
 
   var activeAlerts: [PriceAlert] {
-    (alerts ?? []).filter(\.isActive).sorted { $0.targetPrice < $1.targetPrice }
+    (alerts ?? []).filter(\.isActive).sorted { $0.createdAt < $1.createdAt }
   }
+
+  var buyZone: PriceAlert? { activeAlerts.first { $0.kind == .buyZone } }
+  var sellZone: PriceAlert? { activeAlerts.first { $0.kind == .sellZone } }
 
   var isOwned: Bool { shares > 0 }
 
   func value(at price: Double) -> Double { shares * price }
+
+  var costBasis: Double { shares * averageCost }
 
   /// Unrealized gain as a fraction of cost, when the cost is known.
   func gain(at price: Double) -> Double? {

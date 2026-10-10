@@ -42,11 +42,11 @@ struct NearTargetsWidgetView: View {
           .font(.system(size: 30, weight: .bold, design: .rounded))
           .minimumScaleFactor(0.6)
           .lineLimit(1)
-        Text("to \(status.target.kind.shortTitle.lowercased()) target")
+        Text("to \(status.target.rule.kind.title.lowercased())")
           .font(.caption)
           .foregroundStyle(.white.opacity(0.65))
         WidgetTrack(progress: status.progress)
-        Text("\(status.target.kind.title) \(price(status.target.target, status))")
+        Text(status.summary)
           .font(.caption2.weight(.semibold))
           .foregroundStyle(Brand.amber)
           .lineLimit(1)
@@ -109,10 +109,10 @@ struct NearTargetsWidgetView: View {
   private var rectangular: some View {
     if let status = entry.statuses.first {
       VStack(alignment: .leading, spacing: 2) {
-        Text("\(status.target.symbol) · \(status.target.kind.shortTitle)")
+        Text("\(status.target.symbol) · \(status.target.rule.kind.title)")
           .font(.headline)
           .widgetAccentable()
-        Text("\(distanceText(status)) from \(price(status.target.target, status))")
+        Text(status.summary)
           .font(.subheadline)
         Gauge(value: status.progress) { EmptyView() }
           .gaugeStyle(.accessoryLinearCapacity)
@@ -149,12 +149,9 @@ struct NearTargetsWidgetView: View {
 
   private func distanceText(_ status: TargetStatus) -> String {
     guard let distance = status.distance else { return "—" }
-    return distance == 0 ? "Reached" : distance.formatted(.percent.precision(.fractionLength(1)))
+    return distance == 0 ? "Now" : distance.formatted(.percent.precision(.fractionLength(1)))
   }
 
-  private func price(_ value: Double, _ status: TargetStatus) -> String {
-    status.quote?.formatted(value) ?? value.formatted(.number.precision(.fractionLength(2)))
-  }
 }
 
 private struct WidgetTrack: View {

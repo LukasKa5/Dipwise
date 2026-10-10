@@ -13,31 +13,58 @@ struct QuoteService: Sendable {
     return URLSession(configuration: configuration)
   }()
 
-  func quote(for symbol: String, range: ChartRange = .month) async throws -> Quote {
+  /// One year of daily data (or five years of weekly data) with dividends.
+  func quote(for symbol: String, fiveYears: Bool = false) async throws -> Quote {
     var components = URLComponents(string: "https://query1.finance.yahoo.com/v8/finance/chart/\(symbol)")!
     components.queryItems = [
-      URLQueryItem(name: "range", value: range.rawValue),
-      URLQueryItem(name: "interval", value: range.interval),
+      URLQueryItem(name: "range", value: fiveYears ? "5y" : "1y"),
+      URLQueryItem(name: "interval", value: fiveYears ? "1wk" : "1d"),
+      URLQueryItem(name: "events", value: "div"),
     ]
     let (data, _) = try await Self.session.data(from: components.url!)
     let response = try JSONDecoder().decode(ChartResponse.self, from: data)
     guard let result = response.chart.result?.first else { throw QuoteError.noData }
 
-    let closes = (result.indicators.quote.first?.close ?? []).compactMap { $0 }
     let meta = result.meta
-    let price = meta.regularMarketPrice ?? closes.last ?? 0
-    guard price > 0 else { throw QuoteError.noData }
-    var series = closes
-    if !series.isEmpty { series[series.count - 1] = price } else { series = [price] }
-    let previous = series.count >= 2 ? series[series.count - 2] : (meta.chartPreviousClose ?? price)
+    let rawCloses = result.indicators.quote.first?.close ?? []
+    let timestamps = result.timestamp ?? []
+    var closes: [Double] = []
+    var dates: [Date] = []
+    for (index, close) in rawCloses.enumerated() {
+      guard let close, index < timestamps.count else { continue }
+      closes.append(close)
+      dates.append(Date(timeIntervalSince1970: TimeInterval(timestamps[index])))
+    }
+
+    // London listings quote in pence; normalise to pounds.
+    let isPence = meta.currency == "GBp" || meta.currency == "GBX"
+    let scale = isPence ? 0.01 : 1
+    var price = (meta.regularMarketPrice ?? closes.last ?? 0) * scale
+    closes = closes.map { $0 * scale }
+    guard price > 0 || !closes.isEmpty else { throw QuoteError.noData }
+    if price == 0 { price = closes.last ?? 0 }
+    if closes.isEmpty {
+      closes = [price]
+      dates = [.now]
+    } else {
+      closes[closes.count - 1] = price
+    }
+    let previous = closes.count >= 2 ? closes[closes.count - 2] : (meta.chartPreviousClose ?? price) * scale
+
+    let dividends = (result.events?.dividends?.values.map { DividendPayment(date: Date(timeIntervalSince1970: TimeInterval($0.date)), amount: $0.amount * scale) } ?? [])
+      .sorted { $0.date < $1.date }
 
     return Quote(
       symbol: meta.symbol,
       name: meta.longName ?? meta.shortName ?? meta.symbol,
-      currency: meta.currency ?? "USD",
+      currency: isPence ? "GBP" : (meta.currency ?? "USD"),
+      exchange: meta.fullExchangeName ?? meta.exchangeName ?? "",
+      assetType: meta.instrumentType ?? "",
       price: price,
       previousClose: previous,
-      closes: series,
+      closes: closes,
+      dates: dates,
+      dividends: dividends,
       updatedAt: .now
     )
   }
@@ -54,6 +81,12 @@ struct QuoteService: Sendable {
       }
       return results
     }
+  }
+
+  /// How many units of `target` one unit of `source` buys.
+  func exchangeRate(from source: String, to target: String) async -> Double? {
+    guard source != target else { return 1 }
+    return try? await quote(for: "\(source)\(target)=X").price
   }
 
   func search(_ text: String) async throws -> [SymbolMatch] {
@@ -86,7 +119,9 @@ private struct ChartResponse: Decodable {
   }
   struct Result: Decodable {
     var meta: Meta
+    var timestamp: [Int]?
     var indicators: Indicators
+    var events: Events?
   }
   struct Meta: Decodable {
     var symbol: String
@@ -95,12 +130,22 @@ private struct ChartResponse: Decodable {
     var chartPreviousClose: Double?
     var longName: String?
     var shortName: String?
+    var fullExchangeName: String?
+    var exchangeName: String?
+    var instrumentType: String?
   }
   struct Indicators: Decodable {
     var quote: [QuoteSeries]
   }
   struct QuoteSeries: Decodable {
     var close: [Double?]?
+  }
+  struct Events: Decodable {
+    var dividends: [String: Dividend]?
+  }
+  struct Dividend: Decodable {
+    var amount: Double
+    var date: Int
   }
   var chart: Chart
 }

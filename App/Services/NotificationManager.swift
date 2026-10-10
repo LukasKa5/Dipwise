@@ -12,40 +12,72 @@ enum NotificationManager {
     (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])) ?? false
   }
 
+  static func content(for event: AlertEngine.Event) -> UNMutableNotificationContent {
+    let content = UNMutableNotificationContent()
+    let alert = event.alert
+    let quote = event.quote
+    let symbol = alert.symbol
+    let price = quote.formatted(quote.price)
+    let rule = alert.rule
+    let percent = rule.percent.formatted(.percent.precision(.fractionLength(0)))
+
+    switch event.kind {
+    case .approaching:
+      let distance = (alert.distance(for: quote) ?? 0).formatted(.percent.precision(.fractionLength(1)))
+      content.title = "\(symbol) is \(distance) from your \(alert.kind.title.lowercased())"
+      content.body = "Now \(price). \(alert.summary(for: quote))."
+    case .reached:
+      switch alert.kind {
+      case .buyZone:
+        content.title = "\(symbol) entered your buy zone"
+        content.body = "Now \(price), inside \(quote.formatted(rule.lower))–\(quote.formatted(rule.upper))."
+        if let shares = alert.plannedShares {
+          content.body += " Your plan: about \(shares.formatted(.number.precision(.fractionLength(0...2)))) shares."
+        }
+      case .sellZone:
+        content.title = "\(symbol) reached your sell zone"
+        content.body = "Now \(price), inside \(quote.formatted(rule.lower))–\(quote.formatted(rule.upper))."
+      case .priceBelow:
+        content.title = "\(symbol) dipped below \(quote.formatted(rule.lower))"
+        content.body = "Now \(price). This is the dip you were waiting for."
+      case .priceAbove:
+        content.title = "\(symbol) rose above \(quote.formatted(rule.lower))"
+        content.body = "Now \(price). Your target is here."
+      case .dropFromHigh:
+        content.title = "\(symbol) is \(percent) below its 52-week high"
+        content.body = "Now \(price), down from \(quote.formatted(quote.high52))."
+      case .dailyMove:
+        content.title = "\(symbol) moved \(quote.change.formatted(.percent.precision(.fractionLength(1)).sign(strategy: .always()))) today"
+        content.body = "Now \(price). Big moves are worth a look."
+      case .trailingStop:
+        content.title = "\(symbol) hit your \(percent) trailing stop"
+        content.body = "Now \(price), down from its peak of \(quote.formatted(rule.peak))."
+      case .belowAverage:
+        content.title = "\(symbol) fell below its \(rule.averageDays)-day average"
+        content.body = "Now \(price). Long-term trend just turned."
+      }
+    }
+    if !alert.note.isEmpty {
+      content.body += " Your note: \u{201C}\(alert.note)\u{201D}"
+    }
+    content.sound = event.kind == .reached ? .default : nil
+    content.interruptionLevel = event.kind == .reached && !AlertSettings.quietHours ? .timeSensitive : .active
+    content.threadIdentifier = symbol
+    content.userInfo = ["symbol": symbol]
+    return content
+  }
+
   static func post(_ events: [AlertEngine.Event]) async {
     for event in events {
-      let content = UNMutableNotificationContent()
-      let symbol = event.alert.symbol
-      let price = event.quote.formatted(event.quote.price)
-      let target = event.quote.formatted(event.alert.targetPrice)
-      switch (event.kind, event.alert.kind) {
-      case (.reached, .buyBelow):
-        content.title = "\(symbol) dipped below \(target)"
-        content.body = "Now \(price). This is the dip you were waiting for."
-      case (.reached, .sellAbove):
-        content.title = "\(symbol) rose above \(target)"
-        content.body = "Now \(price). Your sell target is here."
-      case (.approaching, _):
-        let distance = event.alert.distance(from: event.quote.price).formatted(.percent.precision(.fractionLength(1)))
-        content.title = "\(symbol) is \(distance) from your target"
-        content.body = "Now \(price). \(event.alert.kind.title) \(target)."
-      }
-      if !event.alert.note.isEmpty {
-        content.body += " Your note: \u{201C}\(event.alert.note)\u{201D}"
-      }
-      content.sound = event.kind == .reached ? .default : nil
-      content.interruptionLevel = event.kind == .reached ? .timeSensitive : .active
-      content.threadIdentifier = symbol
-      content.userInfo = ["symbol": symbol]
-      let request = UNNotificationRequest(identifier: "\(event.alert.id)-\(event.kind)", content: content, trigger: nil)
+      let request = UNNotificationRequest(identifier: "\(event.alert.id)-\(event.kind)-\(event.alert.triggerCount)", content: content(for: event), trigger: nil)
       try? await UNUserNotificationCenter.current().add(request)
     }
   }
 
   static func sendTest() async {
     let content = UNMutableNotificationContent()
-    content.title = "NVDA dipped below $178.00"
-    content.body = "Now $177.42. This is the dip you were waiting for."
+    content.title = "NVDA entered your buy zone"
+    content.body = "Now $177.42, inside $170.00–$178.00. Your plan: about 5.7 shares."
     content.sound = .default
     let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 3, repeats: false)
     try? await UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "test", content: content, trigger: trigger))

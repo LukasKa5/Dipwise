@@ -9,6 +9,10 @@ struct SettingsView: View {
   @AppStorage(AlertSettings.headsUpThresholdKey) private var headsUpThreshold = 0.03
   @AppStorage(AlertSettings.shareWithFlockKey) private var shareWithFlock = true
   @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = true
+  @AppStorage(AlertSettings.baseCurrencyKey) private var baseCurrency = AlertSettings.defaultBaseCurrency
+  @AppStorage(AlertSettings.cashBalanceKey) private var cash = 0.0
+  @AppStorage(AlertSettings.quietHoursKey) private var quietAlerts = false
+  @Environment(QuoteStore.self) private var quotes
   @Environment(SubscriptionManager.self) private var subscription
   @Environment(FlockService.self) private var flock
   @Environment(\.modelContext) private var modelContext
@@ -30,6 +34,7 @@ struct SettingsView: View {
       Form {
         subscriptionSection
         notificationsSection
+        portfolioSection
         flockSection
         appearanceSection
         supportSection
@@ -52,7 +57,7 @@ struct SettingsView: View {
     Section {
       if subscription.isPro {
         HStack(spacing: 14) {
-          OwlMark().frame(width: 40)
+          LivelyOwl().frame(width: 40, height: 46)
           VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 6) {
               Text("Dipwise Pro")
@@ -70,12 +75,12 @@ struct SettingsView: View {
           showsPaywall = true
         } label: {
           HStack(spacing: 14) {
-            OwlMark().frame(width: 40)
+            LivelyOwl().frame(width: 40, height: 46)
             VStack(alignment: .leading, spacing: 2) {
               Text("Upgrade to Dipwise Pro")
                 .font(.headline)
                 .foregroundStyle(.primary)
-              Text("Unlimited alerts, heads-ups, and full flock statistics.")
+              Text("Unlimited zones, smart alerts, and the full crowd report.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             }
@@ -126,6 +131,9 @@ struct SettingsView: View {
         }
       }
       .disabled(!subscription.isPro)
+      Toggle(isOn: $quietAlerts) {
+        Label("Deliver quietly", systemImage: "moon")
+      }
       if subscription.isPro && headsUpEnabled {
         Picker("Heads-up distance", selection: $headsUpThreshold) {
           Text("2%").tag(0.02)
@@ -138,7 +146,29 @@ struct SettingsView: View {
     } footer: {
       Text(notificationStatus == .denied
            ? "Notifications are off, so Dipwise can't tell you when a target is reached."
-           : "Dipwise checks prices in the background several times an hour. iOS decides the exact timing.")
+           : "Dipwise checks prices in the background several times an hour. iOS decides the exact timing. Quiet delivery won't break through Focus.")
+    }
+  }
+
+  private var portfolioSection: some View {
+    Section {
+      Picker("Currency", selection: $baseCurrency) {
+        ForEach(AlertSettings.supportedCurrencies, id: \.self) { code in
+          Text("\(code) · \(Locale.current.localizedString(forCurrencyCode: code) ?? code)").tag(code)
+        }
+      }
+      .onChange(of: baseCurrency) { _, code in
+        Task { await quotes.setBaseCurrency(code) }
+      }
+      LabeledContent("Cash for buying dips") {
+        TextField("0", value: $cash, format: .currency(code: baseCurrency))
+          .keyboardType(.decimalPad)
+          .multilineTextAlignment(.trailing)
+      }
+    } header: {
+      Text("Portfolio")
+    } footer: {
+      Text("Totals and dividends are converted into this currency using live exchange rates.")
     }
   }
 

@@ -8,6 +8,7 @@ struct RootView: View {
   @Environment(\.modelContext) private var modelContext
   @Environment(QuoteStore.self) private var quotes
   @Environment(Router.self) private var router
+  @Environment(FlockService.self) private var flock
 
   var body: some View {
     Group {
@@ -27,7 +28,7 @@ struct RootView: View {
       // Keep prices fresh while the app is open.
       guard scenePhase == .active else { return }
       while !Task.isCancelled {
-        await MarketMonitor.refresh(context: modelContext, quotes: quotes)
+        await MarketMonitor.refresh(context: modelContext, quotes: quotes, flock: flock)
         try? await Task.sleep(for: .seconds(60))
       }
     }

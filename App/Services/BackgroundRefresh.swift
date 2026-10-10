@@ -14,6 +14,6 @@ enum BackgroundRefresh {
   @MainActor
   static func run(container: ModelContainer) async {
     schedule()
-    await MarketMonitor.refresh(context: ModelContext(container), quotes: QuoteStore())
+    await MarketMonitor.refresh(context: ModelContext(container), quotes: QuoteStore(), flock: FlockService())
   }
 }

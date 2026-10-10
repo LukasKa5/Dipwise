@@ -1,13 +1,17 @@
 import CloudKit
 import Foundation
 
-/// Where anonymous flock alerts are stored and read from.
+/// Where anonymous flock alerts and votes are stored and read from.
 protocol FlockBackend: Sendable {
   var isSample: Bool { get }
-  func targets(for symbol: String) async throws -> (buy: [Double], sell: [Double])
-  func trending() async throws -> [TrendingSymbol]
-  func publish(symbol: String, kind: TargetKind, target: Double, priceAtCreation: Double) async throws -> String
+  func entries(for symbol: String, near price: Double) async throws -> [FlockEntry]
+  func recentEntries(days: Int) async throws -> [(symbol: String, entry: FlockEntry)]
+  func votes(for symbol: String?, week: String) async throws -> FlockVotes
+  func related(to symbol: String, watchers: [String]) async throws -> [RelatedSymbol]
+  func publish(symbol: String, rule: AlertRule, priceAtCreation: Double, installID: String) async throws -> String
   func withdraw(recordName: String) async throws
+  func markTriggered(recordName: String, price: Double) async throws
+  func vote(symbol: String, bullish: Bool, week: String, installID: String) async throws
 }
 
 enum FlockConfiguration {
@@ -24,114 +28,116 @@ enum FlockConfiguration {
     return nil
     #endif
   }
+
+  /// A random, anonymous identifier for this install, used only to count unique investors.
+  static var installID: String {
+    let key = "flockInstallID"
+    if let existing = UserDefaults.standard.string(forKey: key) { return existing }
+    let id = UUID().uuidString
+    UserDefaults.standard.set(id, forKey: key)
+    return id
+  }
 }
 
-/// Stores each shared alert as an anonymous record in the CloudKit public database.
+/// Stores shared alerts and votes as anonymous records in the CloudKit public database.
 struct CloudKitFlockBackend: FlockBackend {
-  private static let recordType = "FlockAlert"
+  private static let alertType = "FlockAlert"
+  private static let voteType = "FlockVote"
   let containerID: String
 
   var isSample: Bool { false }
   private var database: CKDatabase { CKContainer(identifier: containerID).publicCloudDatabase }
 
-  func targets(for symbol: String) async throws -> (buy: [Double], sell: [Double]) {
-    let predicate = NSPredicate(format: "symbol == %@ AND active == 1", symbol)
-    let query = CKQuery(recordType: Self.recordType, predicate: predicate)
-    let (results, _) = try await database.records(matching: query, desiredKeys: ["kind", "target"], resultsLimit: 1000)
-    var buy: [Double] = []
-    var sell: [Double] = []
-    for case .success(let record) in results.map(\.1) {
-      guard let target = record["target"] as? Double else { continue }
-      if record["kind"] as? String == TargetKind.sellAbove.rawValue { sell.append(target) } else { buy.append(target) }
-    }
-    return (buy, sell)
+  private func records(_ predicate: NSPredicate, type: String = alertType, sortedByDate: Bool = false) async throws -> [CKRecord] {
+    let query = CKQuery(recordType: type, predicate: predicate)
+    if sortedByDate { query.sortDescriptors = [NSSortDescriptor(key: "createdAt", ascending: false)] }
+    let (results, _) = try await database.records(matching: query, resultsLimit: 1000)
+    return results.compactMap { try? $0.1.get() }
   }
 
-  func trending() async throws -> [TrendingSymbol] {
-    let since = Date.now.addingTimeInterval(-7 * 24 * 3600) as NSDate
-    let query = CKQuery(recordType: Self.recordType, predicate: NSPredicate(format: "createdAt > %@", since))
-    query.sortDescriptors = [NSSortDescriptor(key: "createdAt", ascending: false)]
-    let (results, _) = try await database.records(matching: query, desiredKeys: ["symbol", "kind"], resultsLimit: 1000)
-    var counts: [String: (total: Int, buy: Int)] = [:]
-    for case .success(let record) in results.map(\.1) {
-      guard let symbol = record["symbol"] as? String else { continue }
-      let isBuy = record["kind"] as? String != TargetKind.sellAbove.rawValue
-      counts[symbol, default: (0, 0)].total += 1
-      if isBuy { counts[symbol, default: (0, 0)].buy += 1 }
+  private func entry(from record: CKRecord) -> FlockEntry? {
+    guard let kindRaw = record["kind"] as? String, let kind = AlertKind(rawValue: kindRaw) else { return nil }
+    return FlockEntry(
+      kind: kind,
+      lower: record["lower"] as? Double ?? 0,
+      upper: record["upper"] as? Double ?? 0,
+      percent: record["percent"] as? Double ?? 0,
+      createdAt: record["createdAt"] as? Date ?? record.creationDate ?? .now,
+      triggeredAt: record["triggeredAt"] as? Date,
+      triggeredPrice: record["triggeredPrice"] as? Double,
+      installID: record["installID"] as? String ?? record.recordID.recordName,
+      isActive: (record["active"] as? Int ?? 1) == 1
+    )
+  }
+
+  func entries(for symbol: String, near price: Double) async throws -> [FlockEntry] {
+    try await records(NSPredicate(format: "symbol == %@", symbol)).compactMap(entry(from:))
+  }
+
+  func recentEntries(days: Int) async throws -> [(symbol: String, entry: FlockEntry)] {
+    let since = Date.now.addingTimeInterval(-Double(days) * 24 * 3600) as NSDate
+    return try await records(NSPredicate(format: "createdAt > %@", since), sortedByDate: true).compactMap { record in
+      guard let symbol = record["symbol"] as? String, let entry = entry(from: record) else { return nil }
+      return (symbol, entry)
     }
-    return counts
-      .map { TrendingSymbol(symbol: $0.key, newAlerts: $0.value.total, buyShare: Double($0.value.buy) / Double($0.value.total)) }
-      .sorted { $0.newAlerts > $1.newAlerts }
-      .prefix(10)
+  }
+
+  func votes(for symbol: String?, week: String) async throws -> FlockVotes {
+    let predicate = symbol.map { NSPredicate(format: "symbol == %@ AND week == %@", $0, week) } ?? NSPredicate(format: "week == %@", week)
+    let votes = try await records(predicate, type: Self.voteType)
+    let bullish = votes.filter { ($0["bullish"] as? Int ?? 0) == 1 }.count
+    return FlockVotes(bullish: bullish, bearish: votes.count - bullish)
+  }
+
+  func related(to symbol: String, watchers: [String]) async throws -> [RelatedSymbol] {
+    let sample = Array(watchers.prefix(100))
+    guard !sample.isEmpty else { return [] }
+    let others = try await records(NSPredicate(format: "installID IN %@ AND active == 1", sample))
+    var watchersBySymbol: [String: Set<String>] = [:]
+    for record in others {
+      guard let other = record["symbol"] as? String, other != symbol, let install = record["installID"] as? String else { continue }
+      watchersBySymbol[other, default: []].insert(install)
+    }
+    return watchersBySymbol
+      .map { RelatedSymbol(symbol: $0.key, overlap: Double($0.value.count) / Double(sample.count)) }
+      .sorted { $0.overlap > $1.overlap }
+      .prefix(8)
       .map { $0 }
   }
 
-  func publish(symbol: String, kind: TargetKind, target: Double, priceAtCreation: Double) async throws -> String {
-    let record = CKRecord(recordType: Self.recordType)
+  func publish(symbol: String, rule: AlertRule, priceAtCreation: Double, installID: String) async throws -> String {
+    let record = CKRecord(recordType: Self.alertType)
     record["symbol"] = symbol
-    record["kind"] = kind.rawValue
-    record["target"] = target
+    record["kind"] = rule.kind.rawValue
+    record["lower"] = rule.lower
+    record["upper"] = rule.upper
+    record["percent"] = rule.percent
     record["priceAtCreation"] = priceAtCreation
     record["createdAt"] = Date.now
     record["active"] = 1
+    record["installID"] = installID
     return try await database.save(record).recordID.recordName
   }
 
   func withdraw(recordName: String) async throws {
     try await database.deleteRecord(withID: CKRecord.ID(recordName: recordName))
   }
-}
 
-#if DEBUG
-/// Deterministic sample data so the flock screens can be designed before CloudKit is connected.
-struct SampleFlockBackend: FlockBackend {
-  var isSample: Bool { true }
-
-  func targets(for symbol: String) async throws -> (buy: [Double], sell: [Double]) {
-    var generator = SeededGenerator(seed: symbol)
-    let price = TargetSnapshotStore.loadQuotes()[symbol]?.price ?? 100
-    let total = Int.random(in: 40...320, using: &generator)
-    let buyShare = Double.random(in: 0.45...0.75, using: &generator)
-    let dipCenter = Double.random(in: 0.05...0.12, using: &generator)
-    let riseCenter = Double.random(in: 0.08...0.18, using: &generator)
-    var buy: [Double] = []
-    var sell: [Double] = []
-    for _ in 0..<total {
-      let spread = (Double.random(in: -1...1, using: &generator) + Double.random(in: -1...1, using: &generator)) * 0.05
-      if Double.random(in: 0...1, using: &generator) < buyShare {
-        buy.append(price * (1 - max(0.005, dipCenter + spread)))
-      } else {
-        sell.append(price * (1 + max(0.005, riseCenter + spread)))
-      }
-    }
-    return (buy, sell)
+  func markTriggered(recordName: String, price: Double) async throws {
+    let record = try await database.record(for: CKRecord.ID(recordName: recordName))
+    record["triggeredAt"] = Date.now
+    record["triggeredPrice"] = price
+    record["active"] = 0
+    _ = try await database.save(record)
   }
 
-  func trending() async throws -> [TrendingSymbol] {
-    [("NVDA", 412, 0.71), ("TSLA", 356, 0.64), ("AAPL", 298, 0.52), ("PLTR", 241, 0.58), ("AMD", 187, 0.69), ("MSFT", 154, 0.47)]
-      .map { TrendingSymbol(symbol: $0.0, newAlerts: $0.1, buyShare: $0.2) }
-  }
-
-  func publish(symbol: String, kind: TargetKind, target: Double, priceAtCreation: Double) async throws -> String {
-    UUID().uuidString
-  }
-
-  func withdraw(recordName: String) async throws {}
-}
-
-private struct SeededGenerator: RandomNumberGenerator {
-  private var state: UInt64
-
-  init(seed: String) {
-    state = seed.utf8.reduce(1469598103934665603) { ($0 ^ UInt64($1)) &* 1099511628211 }
-  }
-
-  mutating func next() -> UInt64 {
-    state &+= 0x9E3779B97F4A7C15
-    var z = state
-    z = (z ^ (z >> 30)) &* 0xBF58476D1CE4E5B9
-    z = (z ^ (z >> 27)) &* 0x94D049BB133111EB
-    return z ^ (z >> 31)
+  func vote(symbol: String, bullish: Bool, week: String, installID: String) async throws {
+    let id = CKRecord.ID(recordName: "vote-\(installID)-\(symbol)-\(week)")
+    let record = (try? await database.record(for: id)) ?? CKRecord(recordType: Self.voteType, recordID: id)
+    record["symbol"] = symbol
+    record["week"] = week
+    record["bullish"] = bullish ? 1 : 0
+    record["installID"] = installID
+    _ = try await database.save(record)
   }
 }
-#endif

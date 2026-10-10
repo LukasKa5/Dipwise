@@ -1,50 +1,53 @@
 import SwiftUI
 
-/// The "night watch" card at the top of Home: portfolio value over a chart with the owl perched in the dip.
+/// The "night watch" card at the top of Home. Scrub the chart to read past values; tap the header for details.
 struct HeroCard: View {
   var title: String
   var value: String
   var change: Double?
   var changeCaption: String
-  var series: [Double]
+  var values: [Double]
+  var dates: [Date]
   var stats: [HeroStat]
+  var format: (Double) -> String
+  @Binding var range: ChartRange
+  var openDetails: (() -> Void)?
+
+  @State private var selectedIndex: Int?
+
+  private var selection: (value: Double, date: Date?)? {
+    guard let selectedIndex, values.indices.contains(selectedIndex) else { return nil }
+    return (values[selectedIndex], dates.indices.contains(selectedIndex) ? dates[selectedIndex] : nil)
+  }
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 18) {
-      VStack(alignment: .leading, spacing: 6) {
-        Text(title)
-          .font(.subheadline.weight(.semibold))
-          .foregroundStyle(.white.opacity(0.65))
-        Text(value)
-          .font(.system(size: 40, weight: .bold, design: .rounded))
-          .monospacedDigit()
-          .foregroundStyle(.white)
-          .minimumScaleFactor(0.6)
-          .lineLimit(1)
-          .contentTransition(.numericText())
-        if let change {
-          ChangeBadge(change: change, caption: changeCaption, positiveColor: Brand.mint, negativeColor: Brand.loss)
-        }
-      }
+    VStack(alignment: .leading, spacing: 16) {
+      header
 
-      if series.count > 1 {
-        DipChart(values: series)
-          .frame(height: 180)
+      if values.count > 1 {
+        InteractiveChart(values: values, dates: dates, selectedIndex: $selectedIndex)
+          .frame(height: 190)
       } else {
         HStack {
           Spacer()
-          OwlMark()
-            .frame(height: 110)
+          LivelyOwl().frame(height: 110)
           Spacer()
         }
         .padding(.vertical, 20)
       }
+
+      Picker("Range", selection: $range) {
+        ForEach(ChartRange.allCases.filter { $0 != .fiveYears }) { Text($0.title).tag($0) }
+      }
+      .pickerStyle(.segmented)
 
       HStack(spacing: 10) {
         ForEach(stats) { stat in
           HeroStatTile(stat: stat)
         }
       }
+      .contentShape(.rect)
+      .onTapGesture { openDetails?() }
     }
     .padding(22)
     .background {
@@ -60,6 +63,57 @@ struct HeroCard: View {
     }
     .shadow(color: Brand.nightBottom.opacity(0.25), radius: 24, y: 12)
     .environment(\.colorScheme, .dark)
+  }
+
+  private var header: some View {
+    Button {
+      openDetails?()
+    } label: {
+      HStack(alignment: .top) {
+        VStack(alignment: .leading, spacing: 6) {
+          if let selection {
+            Text(selection.date?.formatted(date: .abbreviated, time: .omitted) ?? "")
+              .font(.subheadline.weight(.semibold))
+              .foregroundStyle(Brand.mint)
+            Text(format(selection.value))
+              .font(.system(size: 40, weight: .bold, design: .rounded))
+              .monospacedDigit()
+              .foregroundStyle(.white)
+              .minimumScaleFactor(0.6)
+              .lineLimit(1)
+            if let last = values.last, selection.value > 0 {
+              ChangeBadge(change: last / selection.value - 1, caption: "since then", positiveColor: Brand.mint, negativeColor: Brand.loss)
+            }
+          } else {
+            Text(title)
+              .font(.subheadline.weight(.semibold))
+              .foregroundStyle(.white.opacity(0.65))
+            Text(value)
+              .font(.system(size: 40, weight: .bold, design: .rounded))
+              .monospacedDigit()
+              .foregroundStyle(.white)
+              .minimumScaleFactor(0.6)
+              .lineLimit(1)
+              .contentTransition(.numericText())
+            if let change {
+              ChangeBadge(change: change, caption: changeCaption, positiveColor: Brand.mint, negativeColor: Brand.loss)
+            }
+          }
+        }
+        Spacer()
+        if openDetails != nil {
+          Image(systemName: "chevron.forward")
+            .font(.headline)
+            .foregroundStyle(.white.opacity(0.5))
+            .padding(.top, 4)
+            .accessibilityHidden(true)
+        }
+      }
+      .contentShape(.rect)
+    }
+    .buttonStyle(.plain)
+    .disabled(openDetails == nil)
+    .accessibilityHint(openDetails == nil ? "" : "Opens portfolio details")
   }
 }
 
@@ -83,6 +137,8 @@ private struct HeroStatTile: View {
       Text(stat.value)
         .font(.title3.bold())
         .foregroundStyle(.white)
+        .lineLimit(1)
+        .minimumScaleFactor(0.6)
         .contentTransition(.numericText())
       Text(stat.label)
         .font(.caption.weight(.medium))

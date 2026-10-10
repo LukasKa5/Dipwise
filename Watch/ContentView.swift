@@ -40,7 +40,7 @@ private struct TargetRow: View {
           .font(.headline)
         Spacer()
         if let distance = status.distance {
-          Text(distance == 0 ? "Reached" : distance.formatted(.percent.precision(.fractionLength(1))))
+          Text(distance == 0 ? "Now" : distance.formatted(.percent.precision(.fractionLength(1))))
             .font(.headline.monospacedDigit())
             .foregroundStyle(distance < 0.035 ? Brand.amber : .primary)
         }
@@ -48,7 +48,7 @@ private struct TargetRow: View {
       Gauge(value: status.progress) { EmptyView() }
         .gaugeStyle(.accessoryLinearCapacity)
         .tint(Brand.amber)
-      Text("\(status.target.kind.title) \(status.quote?.formatted(status.target.target) ?? status.target.target.formatted())")
+      Text(status.summary)
         .font(.caption2)
         .foregroundStyle(.secondary)
     }

@@ -1,12 +1,13 @@
 import SwiftUI
 
-/// One price target with its progress track and distance.
+/// One alert with its progress track and distance.
 struct AlertCard: View {
   var alert: PriceAlert
   var quote: Quote?
 
-  private var distance: Double? { quote.map { alert.distance(from: $0.price) } }
+  private var distance: Double? { quote.flatMap { alert.distance(for: $0) } }
   private var isClose: Bool { (distance ?? 1) < 0.035 }
+  private var tint: Color { alert.kind.side == .sell ? Palette.green : Palette.amber }
 
   var body: some View {
     VStack(alignment: .leading, spacing: 14) {
@@ -32,28 +33,29 @@ struct AlertCard: View {
         }
       }
 
-      TargetTrack(progress: quote.map { alert.progress(from: $0.price) } ?? 0, isReached: !alert.isActive)
+      TargetTrack(progress: quote.map { alert.progress(for: $0) } ?? 0, isReached: !alert.isActive || distance == 0, tint: tint)
 
       HStack {
-        Label("\(alert.kind.title) \(quote?.formatted(alert.targetPrice) ?? alert.targetPrice.formatted())", systemImage: alert.kind.systemImage)
-          .foregroundStyle(Palette.amber)
+        Label(alert.summary(for: quote), systemImage: alert.kind.systemImage)
+          .foregroundStyle(tint)
+          .lineLimit(1)
+          .minimumScaleFactor(0.8)
         Spacer()
-        if !alert.isActive {
-          Text("Reached")
-            .foregroundStyle(Palette.amber)
-        } else if isClose {
-          Text("Almost there")
-            .font(.caption.bold())
-            .foregroundStyle(Palette.amber)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 4)
-            .background(Palette.amber.opacity(0.15), in: .capsule)
-        } else if let distance {
-          Text("\(distance, format: .percent.precision(.fractionLength(1))) away")
-            .foregroundStyle(.secondary)
-        }
+        status
       }
       .font(.footnote.weight(.semibold))
+
+      if let depth = quote.flatMap({ alert.rule.zoneDepth(for: $0) }) {
+        Text("Inside the zone · \(depth, format: .percent.precision(.fractionLength(0))) of the way through")
+          .font(.caption.weight(.semibold))
+          .foregroundStyle(tint)
+      }
+
+      if let shares = alert.plannedShares, let quote {
+        Text("Plan: invest \(quote.formatted(alert.budget)) ≈ \(shares, format: .number.precision(.fractionLength(0...2))) shares")
+          .font(.caption)
+          .foregroundStyle(.secondary)
+      }
 
       if !alert.note.isEmpty {
         Text("\u{201C}\(alert.note)\u{201D}")
@@ -67,7 +69,32 @@ struct AlertCard: View {
     .cardStyle()
     .contentShape(.rect)
     .accessibilityElement(children: .ignore)
-    .accessibilityLabel("\(alert.holding?.name ?? alert.symbol), \(alert.kind.title) \(alert.targetPrice.formatted())")
-    .accessibilityValue(distance.map { "\($0.formatted(.percent.precision(.fractionLength(1)))) away" } ?? "")
+    .accessibilityLabel("\(alert.holding?.name ?? alert.symbol), \(alert.summary(for: quote))")
+    .accessibilityValue(distance.map { $0 == 0 ? "Reached" : "\($0.formatted(.percent.precision(.fractionLength(1)))) away" } ?? "")
+  }
+
+  @ViewBuilder
+  private var status: some View {
+    if !alert.isActive {
+      Text(alert.isExpired ? "Expired" : "Reached")
+        .foregroundStyle(.secondary)
+    } else if distance == 0 {
+      Text("Active now")
+        .font(.caption.bold())
+        .foregroundStyle(tint)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 4)
+        .background(tint.opacity(0.15), in: .capsule)
+    } else if isClose {
+      Text("Almost there")
+        .font(.caption.bold())
+        .foregroundStyle(tint)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 4)
+        .background(tint.opacity(0.15), in: .capsule)
+    } else if let distance {
+      Text("\(distance, format: .percent.precision(.fractionLength(1))) away")
+        .foregroundStyle(.secondary)
+    }
   }
 }

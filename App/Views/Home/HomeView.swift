@@ -8,9 +8,11 @@ struct HomeView: View {
   @Environment(Router.self) private var router
   @Environment(\.modelContext) private var modelContext
   @State private var showsAddStock = false
+  @State private var showsPortfolio = false
+  @State private var range: ChartRange = .month
 
   private var summary: PortfolioSummary {
-    PortfolioSummary(holdings: holdings, quotes: quotes.quotes)
+    PortfolioSummary(holdings: holdings, quotes: quotes.quotes, baseCurrency: quotes.baseCurrency, convert: quotes.toBase)
   }
 
   var body: some View {
@@ -23,6 +25,7 @@ struct HomeView: View {
           } else {
             hero
             nearTargets
+            dipRadar
             stocks
             flockPulse
           }
@@ -36,7 +39,7 @@ struct HomeView: View {
       }
       .background(Palette.canvas)
       .navigationTitle("Dipwise")
-      .refreshable { await MarketMonitor.refresh(context: modelContext, quotes: quotes) }
+      .refreshable { await MarketMonitor.refresh(context: modelContext, quotes: quotes, flock: flock) }
       .toolbar {
         ToolbarItem(placement: .topBarTrailing) {
           Button("Add Stock", systemImage: "plus") { showsAddStock = true }
@@ -45,12 +48,15 @@ struct HomeView: View {
       .navigationDestination(for: String.self) { symbol in
         StockDetailView(symbol: symbol)
       }
+      .navigationDestination(isPresented: $showsPortfolio) {
+        PortfolioView()
+      }
       .sheet(isPresented: $showsAddStock) {
         AddStockView { symbol in
           router.homePath = [symbol]
         }
       }
-      .task { await flock.loadTrending() }
+      .task { await flock.loadOverview() }
     }
   }
 
@@ -58,46 +64,60 @@ struct HomeView: View {
 
   private var hero: some View {
     let summary = summary
-    let close = summary.closeAlertCount()
-    let stats = [
-      HeroStat(value: "\(summary.activeAlerts.count)", label: "Alerts", systemImage: "scope", tint: Brand.mint),
-      HeroStat(value: "\(close)", label: "Close", systemImage: "bell.badge.fill", tint: Brand.amber),
-      HeroStat(value: "\(holdings.count)", label: "Stocks", systemImage: "binoculars.fill", tint: .white),
-    ]
+    let sessions = range.sessions ?? 22
     if summary.hasPositions {
+      let history = summary.history(sessions: sessions)
+      let format: (Double) -> String = { quotes.formatBase($0) }
       return HeroCard(
         title: DayPeriod(date: .now).greeting,
-        value: summary.totalValue.formatted(.currency(code: summary.currency)),
+        value: format(summary.totalValue),
         change: summary.dayChange,
         changeCaption: "today",
-        series: summary.history,
-        stats: stats
+        values: history.values,
+        dates: history.dates,
+        stats: [
+          HeroStat(value: (summary.dayChangeAmount >= 0 ? "+" : "") + format(summary.dayChangeAmount), label: "Today", systemImage: "sun.max.fill", tint: summary.dayChangeAmount >= 0 ? Brand.mint : Brand.loss),
+          HeroStat(value: summary.totalReturn.map { $0.formatted(.percent.precision(.fractionLength(1)).sign(strategy: .always())) } ?? "—", label: "Total return", systemImage: "chart.line.uptrend.xyaxis", tint: Brand.mint),
+          HeroStat(value: format(summary.annualDividendIncome), label: "Dividends / yr", systemImage: "leaf.fill", tint: Brand.amber),
+        ],
+        format: format,
+        range: $range,
+        openDetails: { showsPortfolio = true }
       )
     }
     let focus = summary.nearestAlerts.first?.holding ?? holdings.first
     let quote = focus.flatMap { quotes[$0.symbol] }
+    let recent = quote?.recent(sessions)
     return HeroCard(
       title: "\(DayPeriod(date: .now).greeting) · Watching \(focus?.symbol ?? "")",
       value: quote.map { $0.formatted($0.price) } ?? "—",
       change: quote?.change,
       changeCaption: "today",
-      series: quote?.closes ?? [],
-      stats: stats
+      values: recent?.values ?? [],
+      dates: recent?.dates ?? [],
+      stats: [
+        HeroStat(value: "\(summary.activeAlerts.count)", label: "Alerts", systemImage: "scope", tint: Brand.mint),
+        HeroStat(value: "\(summary.closeAlertCount())", label: "Close", systemImage: "bell.badge.fill", tint: Brand.amber),
+        HeroStat(value: "\(holdings.count)", label: "Watching", systemImage: "binoculars.fill", tint: .white),
+      ],
+      format: { quote?.formatted($0) ?? $0.formatted() },
+      range: $range,
+      openDetails: nil
     )
   }
 
   @ViewBuilder
   private var nearTargets: some View {
-    let alerts = Array(summary.nearestAlerts.prefix(5))
+    let alerts = Array(summary.nearestAlerts.prefix(4))
     VStack(alignment: .leading, spacing: 14) {
-      SectionHeader(title: "Near Your Targets", subtitle: alerts.isEmpty ? nil : "Closest first") {
+      SectionHeader(title: "Your Plans", subtitle: alerts.isEmpty ? nil : "Closest to triggering first") {
         if summary.activeAlerts.count > alerts.count {
           Button("See All") { router.selectedTab = .alerts }
             .font(.subheadline.weight(.semibold))
         }
       }
       if alerts.isEmpty {
-        EmptyHint(systemImage: "scope", text: "Add a price target to a stock and Dipwise will watch it for you.")
+        EmptyHint(systemImage: "scope", text: "Open a stock and set a buy zone or sell zone. Dipwise will watch it for you.")
       } else {
         ForEach(alerts) { alert in
           NavigationLink(value: alert.symbol) {
@@ -105,6 +125,33 @@ struct HomeView: View {
           }
           .buttonStyle(.plain)
         }
+      }
+    }
+  }
+
+  @ViewBuilder
+  private var dipRadar: some View {
+    if !flock.radar.isEmpty {
+      VStack(alignment: .leading, spacing: 14) {
+        SectionHeader(title: "Dip Radar", subtitle: "In the crowd's buy zone right now") {
+          Button("More") { router.selectedTab = .flock }
+            .font(.subheadline.weight(.semibold))
+        }
+        ScrollView(.horizontal) {
+          HStack(spacing: 12) {
+            ForEach(flock.radar.prefix(6)) { item in
+              NavigationLink {
+                FlockDetailView(symbol: item.symbol)
+              } label: {
+                RadarCard(item: item)
+                  .frame(width: 220)
+              }
+              .buttonStyle(.plain)
+            }
+          }
+        }
+        .scrollIndicators(.hidden)
+        .scrollClipDisabled()
       }
     }
   }
@@ -129,7 +176,7 @@ struct HomeView: View {
 
   @ViewBuilder
   private var flockPulse: some View {
-    if !flock.trending.isEmpty {
+    if !flock.overview.trending.isEmpty {
       VStack(alignment: .leading, spacing: 14) {
         SectionHeader(title: "Flock Pulse", subtitle: "Most new alerts this week") {
           Button("Explore") { router.selectedTab = .flock }
@@ -137,7 +184,7 @@ struct HomeView: View {
         }
         ScrollView(.horizontal) {
           HStack(spacing: 12) {
-            ForEach(flock.trending.prefix(6)) { item in
+            ForEach(flock.overview.trending.prefix(8)) { item in
               TrendingChip(item: item)
             }
           }
@@ -156,13 +203,13 @@ private struct WelcomeCard: View {
 
   var body: some View {
     VStack(spacing: 18) {
-      OwlMark()
+      LivelyOwl()
         .frame(height: 120)
       VStack(spacing: 8) {
         Text("Your owl is ready to watch")
           .font(.title2.bold())
           .foregroundStyle(.white)
-        Text("Add the stocks you own or want to buy, set your price targets, and Dipwise will tell you when it's time.")
+        Text("Add the stocks you own or want to buy, set buy and sell zones, and Dipwise will tell you when it's time.")
           .font(.subheadline)
           .foregroundStyle(.white.opacity(0.7))
           .multilineTextAlignment(.center)
@@ -197,7 +244,7 @@ struct EmptyHint: View {
   }
 }
 
-private struct HoldingRow: View {
+struct HoldingRow: View {
   var holding: Holding
   var quote: Quote?
 
@@ -234,7 +281,7 @@ private struct HoldingRow: View {
   }
 }
 
-private struct TrendingChip: View {
+struct TrendingChip: View {
   var item: TrendingSymbol
 
   var body: some View {
@@ -242,14 +289,22 @@ private struct TrendingChip: View {
       FlockDetailView(symbol: item.symbol)
     } label: {
       VStack(alignment: .leading, spacing: 8) {
-        Text(item.symbol)
-          .font(.headline)
-        Text("\(item.newAlerts) new alerts")
+        HStack {
+          Text(item.symbol)
+            .font(.headline)
+          Spacer()
+          if item.weekChange > 0.25 {
+            Image(systemName: "flame.fill")
+              .foregroundStyle(Palette.amber)
+              .accessibilityLabel("Surging")
+          }
+        }
+        Text("\(item.alertsThisWeek) alerts this week")
           .font(.caption)
           .foregroundStyle(.secondary)
         BuySellBar(buyShare: item.buyShare)
-          .frame(width: 110)
       }
+      .frame(width: 130, alignment: .leading)
       .padding(14)
       .cardStyle(cornerRadius: 20)
     }
