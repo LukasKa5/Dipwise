@@ -13,7 +13,10 @@ struct AlertEditorView: View {
   @Environment(FlockService.self) private var flock
   @Environment(SubscriptionManager.self) private var subscription
   @Environment(ProgressStore.self) private var progress
-  @State private var kind: AlertKind = .buyZone
+  @State private var intent: AlertIntent = .buy
+  @State private var exactPrice = false
+  @State private var smartKind: AlertKind = .dropFromHigh
+  @State private var showsOptions = false
   @State private var lower: Double = 0
   @State private var upper: Double = 0
   @State private var percent: Double = 0.1
@@ -29,6 +32,24 @@ struct AlertEditorView: View {
   private var quote: Quote? { quotes[holding.symbol] }
   private var report: FlockReport? { flock.reports[holding.symbol] }
   private func format(_ value: Double) -> String { quote?.formatted(value) ?? value.formatted(.number.precision(.fractionLength(2))) }
+
+  private var kind: AlertKind {
+    switch intent {
+    case .buy: exactPrice ? .priceBelow : .buyZone
+    case .sell: exactPrice ? .priceAbove : .sellZone
+    case .smart: smartKind
+    }
+  }
+
+  private func apply(kind: AlertKind) {
+    switch kind {
+    case .buyZone: intent = .buy; exactPrice = false
+    case .priceBelow: intent = .buy; exactPrice = true
+    case .sellZone: intent = .sell; exactPrice = false
+    case .priceAbove: intent = .sell; exactPrice = true
+    default: intent = .smart; smartKind = kind
+    }
+  }
 
   private var rule: AlertRule {
     AlertRule(kind: kind, lower: lower, upper: kind.isZone ? upper : 0, percent: kind.usesPercent ? percent : 0,
@@ -50,31 +71,18 @@ struct AlertEditorView: View {
       Form {
         Group {
         Section {
-          AlertKindPicker(selection: $kind, isPro: subscription.isPro)
-            .listRowInsets(EdgeInsets(top: 12, leading: 0, bottom: 12, trailing: 0))
+          IntentPicker(selection: $intent)
+            .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
             .listRowBackground(Color.clear)
-        } footer: {
-          Text(kind.explanation)
+        }
+
+        if let quote {
+          Section {
+            RuleSummary(rule: rule, quote: quote, symbol: holding.symbol, isLocked: isLocked)
+          }
         }
 
         conditionSection
-
-        if kind.side == .buy {
-          Section {
-            LabeledContent("Budget") {
-              TextField("Optional", value: $budget, format: .currency(code: quote?.currency ?? "USD"))
-                .keyboardType(.decimalPad)
-                .multilineTextAlignment(.trailing)
-            }
-            if let budget, budget > 0, let price = rule.referencePrice ?? quote?.price, price > 0 {
-              LabeledContent("You'd get about", value: "\((budget / price).formatted(.number.precision(.fractionLength(0...2)))) shares")
-            }
-          } header: {
-            Text("Your plan")
-          } footer: {
-            Text("Dipwise reminds you of this plan when the alert fires, and counts it toward your buying power.")
-          }
-        }
 
         if let report, report.hasEnoughData, kind.side != .watch {
           Section("The Flock") {
@@ -85,16 +93,26 @@ struct AlertEditorView: View {
         }
 
         Section {
-          Toggle("Repeat", isOn: $repeats)
-          Picker("Expires", selection: $expiry) {
-            ForEach((alert?.expiresAt != nil ? [Expiry.custom] : []) + Expiry.allCases) { Text($0.title).tag($0) }
+          DisclosureGroup("More options", isExpanded: $showsOptions) {
+            if kind.side == .buy {
+              LabeledContent("Budget") {
+                TextField("Optional", value: $budget, format: .currency(code: quote?.currency ?? "USD"))
+                  .keyboardType(.decimalPad)
+                  .multilineTextAlignment(.trailing)
+              }
+              if let budget, budget > 0, let price = rule.referencePrice ?? quote?.price, price > 0 {
+                LabeledContent("You'd get about", value: "\((budget / price).formatted(.number.precision(.fractionLength(0...2)))) shares")
+              }
+            }
+            Toggle("Alert every time", isOn: $repeats)
+            Picker("Expires", selection: $expiry) {
+              ForEach((alert?.expiresAt != nil ? [Expiry.custom] : []) + Expiry.allCases) { Text($0.title).tag($0) }
+            }
+            TextField("Your reason (shown in the alert)", text: $note, axis: .vertical)
+              .lineLimit(2...4)
           }
-          TextField("Why? e.g. Strong earnings, waiting for a pullback", text: $note, axis: .vertical)
-            .lineLimit(2...4)
-        } header: {
-          Text("Options")
         } footer: {
-          Text(repeats ? "You'll be alerted every time the condition is newly met." : "The alert turns off after it fires. You can re-arm it any time.")
+          Text("Add a budget, repeat the alert, set an expiry, or note why you chose this price.")
         }
 
         if let alert {
@@ -129,8 +147,9 @@ struct AlertEditorView: View {
       .onAppear(perform: load)
       .onChange(of: kind) { oldKind, newKind in
         if oldKind.side != newKind.side || oldKind.isZone != newKind.isZone { suggestLevels() }
-        if newKind.usesPercent { percent = defaultPercent(for: newKind) }
+        if newKind.usesPercent && oldKind != newKind { percent = defaultPercent(for: newKind) }
       }
+      .sensoryFeedback(.selection, trigger: kind)
       .task {
         if let quote { await flock.load(symbol: holding.symbol, currentPrice: quote.price) }
       }
@@ -142,8 +161,8 @@ struct AlertEditorView: View {
   @ViewBuilder
   private var conditionSection: some View {
     if let quote {
-      switch kind {
-      case .buyZone, .sellZone, .priceBelow, .priceAbove:
+      switch intent {
+      case .buy, .sell:
         Section {
           ZoneEditorChart(
             values: quote.recent(64).values,
@@ -155,55 +174,87 @@ struct AlertEditorView: View {
           )
           .frame(height: 230)
           .padding(.vertical, 6)
-
+          presets(for: quote)
+          Toggle("Exact price instead of a zone", isOn: $exactPrice.animation(.snappy))
           if kind.isZone {
             LabeledContent("From") { priceField($lower) }
             LabeledContent("To") { priceField($upper) }
           } else {
             LabeledContent("Price") { priceField($lower) }
           }
-          presets(for: quote)
         } header: {
-          Text("Drag to set your \(kind.isZone ? "zone" : "level")")
+          Text("Drag the handles on the chart")
         } footer: {
           Text(levelDescription(for: quote))
         }
 
-      case .dropFromHigh, .dailyMove, .trailingStop:
+      case .smart:
         Section {
-          VStack(alignment: .leading, spacing: 12) {
-            HStack {
-              Text(kind == .dailyMove ? "Move size" : "Drop")
-              Spacer()
-              Text(percent, format: .percent.precision(.fractionLength(0)))
-                .font(.title3.bold().monospacedDigit())
-                .foregroundStyle(kind.side.color)
+          ForEach([AlertKind.dropFromHigh, .trailingStop, .dailyMove, .belowAverage]) { option in
+            Button {
+              withAnimation(.snappy) { smartKind = option }
+            } label: {
+              HStack(spacing: 12) {
+                Image(systemName: option.systemImage)
+                  .font(.headline)
+                  .foregroundStyle(option.side.color)
+                  .frame(width: 36, height: 36)
+                  .background(option.side.color.opacity(0.14), in: .circle)
+                VStack(alignment: .leading, spacing: 2) {
+                  HStack(spacing: 6) {
+                    Text(option.title).font(.headline)
+                    if !subscription.isPro { ProBadge() }
+                  }
+                  Text(option.explanation)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer()
+                Image(systemName: smartKind == option ? "checkmark.circle.fill" : "circle")
+                  .font(.title3)
+                  .foregroundStyle(smartKind == option ? AnyShapeStyle(.tint) : AnyShapeStyle(.tertiary))
+              }
+              .contentShape(.rect)
             }
-            Slider(value: $percent, in: percentRange) {
-              Text("Percentage")
-            } minimumValueLabel: {
-              Text(percentRange.lowerBound, format: .percent.precision(.fractionLength(0)))
-            } maximumValueLabel: {
-              Text(percentRange.upperBound, format: .percent.precision(.fractionLength(0)))
-            }
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(smartKind == option ? .isSelected : [])
           }
-        } footer: {
-          Text(percentDescription(for: quote))
+        } header: {
+          Text("Choose a smart alert")
         }
 
-      case .belowAverage:
         Section {
-          Picker("Average", selection: $averageDays) {
-            Text("50-day").tag(50)
-            Text("100-day").tag(100)
-            Text("200-day").tag(200)
+          if kind == .belowAverage {
+            Picker("Average", selection: $averageDays) {
+              Text("50-day").tag(50)
+              Text("100-day").tag(100)
+              Text("200-day").tag(200)
+            }
+            .pickerStyle(.segmented)
+          } else {
+            VStack(alignment: .leading, spacing: 12) {
+              HStack {
+                Text(kind == .dailyMove ? "Move size" : "Drop")
+                Spacer()
+                Text(percent, format: .percent.precision(.fractionLength(0)))
+                  .font(.title3.bold().monospacedDigit())
+                  .foregroundStyle(kind.side.color)
+              }
+              Slider(value: $percent, in: percentRange) {
+                Text("Percentage")
+              } minimumValueLabel: {
+                Text(percentRange.lowerBound, format: .percent.precision(.fractionLength(0)))
+              } maximumValueLabel: {
+                Text(percentRange.upperBound, format: .percent.precision(.fractionLength(0)))
+              }
+            }
           }
-          .pickerStyle(.segmented)
         } footer: {
-          if let average = quote.movingAverage(days: averageDays) {
+          if kind == .belowAverage, let average = quote.movingAverage(days: averageDays) {
             Text("The \(averageDays)-day average is \(format(average)). Today's price is \(abs(quote.price / average - 1).formatted(.percent.precision(.fractionLength(1)))) \(quote.price >= average ? "above" : "below") it.")
           } else {
-            Text("Not enough price history for this average yet.")
+            Text(percentDescription(for: quote))
           }
         }
       }
@@ -329,7 +380,7 @@ struct AlertEditorView: View {
     didLoad = true
     if let alert {
       let rule = alert.rule
-      kind = rule.kind
+      apply(kind: rule.kind)
       lower = rule.lower
       upper = rule.upper
       percent = rule.percent > 0 ? rule.percent : defaultPercent(for: rule.kind)
@@ -338,8 +389,9 @@ struct AlertEditorView: View {
       repeats = alert.repeats
       expiry = alert.expiresAt == nil ? .never : .custom
       note = alert.note
+      showsOptions = alert.budget > 0 || alert.repeats || alert.expiresAt != nil || !alert.note.isEmpty
     } else if let initialRule {
-      kind = initialRule.kind
+      apply(kind: initialRule.kind)
       percent = initialRule.percent > 0 ? initialRule.percent : defaultPercent(for: initialRule.kind)
       if initialRule.lower > 0 {
         lower = rounded(initialRule.lower)
@@ -449,53 +501,145 @@ enum Expiry: String, CaseIterable, Identifiable {
   }
 }
 
-/// A horizontally scrolling picker of alert types, with Pro types marked.
-struct AlertKindPicker: View {
-  @Binding var selection: AlertKind
-  var isPro: Bool
+enum AlertIntent: String, CaseIterable, Identifiable {
+  case buy
+  case sell
+  case smart
+
+  var id: Self { self }
+
+  var title: String {
+    switch self {
+    case .buy: "Buy"
+    case .sell: "Sell"
+    case .smart: "Smart"
+    }
+  }
+
+  var subtitle: String {
+    switch self {
+    case .buy: "When it drops"
+    case .sell: "When it rises"
+    case .smart: "Dips, stops, trends"
+    }
+  }
+
+  var systemImage: String {
+    switch self {
+    case .buy: "arrow.down.to.line.compact"
+    case .sell: "arrow.up.to.line.compact"
+    case .smart: "sparkles"
+    }
+  }
+
+  var color: Color {
+    switch self {
+    case .buy: Palette.buy
+    case .sell: Palette.sell
+    case .smart: Palette.amber
+    }
+  }
+}
+
+/// Three big choices: buy, sell, or a smart alert.
+struct IntentPicker: View {
+  @Binding var selection: AlertIntent
 
   var body: some View {
-    ScrollView(.horizontal) {
-      HStack(spacing: 10) {
-        ForEach(AlertKind.allCases) { kind in
-          let isSelected = kind == selection
-          let tint: Color = kind.side.color
-          Button {
-            withAnimation(.snappy) { selection = kind }
-          } label: {
-            VStack(alignment: .leading, spacing: 8) {
-              HStack {
-                Image(systemName: kind.systemImage)
-                  .font(.headline)
-                  .foregroundStyle(isSelected ? Brand.owlInk : tint)
-                Spacer()
-                if kind.requiresPro && !isPro {
-                  Image(systemName: "lock.fill")
-                    .font(.caption)
-                    .foregroundStyle(isSelected ? Brand.owlInk : .secondary)
-                }
-              }
-              Text(kind.title)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(isSelected ? Brand.owlInk : .primary)
-                .lineLimit(1)
-            }
-            .frame(width: 112, alignment: .leading)
-            .padding(12)
-            .background(isSelected ? AnyShapeStyle(tint) : AnyShapeStyle(Palette.card), in: .rect(cornerRadius: 16))
-            .overlay {
-              RoundedRectangle(cornerRadius: 16)
-                .strokeBorder(.quaternary, lineWidth: isSelected ? 0 : 1)
-            }
+    HStack(spacing: 10) {
+      ForEach(AlertIntent.allCases) { intent in
+        let isSelected = intent == selection
+        Button {
+          withAnimation(.snappy) { selection = intent }
+        } label: {
+          VStack(spacing: 6) {
+            Image(systemName: intent.systemImage)
+              .font(.title2.weight(.semibold))
+            Text(intent.title)
+              .font(.headline)
+            Text(intent.subtitle)
+              .font(.caption2)
+              .opacity(0.8)
+              .lineLimit(1)
+              .minimumScaleFactor(0.8)
           }
-          .buttonStyle(.plain)
-          .accessibilityAddTraits(isSelected ? .isSelected : [])
-          .accessibilityHint(kind.requiresPro && !isPro ? "Dipwise Pro" : "")
+          .foregroundStyle(isSelected ? .white : intent.color)
+          .frame(maxWidth: .infinity)
+          .padding(.vertical, 14)
+          .background(isSelected ? AnyShapeStyle(intent.color) : AnyShapeStyle(intent.color.opacity(0.12)), in: .rect(cornerRadius: 18))
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+      }
+    }
+  }
+}
+
+/// The alert in plain language, with its odds of firing.
+struct RuleSummary: View {
+  var rule: AlertRule
+  var quote: Quote
+  var symbol: String
+  var isLocked: Bool
+
+  var body: some View {
+    let odds = AlertOdds(rule: rule, quote: quote)
+    VStack(alignment: .leading, spacing: 10) {
+      Text("Alert me when \(symbol) is ready:")
+        .font(.subheadline)
+        .foregroundStyle(.secondary)
+      Text(rule.summary(format: quote.formatted))
+        .font(.title3.bold())
+        .foregroundStyle(rule.kind.side.color)
+        .contentTransition(.numericText())
+      if let odds {
+        HStack(spacing: 10) {
+          OddsPill(title: "30 days", value: odds.monthChance)
+          OddsPill(title: "90 days", value: odds.quarterChance)
+        }
+        Label(odds.lastTriggeredText, systemImage: "clock.arrow.circlepath")
+          .font(.caption)
+          .foregroundStyle(.secondary)
+      }
+      if isLocked {
+        Label("Smart alerts are part of Dipwise Pro", systemImage: "lock.fill")
+          .font(.caption.weight(.semibold))
+          .foregroundStyle(Palette.amber)
+      }
+    }
+    .padding(.vertical, 4)
+    .animation(.snappy, value: rule)
+  }
+}
+
+/// A probability with a small fill bar.
+struct OddsPill: View {
+  var title: String
+  var value: Double
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 4) {
+      HStack {
+        Text(title)
+          .font(.caption)
+          .foregroundStyle(.secondary)
+        Spacer()
+        Text(value, format: .percent.precision(.fractionLength(0)))
+          .font(.subheadline.bold().monospacedDigit())
+      }
+      GeometryReader { geometry in
+        ZStack(alignment: .leading) {
+          Capsule().fill(.quaternary)
+          Capsule().fill(Palette.amber).frame(width: max(4, geometry.size.width * value))
         }
       }
-      .padding(.horizontal, 20)
+      .frame(height: 5)
     }
-    .scrollIndicators(.hidden)
+    .padding(10)
+    .background(.quaternary.opacity(0.4), in: .rect(cornerRadius: 12))
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel("Chance to trigger within \(title)")
+    .accessibilityValue(value.formatted(.percent.precision(.fractionLength(0))))
   }
 }
 

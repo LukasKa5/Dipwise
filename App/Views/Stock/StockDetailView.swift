@@ -76,7 +76,6 @@ struct StockDetailView: View {
       VStack(alignment: .leading, spacing: 28) {
         header(for: holding)
         planSection(for: holding)
-        otherAlerts(for: holding)
         if let quote { keyStats(quote) }
         if holding.isOwned { positionSection(for: holding) }
         if let quote, !quote.dividends.isEmpty { dividendSection(quote, holding: holding) }
@@ -162,144 +161,124 @@ struct StockDetailView: View {
   // MARK: Plan
 
   private func planSection(for holding: Holding) -> some View {
-    VStack(alignment: .leading, spacing: 14) {
-      SectionHeader(title: "Your Plan", subtitle: "Green is where you buy, red is where you sell") {
+    let active = holding.activeAlerts.sorted {
+      (quote.flatMap($0.distance(for:)) ?? .infinity) < (quote.flatMap($1.distance(for:)) ?? .infinity)
+    }
+    let fired = (holding.alerts ?? []).filter { !$0.isActive }.sorted { ($0.triggeredAt ?? $0.createdAt) > ($1.triggeredAt ?? $1.createdAt) }
+    return VStack(alignment: .leading, spacing: 14) {
+      SectionHeader(title: "Your Plan", subtitle: "Everything Ollie watches on \(symbol)") {
         Button("Build", systemImage: "wand.and.stars") { showsPlanBuilder = true }
           .font(.subheadline.weight(.semibold))
       }
-      VStack(alignment: .leading, spacing: 16) {
-        if let quote {
+      VStack(alignment: .leading, spacing: 0) {
+        if let quote, !(holding.buyZones + holding.sellZones).isEmpty {
           let report = flock.reports[symbol]
-          ZoneTrack(
-            price: quote.price,
-            bands: (holding.buyZones + holding.sellZones).map { ZoneTrack.Band(range: $0.targetPrice...max($0.targetPrice, $0.upperPrice), side: $0.kind.side, isCrowd: false) }
-              + [report?.buyZone.map { ZoneTrack.Band(range: $0, side: .buy, isCrowd: true) },
-                 report?.sellZone.map { ZoneTrack.Band(range: $0, side: .sell, isCrowd: true) }].compactMap { $0 },
-            low: quote.low52,
-            high: quote.high52,
-            format: format
-          )
-          ZoneLegend(showsCrowd: report?.buyZone != nil || report?.sellZone != nil)
+          VStack(alignment: .leading, spacing: 10) {
+            ZoneTrack(
+              price: quote.price,
+              bands: (holding.buyZones + holding.sellZones).map { ZoneTrack.Band(range: $0.targetPrice...max($0.targetPrice, $0.upperPrice), side: $0.kind.side, isCrowd: false) }
+                + [report?.buyZone.map { ZoneTrack.Band(range: $0, side: .buy, isCrowd: true) },
+                   report?.sellZone.map { ZoneTrack.Band(range: $0, side: .sell, isCrowd: true) }].compactMap { $0 },
+              low: quote.low52,
+              high: quote.high52,
+              format: format
+            )
+            ZoneLegend(showsCrowd: report?.buyZone != nil || report?.sellZone != nil)
+          }
+          .padding(16)
+          Divider()
         }
 
-        if holding.buyZones.isEmpty && holding.sellZones.isEmpty {
-          Button {
-            showsPlanBuilder = true
-          } label: {
-            Label("Build your plan in one step", systemImage: "wand.and.stars")
+        if active.isEmpty {
+          VStack(spacing: 12) {
+            LivelyOwl().frame(width: 56, height: 64)
+            Text("No plan for \(symbol) yet")
               .font(.headline)
-              .frame(maxWidth: .infinity)
-              .padding(.vertical, 6)
-          }
-          .buttonStyle(.borderedProminent)
-        }
-
-        tierList(title: "Buy", zones: holding.buyZones, side: .buy)
-        tierList(title: "Sell", zones: holding.sellZones, side: .sell)
-
-        if let ladder = holding.ladder {
-          Label("If every funded buy tier fills: \(ladder.shares.formatted(.number.precision(.fractionLength(0...2)))) shares at an average of \(format(ladder.averagePrice)) for \(format(ladder.budget)).", systemImage: "equal.circle.fill")
-            .font(.footnote)
-            .foregroundStyle(.secondary)
-        }
-      }
-      .padding(18)
-      .cardStyle()
-    }
-  }
-
-  private func tierList(title: String, zones: [PriceAlert], side: TradeSide) -> some View {
-    VStack(spacing: 8) {
-      ForEach(Array(zones.enumerated()), id: \.element.id) { index, alert in
-        Button {
-          editor = AlertEditorTarget(alert: alert)
-        } label: {
-          HStack(spacing: 10) {
-            Text(zones.count > 1 ? "\(title) \(index + 1)" : "\(title) zone")
-              .font(.subheadline.weight(.bold))
-              .foregroundStyle(side.color)
-              .frame(width: 64, alignment: .leading)
-            VStack(alignment: .leading, spacing: 2) {
-              Text("\(format(alert.targetPrice))–\(format(alert.upperPrice))")
-                .font(.subheadline.weight(.semibold).monospacedDigit())
-              if alert.budget > 0 {
-                Text("Budget \(format(alert.budget))")
-                  .font(.caption)
-                  .foregroundStyle(.secondary)
-              }
+            Text("Tell Ollie where you'd buy more and where you'd take profit.")
+              .font(.subheadline)
+              .foregroundStyle(.secondary)
+              .multilineTextAlignment(.center)
+            Button {
+              showsPlanBuilder = true
+            } label: {
+              Label("Build my plan", systemImage: "wand.and.stars")
+                .font(.headline)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 4)
             }
-            Spacer()
-            if let quote, let distance = alert.distance(for: quote) {
-              Text(distance == 0 ? "In zone" : "\(distance.formatted(.percent.precision(.fractionLength(1)))) away")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(distance == 0 ? side.color : .secondary)
-            }
-            Image(systemName: "chevron.forward")
-              .font(.caption.weight(.semibold))
-              .foregroundStyle(.tertiary)
+            .buttonStyle(.borderedProminent)
           }
-          .padding(12)
-          .background(side.color.opacity(0.1), in: .rect(cornerRadius: 14))
-          .contentShape(.rect)
-        }
-        .buttonStyle(.plain)
-      }
-      if !zones.isEmpty || side == .buy {
-        Button {
-          addAlert(AlertRule(kind: side == .buy ? .buyZone : .sellZone))
-        } label: {
-          Label(zones.isEmpty ? "Add \(title.lowercased()) zone" : "Add \(title.lowercased()) tier", systemImage: "plus")
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(side.color)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .buttonStyle(.plain)
-        .padding(.horizontal, 4)
-      } else {
-        Button {
-          addAlert(AlertRule(kind: .sellZone))
-        } label: {
-          Label("Add sell zone", systemImage: "plus")
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(side.color)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .buttonStyle(.plain)
-        .padding(.horizontal, 4)
-      }
-    }
-  }
-
-  private func otherAlerts(for holding: Holding) -> some View {
-    let alerts = (holding.alerts ?? [])
-      .filter { !($0.isActive && $0.kind.isZone) }
-      .sorted { ($0.isActive ? 0 : 1, $0.createdAt) < ($1.isActive ? 0 : 1, $1.createdAt) }
-    return VStack(alignment: .leading, spacing: 14) {
-      SectionHeader(title: "Alerts") {
-        Button("Add Alert", systemImage: "plus") { addAlert(nil) }
-          .labelStyle(.iconOnly)
-          .font(.title3.weight(.semibold))
-      }
-      if alerts.isEmpty {
-        EmptyHint(systemImage: "bell.badge", text: "Add price levels or smart alerts like a dip from the 52-week high, a trailing stop, or a big daily move.")
-      } else {
-        ForEach(alerts) { alert in
-          VStack(spacing: 8) {
+          .padding(20)
+          .frame(maxWidth: .infinity)
+        } else {
+          ForEach(active) { alert in
             Button {
               editor = AlertEditorTarget(alert: alert)
             } label: {
-              AlertCard(alert: alert, quote: quote)
+              PlanRow(alert: alert, quote: quote, showsOdds: subscription.isPro || alert.id == active.first?.id)
             }
             .buttonStyle(.plain)
-            if alert.triggeredAt != nil && !alert.isActive && alert.journalAction == nil {
-              Button("Log what you did", systemImage: "book.closed") { journalAlert = alert }
-                .font(.subheadline.weight(.semibold))
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 6)
-            }
+            Divider().padding(.leading, 64)
           }
         }
+
+        Button {
+          addAlert(nil)
+        } label: {
+          Label("Add alert", systemImage: "plus.circle.fill")
+            .font(.subheadline.weight(.semibold))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(16)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.tint)
+
+        if let ladder = holding.ladder {
+          Divider()
+          Label("If every funded buy tier fills: \(ladder.shares.formatted(.number.precision(.fractionLength(0...2)))) shares at an average of \(format(ladder.averagePrice)).", systemImage: "equal.circle.fill")
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+            .padding(16)
+        }
+
+        if !fired.isEmpty {
+          Divider()
+          DisclosureGroup {
+            ForEach(fired) { alert in
+              HStack(spacing: 10) {
+                Image(systemName: alert.kind.systemImage)
+                  .foregroundStyle(alert.kind.side.color)
+                  .frame(width: 24)
+                VStack(alignment: .leading, spacing: 2) {
+                  Text(alert.summary(for: quote))
+                    .font(.subheadline)
+                    .lineLimit(1)
+                  if let triggeredAt = alert.triggeredAt, let price = alert.triggeredPrice {
+                    Text("Fired \(triggeredAt.formatted(.relative(presentation: .named))) at \(format(price))")
+                      .font(.caption)
+                      .foregroundStyle(.secondary)
+                  }
+                }
+                Spacer()
+                Button(alert.journalAction?.title ?? "Log") { journalAlert = alert }
+                  .font(.caption.weight(.semibold))
+                  .buttonStyle(.bordered)
+                  .controlSize(.small)
+              }
+              .padding(.vertical, 4)
+              .contextMenu {
+                Button("Edit or Re-arm", systemImage: "pencil") { editor = AlertEditorTarget(alert: alert) }
+              }
+            }
+          } label: {
+            Label("History · \(fired.count) fired", systemImage: "clock.arrow.circlepath")
+              .font(.subheadline.weight(.semibold))
+          }
+          .padding(16)
+        }
       }
+      .cardStyle()
     }
   }
 
@@ -414,6 +393,64 @@ struct DetailRow: View {
         .multilineTextAlignment(.trailing)
     }
     .padding(16)
+    .accessibilityElement(children: .combine)
+  }
+}
+
+/// One alert in a stock's plan: what it watches, how far away it is, and its odds.
+private struct PlanRow: View {
+  var alert: PriceAlert
+  var quote: Quote?
+  var showsOdds: Bool
+
+  var body: some View {
+    let tint = alert.kind.side.color
+    let distance = quote.flatMap { alert.distance(for: $0) }
+    let odds = quote.flatMap { AlertOdds(rule: alert.rule, quote: $0) }
+    HStack(spacing: 12) {
+      Image(systemName: alert.kind.systemImage)
+        .font(.subheadline.weight(.bold))
+        .foregroundStyle(tint)
+        .frame(width: 36, height: 36)
+        .background(tint.opacity(0.14), in: .circle)
+      VStack(alignment: .leading, spacing: 4) {
+        Text(alert.summary(for: quote))
+          .font(.subheadline.weight(.semibold))
+          .fixedSize(horizontal: false, vertical: true)
+        HStack(spacing: 6) {
+          if let odds, showsOdds, distance != 0 {
+            Label(odds.headline, systemImage: "dice")
+              .foregroundStyle(Palette.amber)
+          }
+          if alert.budget > 0, let quote {
+            Text("Budget \(quote.formatted(alert.budget))")
+              .foregroundStyle(.secondary)
+          }
+          if alert.repeats {
+            Image(systemName: "repeat").foregroundStyle(.secondary)
+          }
+        }
+        .font(.caption)
+        if let quote {
+          TargetTrack(progress: alert.progress(for: quote), isReached: distance == 0, tint: tint)
+        }
+      }
+      Spacer(minLength: 6)
+      VStack(alignment: .trailing, spacing: 2) {
+        Text(distance == 0 ? "Now" : distance.map { $0.formatted(.percent.precision(.fractionLength(1))) } ?? "—")
+          .font(.subheadline.bold().monospacedDigit())
+          .foregroundStyle(distance == 0 || (distance ?? 1) < 0.035 ? tint : .primary)
+        Text(distance == 0 ? "active" : "away")
+          .font(.caption2)
+          .foregroundStyle(.secondary)
+      }
+      Image(systemName: "chevron.forward")
+        .font(.caption.weight(.semibold))
+        .foregroundStyle(.tertiary)
+    }
+    .padding(.horizontal, 16)
+    .padding(.vertical, 12)
+    .contentShape(.rect)
     .accessibilityElement(children: .combine)
   }
 }

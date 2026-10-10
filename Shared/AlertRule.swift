@@ -148,17 +148,18 @@ struct AlertRule: Codable, Hashable {
     }
   }
 
+  /// A plain-language description, like "Buy between $170 and $178".
   func summary(format: (Double) -> String) -> String {
     let percentText = percent.formatted(.percent.precision(.fractionLength(0)))
     switch kind {
-    case .buyZone: return "Buy zone \(format(lower))–\(format(upper))"
-    case .sellZone: return "Sell zone \(format(lower))–\(format(upper))"
-    case .priceBelow: return "Below \(format(lower))"
-    case .priceAbove: return "Above \(format(lower))"
-    case .dropFromHigh: return "\(percentText) below 52-week high"
-    case .dailyMove: return "Moves \(percentText) in a day"
-    case .trailingStop: return "Trailing stop \(percentText)"
-    case .belowAverage: return "Below \(averageDays)-day average"
+    case .buyZone: return "Buy between \(format(lower)) and \(format(upper))"
+    case .sellZone: return "Sell between \(format(lower)) and \(format(upper))"
+    case .priceBelow: return "Buy below \(format(lower))"
+    case .priceAbove: return "Sell above \(format(lower))"
+    case .dropFromHigh: return "Buy after a \(percentText) dip from the high"
+    case .dailyMove: return "A \(percentText) move in one day"
+    case .trailingStop: return "Sell if it falls \(percentText) from its peak"
+    case .belowAverage: return "Falls below its \(averageDays)-day average"
     }
   }
 }
