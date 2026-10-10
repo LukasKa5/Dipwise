@@ -82,6 +82,15 @@ owl.addCurve(to: P(308, 556), control1: P(398, 752), control2: P(320, 680))
 owl.addCurve(to: P(346, 296), control1: P(298, 466), control2: P(308, 380))
 owl.closeSubpath()
 
+// Feet first, so the toes emerge from under the body and grip the line
+ctx.setStrokeColor(amber); ctx.setLineWidth(14); ctx.setLineCap(.round)
+for x in [CGFloat(476), 548] {
+    for dx in [CGFloat(-13), 0, 13] {
+        ctx.move(to: P(x + dx * 0.6, 724)); ctx.addLine(to: P(x + dx * 1.35, 778))
+    }
+}
+ctx.strokePath()
+
 ctx.saveGState()
 ctx.setShadow(offset: CGSize(width: 0, height: 22), blur: 44, color: c(0x000000, 0.45))
 ctx.addPath(owl); ctx.setFillColor(c(0xEEF3F8)); ctx.fillPath()
@@ -89,48 +98,52 @@ ctx.restoreGState()
 
 ctx.saveGState()
 ctx.addPath(owl); ctx.clip()
-// Wings
-ctx.setFillColor(c(0xC6D3E1))
-ctx.fillEllipse(in: CGRect(x: 214, y: 470, width: 196, height: 330))
-ctx.fillEllipse(in: CGRect(x: 614, y: 470, width: 196, height: 330))
+// Wings hug the sides, starting below the face
+let leftWing = CGMutablePath()
+leftWing.move(to: P(306, 520))
+leftWing.addCurve(to: P(440, 756), control1: P(392, 548), control2: P(444, 670))
+leftWing.addLine(to: P(240, 780)); leftWing.addLine(to: P(240, 520)); leftWing.closeSubpath()
+let rightWing = CGMutablePath()
+rightWing.move(to: P(718, 520))
+rightWing.addCurve(to: P(584, 756), control1: P(632, 548), control2: P(580, 670))
+rightWing.addLine(to: P(784, 780)); rightWing.addLine(to: P(784, 520)); rightWing.closeSubpath()
+ctx.addPath(leftWing); ctx.addPath(rightWing)
+ctx.setFillColor(c(0xC6D3E1)); ctx.fillPath()
+// Wing feather lines
+ctx.setStrokeColor(c(0xA9BACB)); ctx.setLineWidth(9); ctx.setLineCap(.round)
+for (a, b, cc) in [(P(330, 600), P(372, 640), P(392, 700)), (P(694, 600), P(652, 640), P(632, 700))] {
+    ctx.move(to: a); ctx.addQuadCurve(to: cc, control: b)
+}
+ctx.strokePath()
 // Facial disc
 ctx.setFillColor(c(0xFFFFFF))
-ctx.fillEllipse(in: circle(P(442, 472), 96))
-ctx.fillEllipse(in: circle(P(582, 472), 96))
+ctx.fillEllipse(in: circle(P(446, 468), 84))
+ctx.fillEllipse(in: circle(P(578, 468), 84))
 ctx.restoreGState()
 
 // Breast feathers
-ctx.setStrokeColor(c(0xAFC0D2)); ctx.setLineWidth(10); ctx.setLineCap(.round); ctx.setLineJoin(.round)
-let rows: [(CGFloat, [CGFloat])] = [(624, [470, 554]), (668, [428, 512, 596]), (712, [470, 554])]
+ctx.setStrokeColor(c(0xAFC0D2)); ctx.setLineWidth(9); ctx.setLineCap(.round); ctx.setLineJoin(.round)
+let rows: [(CGFloat, [CGFloat])] = [(624, [486, 538]), (666, [460, 512, 564]), (708, [486, 538])]
 for (y, xs) in rows {
     for x in xs {
-        ctx.move(to: P(x - 18, y)); ctx.addLine(to: P(x, y + 14)); ctx.addLine(to: P(x + 18, y))
+        ctx.move(to: P(x - 15, y)); ctx.addLine(to: P(x, y + 12)); ctx.addLine(to: P(x + 15, y))
     }
 }
 ctx.strokePath()
 
 // Eyes
-for x in [CGFloat(442), 582] {
-    ctx.setFillColor(night); ctx.fillEllipse(in: circle(P(x, 472), 60))
-    ctx.setFillColor(amber); ctx.fillEllipse(in: circle(P(x, 472), 40))
-    ctx.setFillColor(night); ctx.fillEllipse(in: circle(P(x, 472), 20))
-    ctx.setFillColor(c(0xFFFFFF)); ctx.fillEllipse(in: circle(P(x - 15, 456), 9))
+for x in [CGFloat(446), 578] {
+    ctx.setFillColor(night); ctx.fillEllipse(in: circle(P(x, 468), 56))
+    ctx.setFillColor(amber); ctx.fillEllipse(in: circle(P(x, 468), 38))
+    ctx.setFillColor(night); ctx.fillEllipse(in: circle(P(x, 468), 19))
+    ctx.setFillColor(c(0xFFFFFF)); ctx.fillEllipse(in: circle(P(x - 14, 453), 9))
 }
 
 // Beak
 let beak = CGMutablePath()
-beak.move(to: P(494, 540)); beak.addLine(to: P(530, 540)); beak.addLine(to: P(512, 578)); beak.closeSubpath()
+beak.move(to: P(495, 540)); beak.addLine(to: P(529, 540)); beak.addLine(to: P(512, 576)); beak.closeSubpath()
 ctx.addPath(beak); ctx.setLineJoin(.round); ctx.setLineWidth(14)
 ctx.setStrokeColor(amber); ctx.setFillColor(amber); ctx.drawPath(using: .fillStroke)
-
-// Talons gripping the line
-ctx.setStrokeColor(amber); ctx.setLineWidth(12); ctx.setLineCap(.round)
-for x in [CGFloat(468), 556] {
-    for dx in [CGFloat(-14), 0, 14] {
-        ctx.move(to: P(x + dx, 742)); ctx.addLine(to: P(x + dx * 1.3, 770))
-    }
-}
-ctx.strokePath()
 ctx.restoreGState()
 
 let img = ctx.makeImage()!
