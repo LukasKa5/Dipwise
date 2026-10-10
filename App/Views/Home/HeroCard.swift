@@ -10,7 +10,8 @@ struct HeroCard: View {
   var dates: [Date]
   var stats: [HeroStat]
   var format: (Double) -> String
-  @Binding var range: ChartRange
+  @Binding var period: ChartPeriod
+  var earliest: Date
   var openDetails: (() -> Void)?
 
   @State private var selectedIndex: Int?
@@ -36,10 +37,7 @@ struct HeroCard: View {
         .padding(.vertical, 20)
       }
 
-      Picker("Range", selection: $range) {
-        ForEach(ChartRange.allCases.filter { $0 != .fiveYears }) { Text($0.title).tag($0) }
-      }
-      .pickerStyle(.segmented)
+      PeriodPicker(period: $period, presets: [.week, .month, .threeMonths, .year], earliest: earliest)
 
       HStack(spacing: 10) {
         ForEach(stats) { stat in

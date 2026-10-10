@@ -80,6 +80,15 @@ struct PortfolioSummary {
     return (values, Array(reference.1.dates.suffix(length)))
   }
 
+  /// Combined value over a preset or custom period (up to the last year).
+  func history(period: ChartPeriod) -> (values: [Double], dates: [Date]) {
+    let full = history(sessions: 260)
+    return period.slice(values: full.values, dates: full.dates)
+  }
+
+  /// The first date with portfolio history.
+  var earliestDate: Date { history(sessions: 260).dates.first ?? .now.addingTimeInterval(-365 * 86_400) }
+
   // MARK: Allocation
 
   var allocationByHolding: [Slice] {

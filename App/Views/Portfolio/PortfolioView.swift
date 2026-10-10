@@ -8,7 +8,7 @@ struct PortfolioView: View {
   @Environment(QuoteStore.self) private var quotes
   @Environment(SubscriptionManager.self) private var subscription
   @AppStorage(AlertSettings.cashBalanceKey) private var cash = 0.0
-  @State private var range: ChartRange = .threeMonths
+  @State private var period: ChartPeriod = .preset(.threeMonths)
   @State private var selectedIndex: Int?
   @State private var allocation: AllocationMode = .holding
   @State private var sort: PositionSort = .value
@@ -74,7 +74,7 @@ struct PortfolioView: View {
   // MARK: Performance
 
   private func performance(_ summary: PortfolioSummary) -> some View {
-    let history = summary.history(sessions: range.sessions ?? 260)
+    let history = summary.history(period: period)
     let selected = selectedIndex.flatMap { history.values.indices.contains($0) ? $0 : nil }
     return VStack(alignment: .leading, spacing: 14) {
       SectionHeader(title: "Performance", subtitle: "Value of today's positions over time")
@@ -87,16 +87,13 @@ struct PortfolioView: View {
               .font(.subheadline)
               .foregroundStyle(.secondary)
           } else if let first = history.values.first, let last = history.values.last, first > 0 {
-            ChangeBadge(change: last / first - 1, caption: "over \(range.title)", positiveColor: Palette.gain, negativeColor: Palette.loss)
+            ChangeBadge(change: last / first - 1, caption: period.isCustom ? "in period" : "over \(period.title)", positiveColor: Palette.gain, negativeColor: Palette.loss)
           }
         }
         .frame(height: 30, alignment: .leading)
         InteractiveChart(values: history.values, dates: history.dates, showsOwl: true, owlSize: 40, selectedIndex: $selectedIndex)
           .frame(height: 200)
-        Picker("Range", selection: $range) {
-          ForEach(ChartRange.allCases.filter { $0 != .fiveYears }) { Text($0.title).tag($0) }
-        }
-        .pickerStyle(.segmented)
+        PeriodPicker(period: $period, presets: [.week, .month, .threeMonths, .year], earliest: summary.earliestDate)
       }
       .padding(18)
       .heroCardStyle()

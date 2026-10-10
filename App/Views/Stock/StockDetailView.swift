@@ -10,7 +10,7 @@ struct StockDetailView: View {
   @Environment(SubscriptionManager.self) private var subscription
   @Environment(\.modelContext) private var modelContext
   @Environment(\.dismiss) private var dismiss
-  @State private var range: ChartRange = .month
+  @State private var period: ChartPeriod = .preset(.month)
   @State private var fiveYearQuote: Quote?
   @State private var selectedIndex: Int?
   @State private var editor: AlertEditorTarget?
@@ -30,8 +30,12 @@ struct StockDetailView: View {
   private func format(_ value: Double) -> String { quote?.formatted(value) ?? value.formatted(.number.precision(.fractionLength(2))) }
 
   private var series: (values: [Double], dates: [Date]) {
-    if range == .fiveYears { return (fiveYearQuote?.closes ?? [], fiveYearQuote?.dates ?? []) }
-    return quote?.recent(range.sessions ?? 22) ?? ([], [])
+    if period.needsLongHistory(earliestDaily: quote?.dates.first) {
+      guard let long = fiveYearQuote else { return ([], []) }
+      return period.slice(values: long.closes, dates: long.dates)
+    }
+    guard let quote else { return ([], []) }
+    return period.slice(values: quote.closes, dates: quote.dates)
   }
 
   var body: some View {
@@ -58,8 +62,8 @@ struct StockDetailView: View {
       if let holding { PlanBuilderView(holding: holding) }
     }
     .sheet(item: $journalAlert) { alert in JournalSheet(alert: alert, quote: quote) }
-    .task(id: range) {
-      guard range == .fiveYears, fiveYearQuote == nil else { return }
+    .task(id: period) {
+      guard period.needsLongHistory(earliestDaily: quote?.dates.first), fiveYearQuote == nil else { return }
       fiveYearQuote = try? await QuoteService().quote(for: symbol, fiveYears: true)
     }
     .task(id: quote?.price) {
@@ -119,13 +123,11 @@ struct StockDetailView: View {
         if let quote {
           if let selection, series.values[selection] > 0 {
             ChangeBadge(change: quote.price / series.values[selection] - 1, caption: "since then", positiveColor: Palette.gain, negativeColor: Palette.loss)
-          } else if range == .week || range == .month, let first = series.values.first, first > 0 {
+          } else if let first = series.values.first, let last = series.values.last, first > 0 {
             HStack(spacing: 12) {
               ChangeBadge(change: quote.change, caption: "today", positiveColor: Palette.gain, negativeColor: Palette.loss)
-              ChangeBadge(change: quote.price / first - 1, caption: range.title, positiveColor: Palette.gain, negativeColor: Palette.loss)
+              ChangeBadge(change: last / first - 1, caption: period.isCustom ? "in period" : period.title, positiveColor: Palette.gain, negativeColor: Palette.loss)
             }
-          } else if let first = series.values.first, first > 0 {
-            ChangeBadge(change: quote.price / first - 1, caption: range.title, positiveColor: Palette.gain, negativeColor: Palette.loss)
           }
         }
       }
@@ -150,10 +152,7 @@ struct StockDetailView: View {
           .frame(maxWidth: .infinity, minHeight: 230)
       }
 
-      Picker("Range", selection: $range) {
-        ForEach(ChartRange.allCases) { Text($0.title).tag($0) }
-      }
-      .pickerStyle(.segmented)
+      PeriodPicker(period: $period, earliest: Calendar.current.date(byAdding: .year, value: -5, to: .now) ?? .now)
     }
     .padding(20)
     .heroCardStyle()

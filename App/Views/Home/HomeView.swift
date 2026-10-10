@@ -13,7 +13,7 @@ struct HomeView: View {
   @AppStorage(AlertSettings.briefHiddenDayKey) private var briefHiddenDay = ""
   @State private var showsAddStock = false
   @State private var showsPortfolio = false
-  @State private var range: ChartRange = .month
+  @State private var period: ChartPeriod = .preset(.month)
 
   private var summary: PortfolioSummary {
     PortfolioSummary(holdings: holdings, quotes: quotes.quotes, baseCurrency: quotes.baseCurrency, convert: quotes.toBase)
@@ -92,9 +92,8 @@ struct HomeView: View {
 
   private var hero: some View {
     let summary = summary
-    let sessions = range.sessions ?? 22
     if summary.hasPositions {
-      let history = summary.history(sessions: sessions)
+      let history = summary.history(period: period)
       let format: (Double) -> String = { quotes.formatBase($0) }
       return HeroCard(
         title: DayPeriod(date: .now).greeting,
@@ -109,13 +108,14 @@ struct HomeView: View {
           HeroStat(value: format(summary.annualDividendIncome), label: "Dividends / yr", systemImage: "leaf.fill", tint: Palette.amber),
         ],
         format: format,
-        range: $range,
+        period: $period,
+        earliest: summary.earliestDate,
         openDetails: { showsPortfolio = true }
       )
     }
     let focus = summary.nearestAlerts.first?.holding ?? holdings.first
     let quote = focus.flatMap { quotes[$0.symbol] }
-    let recent = quote?.recent(sessions)
+    let recent = quote.map { period.slice(values: $0.closes, dates: $0.dates) }
     return HeroCard(
       title: "\(DayPeriod(date: .now).greeting) · Watching \(focus?.symbol ?? "")",
       value: quote.map { $0.formatted($0.price) } ?? "—",
@@ -129,7 +129,8 @@ struct HomeView: View {
         HeroStat(value: "\(holdings.count)", label: "Watching", systemImage: "binoculars.fill", tint: .primary),
       ],
       format: { quote?.formatted($0) ?? $0.formatted() },
-      range: $range,
+      period: $period,
+      earliest: quote?.dates.first ?? .now.addingTimeInterval(-365 * 86_400),
       openDetails: nil
     )
   }
