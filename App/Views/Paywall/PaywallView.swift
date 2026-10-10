@@ -13,6 +13,7 @@ struct PaywallView: View {
 
   private let features: [(String, String, String)] = [
     ("scope", "Unlimited buy & sell zones", "Plan every stock you care about, not just three."),
+    ("dice.fill", "Odds for every alert", "See the chance each alert fires in 30 and 90 days, and how your past alerts worked out."),
     ("sparkles", "Smart alerts", "Dips from the 52-week high, trailing stops, big daily moves, and moving averages."),
     ("person.3.fill", "The full crowd report", "Where investors buy and sell, momentum, live activity, and track records."),
     ("dot.radiowaves.left.and.right", "Dip Radar", "Every popular stock trading inside the crowd's buy zone right now."),
