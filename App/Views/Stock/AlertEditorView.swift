@@ -335,9 +335,13 @@ struct AlertEditorView: View {
       note = alert.note
     } else if let initialRule {
       kind = initialRule.kind
-      lower = rounded(initialRule.lower)
-      upper = rounded(initialRule.upper)
       percent = initialRule.percent > 0 ? initialRule.percent : defaultPercent(for: initialRule.kind)
+      if initialRule.lower > 0 {
+        lower = rounded(initialRule.lower)
+        upper = rounded(initialRule.upper)
+      } else {
+        suggestLevels()
+      }
     } else {
       suggestLevels()
     }

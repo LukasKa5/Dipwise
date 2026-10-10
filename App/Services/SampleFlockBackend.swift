@@ -55,7 +55,9 @@ struct SampleFlockBackend: FlockBackend {
   private static func makeEntries(price: Double, generator: inout SeededGenerator) -> [FlockEntry] {
     let count = Int.random(in: 60...420, using: &generator)
     let investors = max(5, Int(Double(count) * 0.7))
-    let dipCenter = Double.random(in: 0.04...0.12, using: &generator)
+    let dipCenter = Double.random(in: 0.03...0.12, using: &generator)
+    // Alerts were set at earlier prices, so recent moves can carry a stock into the crowd's zone.
+    let reference = price * (1 + Double.random(in: -0.04...0.10, using: &generator))
     let riseCenter = Double.random(in: 0.08...0.2, using: &generator)
     let buyBias = Double.random(in: 0.45...0.75, using: &generator)
     let kinds: [(AlertKind, Double)] = [
@@ -77,11 +79,11 @@ struct SampleFlockBackend: FlockBackend {
       var lower = 0.0, upper = 0.0, percent = 0.0
       switch kind.side {
       case .buy:
-        let center = price * (1 - max(0.004, dipCenter + spread))
+        let center = reference * (1 - max(0.004, dipCenter + spread))
         lower = kind.isZone ? center * (1 - width / 2) : center
         upper = kind.isZone ? center * (1 + width / 2) : 0
       case .sell:
-        let center = price * (1 + max(0.004, riseCenter + spread))
+        let center = reference * (1 + max(0.004, riseCenter + spread))
         lower = kind.isZone ? center * (1 - width / 2) : center
         upper = kind.isZone ? center * (1 + width / 2) : 0
       case .watch:

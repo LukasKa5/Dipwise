@@ -189,7 +189,7 @@ struct PortfolioView: View {
           }
         }
 
-        Group {
+        VStack(alignment: .leading, spacing: 18) {
           Chart(summary.monthlyDividends, id: \.month) { item in
             BarMark(x: .value("Month", item.month, unit: .month), y: .value("Income", item.amount))
               .foregroundStyle(Palette.amber.gradient)
