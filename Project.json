@@ -113,7 +113,21 @@
           "path": "Shared"
         }
       ],
-      "type": "application"
+      "type": "application",
+      "dependencies": [
+        {
+          "embed": true,
+          "target": "Dipwise Watch Widget Extension"
+        }
+      ],
+      "entitlements": {
+        "path": "Watch/Watch.entitlements",
+        "properties": {
+          "com.apple.security.application-groups": [
+            "group.app.bitrig.new.15b8fdf3-82a6-4223-97a2-c5cc5f8ba55e"
+          ]
+        }
+      }
     },
     "Dipwise Widget Extension": {
       "type": "app-extension",
@@ -148,6 +162,45 @@
       },
       "entitlements": {
         "path": "Widget Extension/Widget Extension.entitlements",
+        "properties": {
+          "com.apple.security.application-groups": [
+            "group.app.bitrig.new.15b8fdf3-82a6-4223-97a2-c5cc5f8ba55e"
+          ]
+        }
+      }
+    },
+    "Dipwise Watch Widget Extension": {
+      "type": "app-extension",
+      "platform": "watchOS",
+      "deploymentTarget": "26.0",
+      "sources": [
+        {
+          "path": "Watch Widget Extension"
+        },
+        {
+          "path": "Shared"
+        }
+      ],
+      "info": {
+        "path": "Watch Widget Extension/Info.plist",
+        "properties": {
+          "CFBundleDisplayName": "Dipwise Watch Widget Extension",
+          "CFBundleShortVersionString": "1.0",
+          "CFBundleVersion": "1",
+          "NSExtension": {
+            "NSExtensionPointIdentifier": "com.apple.widgetkit-extension"
+          }
+        }
+      },
+      "settings": {
+        "CURRENT_PROJECT_VERSION": "1",
+        "MARKETING_VERSION": "1.0",
+        "PRODUCT_BUNDLE_IDENTIFIER": "app.bitrig.new.15b8fdf3-82a6-4223-97a2-c5cc5f8ba55e.watchkitapp.widget-extension",
+        "PRODUCT_NAME": "$(TARGET_NAME)",
+        "SWIFT_VERSION": "5.0"
+      },
+      "entitlements": {
+        "path": "Watch Widget Extension/Watch Widget Extension.entitlements",
         "properties": {
           "com.apple.security.application-groups": [
             "group.app.bitrig.new.15b8fdf3-82a6-4223-97a2-c5cc5f8ba55e"
