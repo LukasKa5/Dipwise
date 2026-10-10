@@ -8,10 +8,27 @@ struct WatchedTarget: Codable, Hashable, Identifiable {
   var rule: AlertRule
 }
 
+/// A followed stock, shared with widgets so they can offer it as a choice.
+struct WatchedStock: Codable, Hashable, Identifiable {
+  var symbol: String
+  var name: String
+  var id: String { symbol }
+}
+
 /// Reads and writes the alert snapshot and cached quotes in the shared App Group.
 enum TargetSnapshotStore {
   private static let targetsKey = "watchedTargets.v2"
   private static let quotesKey = "cachedQuotes.v2"
+  private static let stocksKey = "watchedStocks.v1"
+
+  static func loadStocks() -> [WatchedStock] {
+    guard let data = AppGroup.defaults.data(forKey: stocksKey) else { return [] }
+    return (try? JSONDecoder().decode([WatchedStock].self, from: data)) ?? []
+  }
+
+  static func save(stocks: [WatchedStock]) {
+    AppGroup.defaults.set(try? JSONEncoder().encode(stocks), forKey: stocksKey)
+  }
 
   static func loadTargets() -> [WatchedTarget] {
     guard let data = AppGroup.defaults.data(forKey: targetsKey) else { return [] }

@@ -16,11 +16,6 @@ enum Brand {
   static let owlFeather = Color(red: 0.686, green: 0.753, blue: 0.824)
   static let owlInk = Color(red: 0.039, green: 0.106, blue: 0.180)
 
-  static let nightGradient = LinearGradient(
-    colors: [nightTop, nightMiddle, nightBottom],
-    startPoint: .topLeading,
-    endPoint: .bottomTrailing
-  )
 }
 
 extension TradeSide {

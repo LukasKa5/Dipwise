@@ -9,7 +9,9 @@ enum SnapshotPublisher {
     let alerts = (try? context.fetch(FetchDescriptor<PriceAlert>(predicate: #Predicate { $0.isActive }))) ?? []
     let targets = alerts.filter { $0.holding != nil }.map(\.watchedTarget)
     TargetSnapshotStore.save(targets: targets)
+    let holdings = (try? context.fetch(FetchDescriptor<Holding>(sortBy: [SortDescriptor(\.addedAt)]))) ?? []
+    TargetSnapshotStore.save(stocks: holdings.map { WatchedStock(symbol: $0.symbol, name: $0.name) })
     WidgetCenter.shared.reloadAllTimelines()
-    WatchSync.shared.send(targets: targets)
+    WatchSync.shared.send(targets: targets, progress: ProgressSnapshot.load())
   }
 }

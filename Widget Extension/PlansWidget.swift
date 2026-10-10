@@ -1,0 +1,199 @@
+import SwiftUI
+import WidgetKit
+
+/// The alerts closest to triggering, across all stocks.
+struct PlansWidget: Widget {
+  let kind = "NearTargetsWidget"
+
+  var body: some WidgetConfiguration {
+    StaticConfiguration(kind: kind, provider: PlansProvider()) { entry in
+      PlansWidgetView(entry: entry)
+    }
+    .configurationDisplayName("Your Plans")
+    .description("See which stocks are closest to your buy and sell zones.")
+    .supportedFamilies([.systemSmall, .systemMedium, .systemLarge, .accessoryRectangular, .accessoryCircular, .accessoryInline])
+  }
+}
+
+struct PlansEntry: TimelineEntry {
+  var date: Date
+  var statuses: [TargetStatus]
+}
+
+struct PlansProvider: TimelineProvider {
+  func placeholder(in context: Context) -> PlansEntry {
+    PlansEntry(date: .now, statuses: Self.sample)
+  }
+
+  func getSnapshot(in context: Context, completion: @escaping (PlansEntry) -> Void) {
+    let statuses = TargetStatus.sorted(targets: TargetSnapshotStore.loadTargets(), quotes: TargetSnapshotStore.loadQuotes())
+    completion(PlansEntry(date: .now, statuses: statuses.isEmpty && context.isPreview ? Self.sample : statuses))
+  }
+
+  func getTimeline(in context: Context, completion: @escaping (Timeline<PlansEntry>) -> Void) {
+    Task {
+      let targets = TargetSnapshotStore.loadTargets()
+      let quotes = await WidgetData.quotes(for: targets.map(\.symbol))
+      let entry = PlansEntry(date: .now, statuses: TargetStatus.sorted(targets: targets, quotes: quotes))
+      completion(Timeline(entries: [entry], policy: .after(.now.addingTimeInterval(WidgetData.refresh))))
+    }
+  }
+
+  static let sample: [TargetStatus] = [
+    TargetStatus(
+      target: WatchedTarget(id: UUID(), symbol: "NVDA", name: "NVIDIA", rule: AlertRule(kind: .buyZone, lower: 170, upper: 178)),
+      quote: Quote(symbol: "NVDA", name: "NVIDIA", currency: "USD", price: 182.4, previousClose: 185.2, closes: [], updatedAt: .now)
+    ),
+    TargetStatus(
+      target: WatchedTarget(id: UUID(), symbol: "AAPL", name: "Apple", rule: AlertRule(kind: .sellZone, lower: 255, upper: 265)),
+      quote: Quote(symbol: "AAPL", name: "Apple", currency: "USD", price: 247.3, previousClose: 243, closes: [], updatedAt: .now)
+    ),
+    TargetStatus(
+      target: WatchedTarget(id: UUID(), symbol: "MSFT", name: "Microsoft", rule: AlertRule(kind: .buyZone, lower: 470, upper: 490)),
+      quote: Quote(symbol: "MSFT", name: "Microsoft", currency: "USD", price: 512.3, previousClose: 508, closes: [], updatedAt: .now)
+    ),
+  ]
+}
+
+struct PlansWidgetView: View {
+  var entry: PlansEntry
+  @Environment(\.widgetFamily) private var family
+
+  var body: some View {
+    Group {
+      switch family {
+      case .accessoryRectangular: rectangular
+      case .accessoryCircular: circular
+      case .accessoryInline: inline
+      case .systemMedium: list(count: 3)
+      case .systemLarge: list(count: 6)
+      default: small
+      }
+    }
+    .dipwiseWidgetBackground()
+    .widgetURL(entry.statuses.first.map { URL(string: "dipwise://stock/\($0.target.symbol)")! } ?? URL(string: "dipwise://alerts"))
+  }
+
+  @ViewBuilder
+  private var small: some View {
+    if let status = entry.statuses.first {
+      let color = status.target.rule.kind.side.brandColor
+      VStack(alignment: .leading, spacing: 6) {
+        HStack {
+          WidgetBadge(symbol: status.target.symbol)
+          Text(status.target.symbol).font(.headline)
+          Spacer(minLength: 0)
+          OwlMark().frame(width: 22)
+        }
+        Spacer(minLength: 0)
+        Text(distanceText(status.distance))
+          .font(.system(size: 30, weight: .bold, design: .rounded))
+          .foregroundStyle(status.distance == 0 ? color : .primary)
+          .minimumScaleFactor(0.6)
+          .lineLimit(1)
+        Text("to \(status.target.rule.kind.title.lowercased())")
+          .font(.caption)
+          .foregroundStyle(.secondary)
+        WidgetTrack(progress: status.progress, color: color)
+        Text(status.summary)
+          .font(.caption2.weight(.semibold))
+          .foregroundStyle(color)
+          .lineLimit(1)
+          .minimumScaleFactor(0.7)
+      }
+    } else {
+      empty
+    }
+  }
+
+  @ViewBuilder
+  private func list(count: Int) -> some View {
+    if entry.statuses.isEmpty {
+      empty
+    } else {
+      VStack(alignment: .leading, spacing: family == .systemLarge ? 12 : 8) {
+        HStack {
+          Text("Your plans")
+            .font(.subheadline.weight(.bold))
+          Spacer()
+          OwlMark().frame(width: 20)
+        }
+        ForEach(entry.statuses.prefix(count)) { status in
+          let color = status.target.rule.kind.side.brandColor
+          Link(destination: URL(string: "dipwise://stock/\(status.target.symbol)")!) {
+            HStack(spacing: 10) {
+              WidgetBadge(symbol: status.target.symbol, size: 26)
+              VStack(alignment: .leading, spacing: 3) {
+                HStack {
+                  Text(status.target.symbol).font(.subheadline.bold())
+                  Text(status.summary)
+                    .font(.caption)
+                    .foregroundStyle(color)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                }
+                WidgetTrack(progress: status.progress, color: color)
+              }
+              Text(distanceText(status.distance))
+                .font(.subheadline.weight(.semibold).monospacedDigit())
+                .foregroundStyle((status.distance ?? 1) < 0.035 ? color : .primary)
+                .frame(width: 54, alignment: .trailing)
+            }
+          }
+        }
+        Spacer(minLength: 0)
+      }
+    }
+  }
+
+  private var empty: some View {
+    VStack(spacing: 8) {
+      OwlMark().frame(height: 48)
+      Text("Set a buy zone in Dipwise")
+        .font(.caption.weight(.semibold))
+        .multilineTextAlignment(.center)
+        .foregroundStyle(.secondary)
+    }
+  }
+
+  @ViewBuilder
+  private var rectangular: some View {
+    if let status = entry.statuses.first {
+      VStack(alignment: .leading, spacing: 2) {
+        Text("\(status.target.symbol) · \(distanceText(status.distance))")
+          .font(.headline)
+          .widgetAccentable()
+        Text(status.summary)
+          .font(.caption)
+          .lineLimit(1)
+        Gauge(value: status.progress) { EmptyView() }
+          .gaugeStyle(.accessoryLinearCapacity)
+      }
+    } else {
+      Text("No plans yet")
+    }
+  }
+
+  @ViewBuilder
+  private var circular: some View {
+    if let status = entry.statuses.first {
+      Gauge(value: status.progress) {
+        Text(status.target.symbol)
+      } currentValueLabel: {
+        Text(status.target.symbol.prefix(4))
+          .minimumScaleFactor(0.5)
+      }
+      .gaugeStyle(.accessoryCircularCapacity)
+    } else {
+      Image(systemName: "scope")
+    }
+  }
+
+  private var inline: some View {
+    if let status = entry.statuses.first {
+      Text("\(status.target.symbol) \(distanceText(status.distance)) to \(status.target.rule.kind.title.lowercased())")
+    } else {
+      Text("Dipwise: no plans")
+    }
+  }
+}
