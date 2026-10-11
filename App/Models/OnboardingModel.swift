@@ -8,6 +8,7 @@ enum InvestorStyle: String, CaseIterable, Identifiable {
   case income
   case protect
   case calm
+  case other
 
   var id: Self { self }
 
@@ -17,6 +18,7 @@ enum InvestorStyle: String, CaseIterable, Identifiable {
     case .income: "Grow dividend income"
     case .protect: "Protect my gains"
     case .calm: "Invest calmly, without stress"
+    case .other: "Something else"
     }
   }
 
@@ -26,6 +28,7 @@ enum InvestorStyle: String, CaseIterable, Identifiable {
     case .income: "leaf.fill"
     case .protect: "shield.lefthalf.filled"
     case .calm: "moon.stars.fill"
+    case .other: "ellipsis.bubble.fill"
     }
   }
 
@@ -35,6 +38,7 @@ enum InvestorStyle: String, CaseIterable, Identifiable {
     case .income: "Slow and steady. I love it."
     case .protect: "Smart. I'll guard your gains."
     case .calm: "Hoo! That's exactly what I'm for."
+    case .other: "Tell me more! I'm all ears. Well, tufts."
     }
   }
 
@@ -43,7 +47,7 @@ enum InvestorStyle: String, CaseIterable, Identifiable {
     case .dips: .dipHunter
     case .income: .dividendBuilder
     case .protect: .protectGains
-    case .calm: .balanced
+    case .calm, .other: .balanced
     }
   }
 }
@@ -54,7 +58,9 @@ enum InvestorStyle: String, CaseIterable, Identifiable {
 final class OnboardingModel {
   static let suggestions = ["AAPL", "NVDA", "MSFT", "TSLA", "AMZN", "GOOGL", "META", "VOO", "KO", "O", "AMD", "NFLX"]
 
-  var style: InvestorStyle?
+  var styles: Set<InvestorStyle> = []
+  var lastStyle: InvestorStyle?
+  var otherGoal = ""
   var selected: [String] = []
   var quotes: [String: Quote] = [:]
   var zoneLower = 0.0
@@ -67,6 +73,16 @@ final class OnboardingModel {
   func loadQuotes() async {
     guard quotes.isEmpty else { return }
     quotes = await QuoteService().quotes(for: Self.suggestions)
+  }
+
+  func toggle(style: InvestorStyle) {
+    if styles.contains(style) {
+      styles.remove(style)
+      lastStyle = styles.first
+    } else {
+      styles.insert(style)
+      lastStyle = style
+    }
   }
 
   func toggle(_ symbol: String) {
@@ -87,7 +103,8 @@ final class OnboardingModel {
 
   /// Creates the chosen stocks, a buy zone for the focus stock, and starter zones for the rest within the free limit.
   func commit(context: ModelContext, quoteStore: QuoteStore, isPro: Bool) -> [PriceAlert] {
-    UserDefaults.standard.set(style?.rawValue, forKey: AlertSettings.investorStyleKey)
+    UserDefaults.standard.set(styles.map(\.rawValue), forKey: AlertSettings.investorStyleKey)
+    if !otherGoal.isEmpty { UserDefaults.standard.set(otherGoal, forKey: "investorGoalNote") }
     var created: [PriceAlert] = []
     let existing = Set(((try? context.fetch(FetchDescriptor<Holding>())) ?? []).map(\.symbol))
     for symbol in selected where !existing.contains(symbol) {

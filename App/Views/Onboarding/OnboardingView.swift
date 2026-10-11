@@ -16,11 +16,11 @@ struct OnboardingView: View {
   @State private var showsPaywall = false
   @State private var celebration = 0
 
-  private let pageCount = 8
+  private let pageCount = 10
 
   private var canContinue: Bool {
     switch page {
-    case 1: model.style != nil
+    case 1: !model.styles.isEmpty
     case 2: !model.selected.isEmpty
     case 5: model.vote != nil
     default: true
@@ -31,8 +31,8 @@ struct OnboardingView: View {
     switch page {
     case 2: model.selected.isEmpty ? "Pick at least one" : "Watch \(model.selected.count) \(model.selected.count == 1 ? "stock" : "stocks")"
     case 5: model.vote == nil ? "Cast your vote" : "Continue"
-    case 6: "Allow Notifications"
-    case 7: "Start Watching"
+    case 8: "Allow Notifications"
+    case 9: "Start Watching"
     default: "Continue"
     }
   }
@@ -40,7 +40,6 @@ struct OnboardingView: View {
   var body: some View {
     ZStack {
       Brand.nightMiddle.ignoresSafeArea()
-      StarField().ignoresSafeArea()
       VStack(spacing: 0) {
         topBar
         Group {
@@ -51,7 +50,9 @@ struct OnboardingView: View {
           case 3: ScrubStep(model: model)
           case 4: ZoneStep(model: model)
           case 5: FlockStep(model: model)
-          case 6: NotifyStep()
+          case 6: WidgetStep(model: model)
+          case 7: WatchStep(model: model)
+          case 8: NotifyStep()
           default: RevealStep(model: model, streak: max(1, progress.streak))
           }
         }
@@ -118,14 +119,14 @@ struct OnboardingView: View {
   private func advance() {
     switch page {
     case 3: model.prepareZone()
-    case 6:
+    case 8:
       Task {
         await NotificationManager.requestAuthorization()
         withAnimation(.smooth) { page += 1 }
         celebration += 1
       }
       return
-    case 7:
+    case 9:
       let created = model.commit(context: modelContext, quoteStore: quoteStore, isPro: subscription.isPro)
       for alert in created {
         Task { await flock.share(alert) }
@@ -197,49 +198,58 @@ private struct WelcomeStep: View {
 }
 
 private struct StyleStep: View {
-  var model: OnboardingModel
+  @Bindable var model: OnboardingModel
   @State private var hops = 0
 
   var body: some View {
-    VStack(spacing: 20) {
-      Spacer(minLength: 8)
-      HStack(alignment: .top, spacing: 12) {
-        LivelyOwl(hopsOnTap: false)
-          .frame(width: 70, height: 80)
-          .owlFlight(trigger: hops, height: 24)
-        SpeechBubble(text: model.style?.owlReply ?? "What brings you here?")
-          .animation(.snappy, value: model.style)
-      }
-      VStack(spacing: 12) {
-        ForEach(InvestorStyle.allCases) { style in
-          let isSelected = model.style == style
-          Button {
-            withAnimation(.snappy) { model.style = style }
-            hops += 1
-          } label: {
-            HStack(spacing: 14) {
-              Image(systemName: style.systemImage)
-                .font(.title3)
-                .frame(width: 30)
-              Text(style.title)
-                .font(.headline)
-              Spacer()
-              Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                .font(.title3)
-            }
-            .padding(18)
-            .foregroundStyle(isSelected ? Brand.owlInk : .white)
-            .background(isSelected ? AnyShapeStyle(Brand.buy) : AnyShapeStyle(.white.opacity(0.08)), in: .rect(cornerRadius: 18))
-            .scaleEffect(isSelected ? 1.02 : 1)
-          }
-          .buttonStyle(.plain)
-          .accessibilityAddTraits(isSelected ? .isSelected : [])
+    ScrollView {
+      VStack(spacing: 20) {
+        HStack(alignment: .top, spacing: 12) {
+          LivelyOwl(hopsOnTap: false)
+            .frame(width: 70, height: 80)
+            .owlFlight(trigger: hops, height: 24)
+          SpeechBubble(text: model.lastStyle?.owlReply ?? "What brings you here? Pick as many as you like.")
+            .animation(.snappy, value: model.lastStyle)
         }
+        .padding(.top, 12)
+        VStack(spacing: 12) {
+          ForEach(InvestorStyle.allCases) { style in
+            let isSelected = model.styles.contains(style)
+            Button {
+              withAnimation(.snappy) { model.toggle(style: style) }
+              if isSelected == false { hops += 1 }
+            } label: {
+              HStack(spacing: 14) {
+                Image(systemName: style.systemImage)
+                  .font(.title3)
+                  .frame(width: 30)
+                Text(style.title)
+                  .font(.headline)
+                Spacer()
+                Image(systemName: isSelected ? "checkmark.square.fill" : "square")
+                  .font(.title3)
+              }
+              .padding(18)
+              .foregroundStyle(isSelected ? Brand.owlInk : .white)
+              .background(isSelected ? AnyShapeStyle(Brand.buy) : AnyShapeStyle(.white.opacity(0.08)), in: .rect(cornerRadius: 18))
+              .scaleEffect(isSelected ? 1.02 : 1)
+            }
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(isSelected ? .isSelected : [])
+          }
+          if model.styles.contains(.other) {
+            TextField("What would you like Dipp to help with?", text: $model.otherGoal, axis: .vertical)
+              .lineLimit(1...3)
+              .padding(16)
+              .background(.white.opacity(0.1), in: .rect(cornerRadius: 16))
+              .transition(.move(edge: .top).combined(with: .opacity))
+          }
+        }
+        .padding(.horizontal, 24)
+        .sensoryFeedback(.selection, trigger: model.styles)
       }
-      .padding(.horizontal, 24)
-      .sensoryFeedback(.selection, trigger: model.style)
-      Spacer(minLength: 8)
     }
+    .scrollDismissesKeyboard(.interactively)
   }
 }
 
@@ -394,6 +404,261 @@ private struct FlockStep: View {
       .padding(.horizontal, 20)
       Spacer()
     }
+  }
+}
+
+private struct WidgetStep: View {
+  var model: OnboardingModel
+  @State private var index = 0
+  @State private var showsZones = false
+
+  private var symbols: [String] { model.selected.isEmpty ? ["NVDA", "AAPL", "MSFT"] : model.selected }
+
+  var body: some View {
+    VStack(spacing: 24) {
+      Spacer(minLength: 8)
+      VStack(spacing: 18) {
+        HStack(spacing: 16) {
+          appIcon(.appIconPreview)
+          ForEach([Color.blue, .green, .orange], id: \.self) { color in
+            RoundedRectangle(cornerRadius: 14).fill(color.gradient).frame(width: 56, height: 56)
+          }
+        }
+        HStack(alignment: .top, spacing: 14) {
+          Button {
+            withAnimation(.bouncy) { index = (index + 1) % symbols.count }
+          } label: {
+            smallWidget
+          }
+          .buttonStyle(.plain)
+          .accessibilityLabel("Plans widget. Tap to see the next stock.")
+          VStack(spacing: 14) {
+            HStack(spacing: 16) {
+              ForEach([Color.pink, .purple], id: \.self) { color in
+                RoundedRectangle(cornerRadius: 14).fill(color.gradient).frame(width: 56, height: 56)
+              }
+            }
+            HStack(spacing: 16) {
+              ForEach([Color.teal, .indigo], id: \.self) { color in
+                RoundedRectangle(cornerRadius: 14).fill(color.gradient).frame(width: 56, height: 56)
+              }
+            }
+          }
+        }
+        Button {
+          withAnimation(.smooth) { showsZones.toggle() }
+        } label: {
+          mediumWidget
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Stock plan widget. Tap to switch between chart and zones.")
+      }
+      .padding(18)
+      .background(Brand.nightTop, in: .rect(cornerRadius: 36))
+      .overlay { RoundedRectangle(cornerRadius: 36).strokeBorder(.white.opacity(0.15), lineWidth: 2) }
+      StepTitle(title: "Dipp on your Home Screen", message: "Tap the widgets. They flip through your plans, show zones, and update themselves.")
+      Spacer(minLength: 8)
+    }
+    .sensoryFeedback(.selection, trigger: index)
+    .sensoryFeedback(.selection, trigger: showsZones)
+  }
+
+  private func appIcon(_ resource: ImageResource) -> some View {
+    Image(resource).resizable().frame(width: 56, height: 56).clipShape(.rect(cornerRadius: 14))
+  }
+
+  private var smallWidget: some View {
+    let symbol = symbols[index % symbols.count]
+    let quote = model.quotes[symbol]
+    let distance = Double(index + 2) * 1.7 / 100
+    return VStack(alignment: .leading, spacing: 6) {
+      HStack {
+        TickerBadge(symbol: symbol, size: 26)
+        Text(symbol).font(.headline)
+        Spacer(minLength: 0)
+        OwlMark().frame(width: 20)
+      }
+      Spacer(minLength: 0)
+      Text(distance, format: .percent.precision(.fractionLength(1)))
+        .font(.system(size: 28, weight: .bold, design: .rounded))
+        .contentTransition(.numericText())
+      Text("to buy zone")
+        .font(.caption)
+        .foregroundStyle(.white.opacity(0.6))
+      GeometryReader { geometry in
+        ZStack(alignment: .leading) {
+          Capsule().fill(.white.opacity(0.15))
+          Capsule().fill(Brand.buy).frame(width: geometry.size.width * (1 - distance * 4))
+        }
+      }
+      .frame(height: 6)
+      if let quote {
+        Text(quote.formatted(quote.price)).font(.caption2.weight(.semibold)).foregroundStyle(.white.opacity(0.7))
+      }
+    }
+    .padding(14)
+    .frame(width: 140, height: 140)
+    .background(Brand.nightMiddle, in: .rect(cornerRadius: 22))
+    .id(symbol)
+    .transition(.push(from: .trailing))
+  }
+
+  private var mediumWidget: some View {
+    let symbol = model.focusSymbol ?? symbols[0]
+    let quote = model.quotes[symbol]
+    return HStack(spacing: 14) {
+      VStack(alignment: .leading, spacing: 4) {
+        HStack {
+          TickerBadge(symbol: symbol, size: 26)
+          Text(symbol).font(.headline)
+        }
+        if let quote {
+          Text(quote.formatted(quote.price)).font(.title3.bold().monospacedDigit())
+          Text(quote.change, format: .percent.precision(.fractionLength(1)).sign(strategy: .always()))
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(quote.change >= 0 ? Brand.buy : Brand.sell)
+        }
+      }
+      Spacer()
+      if showsZones {
+        VStack(alignment: .leading, spacing: 8) {
+          Label("Buy zone", systemImage: "circle.fill").foregroundStyle(Brand.buy)
+          Label("Sell zone", systemImage: "circle.fill").foregroundStyle(Brand.sell)
+          GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+              Capsule().fill(.white.opacity(0.15)).frame(height: 8)
+              Capsule().fill(Brand.buy).frame(width: geometry.size.width * 0.25, height: 8).offset(x: geometry.size.width * 0.1)
+              Capsule().fill(Brand.sell).frame(width: geometry.size.width * 0.2, height: 8).offset(x: geometry.size.width * 0.72)
+              Capsule().fill(.white).frame(width: 3, height: 18).offset(x: geometry.size.width * 0.5)
+            }
+          }
+          .frame(height: 18)
+        }
+        .font(.caption.weight(.semibold))
+        .frame(width: 150)
+        .transition(.opacity.combined(with: .scale))
+      } else if let quote {
+        Sparkline(values: Array(quote.closes.suffix(30)))
+          .frame(width: 150, height: 60)
+          .transition(.opacity.combined(with: .scale))
+      }
+    }
+    .padding(16)
+    .frame(width: 302, height: 140)
+    .background(Brand.nightMiddle, in: .rect(cornerRadius: 22))
+  }
+}
+
+private struct WatchStep: View {
+  var model: OnboardingModel
+  @State private var page = 0
+  @State private var notification = false
+
+  private var symbol: String { model.focusSymbol ?? "NVDA" }
+
+  var body: some View {
+    VStack(spacing: 26) {
+      Spacer(minLength: 8)
+      ZStack {
+        RoundedRectangle(cornerRadius: 58)
+          .fill(Color.black)
+          .frame(width: 220, height: 264)
+          .overlay { RoundedRectangle(cornerRadius: 58).strokeBorder(.white.opacity(0.25), lineWidth: 6) }
+        Capsule().fill(.white.opacity(0.3)).frame(width: 8, height: 46).offset(x: 116, y: -40)
+        Group {
+          if page == 0 { face } else { plans }
+        }
+        .frame(width: 190, height: 234)
+        .clipShape(.rect(cornerRadius: 46))
+        .transition(.push(from: .bottom))
+        if notification {
+          VStack(spacing: 6) {
+            Image(.appIconPreview).resizable().frame(width: 34, height: 34).clipShape(.circle)
+            Text("\(symbol) entered your buy zone")
+              .font(.footnote.weight(.semibold))
+              .multilineTextAlignment(.center)
+          }
+          .padding(12)
+          .frame(width: 180)
+          .background(.ultraThinMaterial, in: .rect(cornerRadius: 26))
+          .transition(.move(edge: .bottom).combined(with: .opacity))
+        }
+      }
+      .onTapGesture { withAnimation(.smooth) { page = (page + 1) % 2 } }
+      .accessibilityElement(children: .combine)
+      .accessibilityLabel("Apple Watch preview. Tap to switch screens.")
+      .accessibilityAddTraits(.isButton)
+      StepTitle(title: "On your wrist", message: "A gentle tap when a stock reaches your zone, your nearest plan on the watch face, and every plan a glance away. Tap the watch.")
+      Spacer(minLength: 8)
+    }
+    .sensoryFeedback(.impact(weight: .medium), trigger: notification)
+    .task {
+      while !Task.isCancelled {
+        try? await Task.sleep(for: .seconds(2.5))
+        withAnimation(.bouncy) { notification = true }
+        try? await Task.sleep(for: .seconds(2.2))
+        withAnimation(.smooth) { notification = false }
+        try? await Task.sleep(for: .seconds(1.5))
+      }
+    }
+  }
+
+  private var face: some View {
+    VStack(spacing: 10) {
+      Text("10:09")
+        .font(.system(size: 44, weight: .semibold, design: .rounded))
+      HStack(spacing: 12) {
+        ZStack {
+          Circle().stroke(.white.opacity(0.2), lineWidth: 5)
+          Circle().trim(from: 0, to: 0.78).stroke(Brand.buy, style: StrokeStyle(lineWidth: 5, lineCap: .round)).rotationEffect(.degrees(-90))
+          Text(symbol.prefix(4)).font(.system(size: 11, weight: .bold))
+        }
+        .frame(width: 50, height: 50)
+        ZStack {
+          Circle().fill(.white.opacity(0.1))
+          VStack(spacing: 0) {
+            Image(systemName: "flame.fill").foregroundStyle(Brand.amber)
+            Text("12").font(.system(size: 12, weight: .bold))
+          }
+        }
+        .frame(width: 50, height: 50)
+      }
+      HStack(spacing: 6) {
+        OwlMark().frame(width: 22)
+        VStack(alignment: .leading, spacing: 1) {
+          Text("\(symbol) · 2.4%").font(.system(size: 12, weight: .bold))
+          Text("to buy zone").font(.system(size: 10)).foregroundStyle(.white.opacity(0.6))
+        }
+      }
+    }
+    .foregroundStyle(.white)
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .background(Color.black)
+  }
+
+  private var plans: some View {
+    VStack(alignment: .leading, spacing: 8) {
+      Text("Plans").font(.system(size: 16, weight: .bold)).foregroundStyle(Brand.buy)
+      ForEach((model.selected.isEmpty ? ["NVDA", "AAPL"] : Array(model.selected.prefix(3))), id: \.self) { item in
+        VStack(alignment: .leading, spacing: 4) {
+          HStack {
+            Text(item).font(.system(size: 13, weight: .bold))
+            Spacer()
+            Text(model.quotes[item].map { $0.change.formatted(.percent.precision(.fractionLength(1)).sign(strategy: .always())) } ?? "")
+              .font(.system(size: 11, weight: .semibold))
+              .foregroundStyle((model.quotes[item]?.change ?? 0) >= 0 ? Brand.buy : Brand.sell)
+          }
+          Capsule().fill(Brand.buy).frame(height: 4)
+        }
+        .padding(8)
+        .background(Brand.nightMiddle, in: .rect(cornerRadius: 12))
+      }
+      Spacer(minLength: 0)
+    }
+    .padding(14)
+    .foregroundStyle(.white)
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .background(Color.black)
   }
 }
 
@@ -560,33 +825,5 @@ private struct SpeechBubble: View {
       .background(.white, in: .rect(cornerRadius: 18))
       .id(text)
       .transition(.scale(scale: 0.8).combined(with: .opacity))
-  }
-}
-
-/// Gently twinkling stars for the night sky behind onboarding.
-private struct StarField: View {
-  @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-  private static let stars: [(x: Double, y: Double, size: Double, phase: Double)] = {
-    var generator = SystemRandomNumberGenerator()
-    return (0..<70).map { _ in
-      (Double.random(in: 0...1, using: &generator), Double.random(in: 0...0.7, using: &generator),
-       Double.random(in: 1...2.6, using: &generator), Double.random(in: 0...6.28, using: &generator))
-    }
-  }()
-
-  var body: some View {
-    TimelineView(.animation(minimumInterval: 1 / 20, paused: reduceMotion)) { timeline in
-      Canvas { context, size in
-        let t = timeline.date.timeIntervalSinceReferenceDate
-        for star in Self.stars {
-          let alpha = 0.25 + 0.35 * (1 + sin(t * 1.3 + star.phase)) / 2
-          let rect = CGRect(x: star.x * size.width, y: star.y * size.height, width: star.size, height: star.size)
-          context.fill(Path(ellipseIn: rect), with: .color(.white.opacity(alpha)))
-        }
-      }
-    }
-    .allowsHitTesting(false)
-    .accessibilityHidden(true)
   }
 }
