@@ -6,6 +6,8 @@ struct OwlFlightPose {
   var wing: Double = 0
   var tilt: Double = 0
   var scale: Double = 1
+  /// Vertical squash for the crouch before take-off and the bounce on landing.
+  var squash: Double = 1
 }
 
 extension View {
@@ -26,30 +28,48 @@ private struct OwlFlightModifier: ViewModifier {
       content.keyframeAnimator(initialValue: OwlFlightPose(), trigger: trigger) { view, pose in
         view
           .environment(\.owlWingSpread, pose.wing)
+          .scaleEffect(x: 2 - pose.squash, y: pose.squash, anchor: .bottom)
           .rotationEffect(.degrees(pose.tilt), anchor: .bottom)
           .scaleEffect(pose.scale, anchor: .bottom)
           .offset(y: -pose.lift)
       } keyframes: { _ in
+        KeyframeTrack(\.squash) {
+          CubicKeyframe(0.9, duration: 0.12)
+          SpringKeyframe(1.06, duration: 0.18, spring: .snappy)
+          CubicKeyframe(1, duration: 0.7)
+          CubicKeyframe(0.92, duration: 0.1)
+          SpringKeyframe(1, duration: 0.3, spring: .bouncy)
+        }
         KeyframeTrack(\.lift) {
-          SpringKeyframe(height, duration: 0.32, spring: .snappy)
-          CubicKeyframe(height * 0.7, duration: 0.25)
-          SpringKeyframe(0, duration: 0.4, spring: .bouncy)
+          LinearKeyframe(0, duration: 0.12)
+          SpringKeyframe(height, duration: 0.3, spring: .snappy)
+          CubicKeyframe(height * 0.85, duration: 0.2)
+          CubicKeyframe(height * 0.95, duration: 0.2)
+          CubicKeyframe(height * 0.6, duration: 0.18)
+          SpringKeyframe(0, duration: 0.35, spring: .bouncy)
         }
         KeyframeTrack(\.wing) {
-          LinearKeyframe(1, duration: 0.1)
-          LinearKeyframe(0.35, duration: 0.11)
-          LinearKeyframe(1, duration: 0.11)
-          LinearKeyframe(0.35, duration: 0.11)
-          LinearKeyframe(1, duration: 0.11)
-          LinearKeyframe(0.6, duration: 0.15)
-          LinearKeyframe(0, duration: 0.2)
+          LinearKeyframe(0.15, duration: 0.12)
+          CubicKeyframe(1, duration: 0.09)
+          CubicKeyframe(0.25, duration: 0.1)
+          CubicKeyframe(1, duration: 0.09)
+          CubicKeyframe(0.3, duration: 0.1)
+          CubicKeyframe(0.95, duration: 0.1)
+          CubicKeyframe(0.4, duration: 0.11)
+          CubicKeyframe(0.8, duration: 0.12)
+          CubicKeyframe(0.75, duration: 0.15)
+          CubicKeyframe(1, duration: 0.1)
+          CubicKeyframe(0, duration: 0.25)
         }
         KeyframeTrack(\.tilt) {
-          CubicKeyframe(12 * direction, duration: 0.3)
-          CubicKeyframe(4 * direction, duration: 0.3)
+          CubicKeyframe(-4 * direction, duration: 0.12)
+          CubicKeyframe(14 * direction, duration: 0.3)
+          CubicKeyframe(6 * direction, duration: 0.4)
+          CubicKeyframe(-8 * direction, duration: 0.15)
           SpringKeyframe(0, duration: 0.35, spring: .bouncy)
         }
         KeyframeTrack(\.scale) {
+          CubicKeyframe(1, duration: 0.12)
           CubicKeyframe(1.08, duration: 0.3)
           CubicKeyframe(1.0, duration: 0.6)
         }

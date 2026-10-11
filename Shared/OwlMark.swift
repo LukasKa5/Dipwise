@@ -54,26 +54,47 @@ struct OwlMark: View, Animatable {
       path.closeSubpath()
     }
 
-    // Open wings sit behind the body.
+    // Open wings sit behind the body: broad, rounded, with a scalloped feather edge.
     if wingSpread > 0.02 {
       for side in [CGFloat(-1), 1] {
         var wingContext = context
-        let shoulder = CGPoint(x: 512 + side * 180, y: 540)
+        let shoulder = CGPoint(x: 512 + side * 168, y: 500)
         wingContext.translateBy(x: shoulder.x, y: shoulder.y)
-        wingContext.rotate(by: .degrees(-Double(side) * (25 + 85 * wingSpread)))
+        wingContext.rotate(by: .degrees(-Double(side) * (15 + 100 * wingSpread)))
+        let length: CGFloat = 250
+        let width: CGFloat = 150
+        let tip = CGPoint(x: side * width * 0.45, y: length)
+        let trailingEnd = CGPoint(x: side * -width * 0.25, y: length * 0.28)
         let wing = Path { path in
-          path.move(to: .zero)
-          path.addQuadCurve(to: CGPoint(x: side * 30, y: 250), control: CGPoint(x: side * 110, y: 90))
-          path.addQuadCurve(to: .zero, control: CGPoint(x: side * -40, y: 140))
+          path.move(to: CGPoint(x: side * -20, y: -10))
+          path.addQuadCurve(to: CGPoint(x: side * width * 0.95, y: length * 0.55), control: CGPoint(x: side * width * 1.15, y: length * 0.05))
+          path.addQuadCurve(to: tip, control: CGPoint(x: side * width * 0.95, y: length * 0.9))
+          // Scalloped trailing edge from the tip back toward the body.
+          let scallops = 5
+          var previous = tip
+          for index in 1...scallops {
+            let t = CGFloat(index) / CGFloat(scallops)
+            let point = CGPoint(x: tip.x + (trailingEnd.x - tip.x) * t, y: tip.y + (trailingEnd.y - tip.y) * t)
+            let middle = CGPoint(x: (previous.x + point.x) / 2, y: (previous.y + point.y) / 2)
+            let control = CGPoint(x: middle.x - side * 18, y: middle.y + 26)
+            path.addQuadCurve(to: point, control: control)
+            previous = point
+          }
+          path.addQuadCurve(to: CGPoint(x: side * -20, y: -10), control: CGPoint(x: side * -width * 0.35, y: length * 0.08))
+          path.closeSubpath()
         }
         wingContext.fill(wing, with: .color(Brand.owlWing))
+        // Feather lines fanning toward the scallops.
         let feathers = Path { path in
-          for step in [CGFloat(0.35), 0.55, 0.75] {
-            path.move(to: CGPoint(x: side * 18 * step, y: 250 * step))
-            path.addLine(to: CGPoint(x: side * 70 * step, y: 250 * step - 20))
+          for index in 1..<5 {
+            let t = CGFloat(index) / 5
+            let edge = CGPoint(x: tip.x + (trailingEnd.x - tip.x) * t, y: tip.y + (trailingEnd.y - tip.y) * t)
+            path.move(to: CGPoint(x: side * width * 0.3, y: length * 0.25))
+            path.addQuadCurve(to: CGPoint(x: edge.x + side * 6, y: edge.y - 18), control: CGPoint(x: side * width * 0.45, y: (length * 0.25 + edge.y) / 2))
           }
         }
-        wingContext.stroke(feathers, with: .color(Brand.owlFeather), style: StrokeStyle(lineWidth: 9, lineCap: .round))
+        wingContext.stroke(feathers, with: .color(Brand.owlFeather.opacity(0.8)), style: StrokeStyle(lineWidth: 6, lineCap: .round))
+        wingContext.stroke(wing, with: .color(Brand.owlFeather), style: StrokeStyle(lineWidth: 6, lineJoin: .round))
       }
     }
 
