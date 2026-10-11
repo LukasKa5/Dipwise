@@ -78,6 +78,27 @@ struct QuoteService: Sendable {
     )
   }
 
+  /// Today's prices in five-minute steps.
+  func intraday(for symbol: String) async throws -> (values: [Double], dates: [Date]) {
+    var components = URLComponents(string: "https://query1.finance.yahoo.com/v8/finance/chart/\(symbol)")!
+    components.queryItems = [URLQueryItem(name: "range", value: "1d"), URLQueryItem(name: "interval", value: "5m")]
+    let (data, _) = try await Self.session.data(from: components.url!)
+    let response = try JSONDecoder().decode(ChartResponse.self, from: data)
+    guard let result = response.chart.result?.first else { throw QuoteError.noData }
+    let scale = result.meta.currency == "GBp" || result.meta.currency == "GBX" ? 0.01 : 1
+    let closes = result.indicators.quote.first?.close ?? []
+    let timestamps = result.timestamp ?? []
+    var values: [Double] = []
+    var dates: [Date] = []
+    for (index, close) in closes.enumerated() where index < timestamps.count {
+      guard let close else { continue }
+      values.append(close * scale)
+      dates.append(Date(timeIntervalSince1970: TimeInterval(timestamps[index])))
+    }
+    guard values.count > 1 else { throw QuoteError.noData }
+    return (values, dates)
+  }
+
   /// Fetches several quotes concurrently, skipping any that fail.
   func quotes(for symbols: [String]) async -> [String: Quote] {
     await withTaskGroup(of: Quote?.self) { group in

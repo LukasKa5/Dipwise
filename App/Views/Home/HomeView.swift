@@ -16,7 +16,7 @@ struct HomeView: View {
   @State private var period: ChartPeriod = .preset(.month)
 
   private var summary: PortfolioSummary {
-    PortfolioSummary(holdings: holdings, quotes: quotes.quotes, baseCurrency: quotes.baseCurrency, convert: quotes.toBase)
+    PortfolioSummary(holdings: holdings, quotes: quotes.quotes, baseCurrency: quotes.baseCurrency, convert: quotes.toBase, intraday: quotes.intraday)
   }
 
   var body: some View {
@@ -83,6 +83,9 @@ struct HomeView: View {
         }
       }
       .task { await flock.loadOverview() }
+      .task(id: period) {
+        if period.isIntraday { await quotes.loadIntraday(symbols: holdings.map(\.symbol)) }
+      }
     }
   }
 
@@ -115,7 +118,9 @@ struct HomeView: View {
     }
     let focus = summary.nearestAlerts.first?.holding ?? holdings.first
     let quote = focus.flatMap { quotes[$0.symbol] }
-    let recent = quote.map { period.slice(values: $0.closes, dates: $0.dates) }
+    let recent: (values: [Double], dates: [Date])? = period.isIntraday
+      ? focus.flatMap { quotes.intraday[$0.symbol] }.map { ($0.values, $0.dates) }
+      : quote.map { period.slice(values: $0.closes, dates: $0.dates) }
     return HeroCard(
       title: "\(DayPeriod(date: .now).greeting) · Watching \(focus?.symbol ?? "")",
       value: quote.map { $0.formatted($0.price) } ?? "—",

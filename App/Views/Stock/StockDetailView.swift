@@ -30,6 +30,9 @@ struct StockDetailView: View {
   private func format(_ value: Double) -> String { quote?.formatted(value) ?? value.formatted(.number.precision(.fractionLength(2))) }
 
   private var series: (values: [Double], dates: [Date]) {
+    if period.isIntraday {
+      return quotes.intraday[symbol].map { ($0.values, $0.dates) } ?? ([], [])
+    }
     if period.needsLongHistory(earliestDaily: quote?.dates.first) {
       guard let long = fiveYearQuote else { return ([], []) }
       return period.slice(values: long.closes, dates: long.dates)
@@ -63,6 +66,7 @@ struct StockDetailView: View {
     }
     .sheet(item: $journalAlert) { alert in JournalSheet(alert: alert, quote: quote) }
     .task(id: period) {
+      if period.isIntraday { await quotes.loadIntraday(symbols: [symbol]) }
       guard period.needsLongHistory(earliestDaily: quote?.dates.first), fiveYearQuote == nil else { return }
       fiveYearQuote = try? await QuoteService().quote(for: symbol, fiveYears: true)
     }
@@ -111,7 +115,7 @@ struct StockDetailView: View {
     let selection = selectedIndex.flatMap { series.values.indices.contains($0) ? $0 : nil }
     return VStack(alignment: .leading, spacing: 16) {
       VStack(alignment: .leading, spacing: 4) {
-        Text(selection.flatMap { series.dates.indices.contains($0) ? series.dates[$0].formatted(date: .abbreviated, time: .omitted) : nil } ?? holding.name)
+        Text(selection.flatMap { series.dates.indices.contains($0) ? (period.isIntraday ? series.dates[$0].formatted(date: .omitted, time: .shortened) : series.dates[$0].formatted(date: .abbreviated, time: .omitted)) : nil } ?? holding.name)
           .font(.subheadline.weight(.semibold))
           .foregroundStyle(selection == nil ? AnyShapeStyle(.secondary) : AnyShapeStyle(.tint))
           .lineLimit(1)

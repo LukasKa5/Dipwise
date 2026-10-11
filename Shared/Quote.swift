@@ -131,6 +131,7 @@ struct Quote: Codable, Hashable {
 }
 
 enum ChartRange: String, CaseIterable, Identifiable, Codable {
+  case day = "1d"
   case week = "5d"
   case month = "1mo"
   case threeMonths = "3mo"
@@ -141,6 +142,7 @@ enum ChartRange: String, CaseIterable, Identifiable, Codable {
 
   var title: String {
     switch self {
+    case .day: "1D"
     case .week: "1W"
     case .month: "1M"
     case .threeMonths: "3M"
@@ -152,6 +154,7 @@ enum ChartRange: String, CaseIterable, Identifiable, Codable {
   /// Sessions covered by this range within a one-year quote, or nil when it needs its own request.
   var sessions: Int? {
     switch self {
+    case .day: nil
     case .week: 5
     case .month: 22
     case .threeMonths: 64

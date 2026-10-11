@@ -18,6 +18,14 @@ enum ChartPeriod: Hashable {
     return false
   }
 
+  /// Periods of a day or less are drawn from intraday prices.
+  var isIntraday: Bool {
+    switch self {
+    case .preset(let range): range == .day
+    case .custom(let span): span.upperBound.timeIntervalSince(span.lowerBound) < 2 * 86_400
+    }
+  }
+
   /// Whether the period reaches further back than one year of daily data.
   func needsLongHistory(earliestDaily: Date?) -> Bool {
     switch self {

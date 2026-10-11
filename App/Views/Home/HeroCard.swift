@@ -16,6 +16,11 @@ struct HeroCard: View {
 
   @State private var selectedIndex: Int?
 
+  private var isIntraday: Bool {
+    guard let first = dates.first, let last = dates.last else { return false }
+    return last.timeIntervalSince(first) < 2 * 86_400
+  }
+
   private var selection: (value: Double, date: Date?)? {
     guard let selectedIndex, values.indices.contains(selectedIndex) else { return nil }
     return (values[selectedIndex], dates.indices.contains(selectedIndex) ? dates[selectedIndex] : nil)
@@ -37,13 +42,14 @@ struct HeroCard: View {
         .padding(.vertical, 20)
       }
 
-      PeriodPicker(period: $period, presets: [.week, .month, .threeMonths, .year], earliest: earliest)
+      PeriodPicker(period: $period, presets: [.day, .week, .month, .threeMonths, .year], earliest: earliest)
 
       HStack(spacing: 10) {
         ForEach(stats) { stat in
           HeroStatTile(stat: stat)
         }
       }
+      .fixedSize(horizontal: false, vertical: true)
       .contentShape(.rect)
       .onTapGesture { openDetails?() }
     }
@@ -58,7 +64,7 @@ struct HeroCard: View {
       HStack(alignment: .top) {
         VStack(alignment: .leading, spacing: 6) {
           if let selection {
-            Text(selection.date?.formatted(date: .abbreviated, time: .omitted) ?? "")
+            Text(selection.date.map { isIntraday ? $0.formatted(date: .omitted, time: .shortened) : $0.formatted(date: .abbreviated, time: .omitted) } ?? "")
               .font(.subheadline.weight(.semibold))
               .foregroundStyle(.tint)
             Text(format(selection.value))
@@ -129,7 +135,7 @@ private struct HeroStatTile: View {
         .lineLimit(1)
         .minimumScaleFactor(0.8)
     }
-    .frame(maxWidth: .infinity, alignment: .leading)
+    .frame(maxWidth: .infinity, minHeight: 74, maxHeight: .infinity, alignment: .topLeading)
     .padding(14)
     .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 16))
     .accessibilityElement(children: .combine)

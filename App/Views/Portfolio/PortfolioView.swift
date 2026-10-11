@@ -15,7 +15,7 @@ struct PortfolioView: View {
   @State private var showsCashEditor = false
 
   private var summary: PortfolioSummary {
-    PortfolioSummary(holdings: holdings, quotes: quotes.quotes, baseCurrency: quotes.baseCurrency, convert: quotes.toBase)
+    PortfolioSummary(holdings: holdings, quotes: quotes.quotes, baseCurrency: quotes.baseCurrency, convert: quotes.toBase, intraday: quotes.intraday)
   }
 
   private func money(_ value: Double) -> String { quotes.formatBase(value) }
@@ -48,6 +48,9 @@ struct PortfolioView: View {
       .frame(maxWidth: .infinity)
     }
     .background(Palette.canvas)
+    .task(id: period) {
+      if period.isIntraday { await quotes.loadIntraday(symbols: holdings.map(\.symbol)) }
+    }
     .navigationTitle("Portfolio")
     .navigationBarTitleDisplayMode(.inline)
     .sheet(isPresented: $showsCashEditor) {
@@ -93,7 +96,7 @@ struct PortfolioView: View {
         .frame(height: 30, alignment: .leading)
         InteractiveChart(values: history.values, dates: history.dates, showsOwl: true, owlSize: 40, selectedIndex: $selectedIndex)
           .frame(height: 200)
-        PeriodPicker(period: $period, presets: [.week, .month, .threeMonths, .year], earliest: summary.earliestDate)
+        PeriodPicker(period: $period, presets: [.day, .week, .month, .threeMonths, .year], earliest: summary.earliestDate)
       }
       .padding(18)
       .heroCardStyle()

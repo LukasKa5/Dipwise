@@ -33,6 +33,7 @@ struct PortfolioSummary {
   var quotes: [String: Quote]
   var baseCurrency: String
   var convert: (Double, String) -> Double?
+  var intraday: [String: IntradaySeries] = [:]
 
   var positions: [Position] {
     let raw = holdings.compactMap { holding -> Position? in
@@ -82,6 +83,17 @@ struct PortfolioSummary {
 
   /// Combined value over a preset or custom period (up to the last year).
   func history(period: ChartPeriod) -> (values: [Double], dates: [Date]) {
+    if period.isIntraday {
+      let series = positions.compactMap { position in
+        intraday[position.holding.symbol].map { (position.holding.shares * (convert(1, position.quote.currency) ?? 0), $0) }
+      }
+      guard series.count == positions.count, let length = series.map(\.1.values.count).min(), length > 1,
+            let reference = series.max(by: { $0.1.dates.count < $1.1.dates.count }) else { return ([], []) }
+      let values = (0..<length).map { index in
+        series.reduce(0) { $0 + $1.0 * $1.1.values[$1.1.values.count - length + index] }
+      }
+      return (values, Array(reference.1.dates.suffix(length)))
+    }
     let full = history(sessions: 260)
     return period.slice(values: full.values, dates: full.dates)
   }

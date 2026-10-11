@@ -78,9 +78,11 @@ private struct CustomPeriodSheet: View {
             Text("Pick any period to see how prices moved.")
           }
           Section("Quick picks") {
+            quickPick("Last day", start: Calendar.current.date(byAdding: .day, value: -1, to: .now) ?? .now)
             quickPick("Year to date", start: Calendar.current.date(from: Calendar.current.dateComponents([.year], from: .now)) ?? .now)
             quickPick("Last 6 months", start: Calendar.current.date(byAdding: .month, value: -6, to: .now) ?? .now)
             quickPick("Last 2 years", start: Calendar.current.date(byAdding: .year, value: -2, to: .now) ?? .now)
+            quickPick("Last 5 years", start: Calendar.current.date(byAdding: .year, value: -5, to: .now) ?? .now)
           }
         }
         .dipwiseRows()
@@ -108,9 +110,19 @@ private struct CustomPeriodSheet: View {
   }
 
   private func quickPick(_ title: String, start date: Date) -> some View {
-    Button(title) {
-      start = max(date, earliest)
-      end = .now
+    Button {
+      period = .custom(max(date, earliest)...Date.now)
+      dismiss()
+    } label: {
+      HStack {
+        Text(title)
+        Spacer()
+        if date < earliest {
+          Text("Up to the earliest data")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+      }
     }
   }
 }
