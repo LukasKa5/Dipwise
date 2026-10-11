@@ -89,7 +89,7 @@ struct StockPlanWidgetView: View {
   var entry: StockPlanEntry
   @Environment(\.widgetFamily) private var family
 
-  private var zones: [AlertRule] { entry.targets.map(\.rule).filter(\.kind.isZone) }
+  private var zones: [AlertRule] { entry.targets.map(\.rule).filter { $0.kind.isZone || $0.kind == .priceBelow || $0.kind == .priceAbove } }
 
   var body: some View {
     Group {
@@ -100,7 +100,7 @@ struct StockPlanWidgetView: View {
             VStack(alignment: .leading, spacing: 0) {
               Text(symbol).font(.headline)
               if family == .systemMedium {
-                Text(quote.name).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                Text(quote.name).font(.caption2).foregroundStyle(.white.opacity(0.6)).lineLimit(1)
               }
             }
             Spacer(minLength: 0)
@@ -114,26 +114,45 @@ struct StockPlanWidgetView: View {
                 .foregroundStyle(quote.change >= 0 ? Brand.buy : Brand.sell)
             }
           }
-          WidgetSparkline(values: Array(quote.closes.suffix(22)))
-          if family == .systemMedium {
+          if family == .systemMedium && WidgetState.showsZones {
             WidgetZoneScale(price: quote.price, zones: zones, format: quote.formatted)
-          } else if let nearest = entry.targets.min(by: { ($0.rule.distance(for: quote) ?? 9) < ($1.rule.distance(for: quote) ?? 9) }) {
-            Text("\(distanceText(nearest.rule.distance(for: quote))) to \(nearest.rule.kind.title.lowercased())")
-              .font(.caption2.weight(.semibold))
-              .foregroundStyle(nearest.rule.kind.side.brandColor)
-              .lineLimit(1)
-              .minimumScaleFactor(0.7)
+            Spacer(minLength: 0)
+          } else {
+            WidgetSparkline(values: Array(quote.closes.suffix(30)), zones: zones)
+          }
+          HStack {
+            if let nearest = entry.targets.min(by: { ($0.rule.distance(for: quote) ?? 9) < ($1.rule.distance(for: quote) ?? 9) }) {
+              Text("\(distanceText(nearest.rule.distance(for: quote))) · \(nearest.rule.kind.title.lowercased())")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(nearest.rule.kind.side.brandColor)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            } else {
+              Text("No plan yet").font(.caption2).foregroundStyle(.white.opacity(0.6))
+            }
+            Spacer(minLength: 0)
+            if family == .systemMedium {
+              Button(intent: ToggleZonesIntent()) {
+                Label(WidgetState.showsZones ? "Chart" : "Zones", systemImage: WidgetState.showsZones ? "chart.xyaxis.line" : "arrow.left.and.right")
+                  .font(.caption2.weight(.bold))
+                  .padding(.horizontal, 8)
+                  .padding(.vertical, 4)
+                  .background(.white.opacity(0.15), in: .capsule)
+              }
+              .buttonStyle(.plain)
+            }
           }
         }
       } else {
         VStack(spacing: 8) {
-          OwlMark().frame(height: 44)
+          WidgetOwl(size: 44)
           Text("Choose a stock")
             .font(.caption.weight(.semibold))
-            .foregroundStyle(.secondary)
+            .foregroundStyle(.white.opacity(0.7))
         }
       }
     }
+    .foregroundStyle(.white)
     .dipwiseWidgetBackground()
     .widgetURL(entry.symbol.flatMap { URL(string: "dipwise://stock/\($0)") })
   }
@@ -146,38 +165,34 @@ private struct WidgetZoneScale: View {
   var format: (Double) -> String
 
   var body: some View {
-    let values = zones.flatMap { [$0.lower, $0.upper] } + [price]
+    let values = zones.flatMap { [$0.lower, max($0.lower, $0.upper)] } + [price]
     let low = (values.min() ?? price) * 0.98
     let high = (values.max() ?? price) * 1.02
-    VStack(spacing: 4) {
+    VStack(spacing: 6) {
       GeometryReader { geometry in
         let x: (Double) -> CGFloat = { CGFloat(($0 - low) / max(high - low, 0.0001)) * geometry.size.width }
         ZStack(alignment: .leading) {
-          Capsule().fill(.quaternary).frame(height: 8)
+          Capsule().fill(.white.opacity(0.15)).frame(height: 10)
           ForEach(Array(zones.enumerated()), id: \.offset) { _, zone in
             Capsule()
               .fill(zone.kind.side.brandColor)
-              .frame(width: max(6, x(zone.upper) - x(zone.lower)), height: 8)
+              .frame(width: max(8, x(max(zone.lower, zone.upper)) - x(zone.lower)), height: 10)
               .offset(x: x(zone.lower))
           }
           Capsule()
-            .fill(.primary)
-            .frame(width: 3, height: 18)
+            .fill(.white)
+            .frame(width: 3, height: 22)
             .offset(x: x(price) - 1.5)
         }
         .frame(maxHeight: .infinity)
       }
-      .frame(height: 18)
-      if zones.isEmpty {
-        Text("No zones yet")
-          .font(.caption2)
-          .foregroundStyle(.secondary)
-      } else {
-        HStack {
-          Text(format(low)).font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
-          Spacer()
-          Text(format(high)).font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
-        }
+      .frame(height: 22)
+      HStack {
+        Text(format(low)).font(.caption2.monospacedDigit()).foregroundStyle(.white.opacity(0.6))
+        Spacer()
+        Text("Now \(format(price))").font(.caption2.weight(.semibold))
+        Spacer()
+        Text(format(high)).font(.caption2.monospacedDigit()).foregroundStyle(.white.opacity(0.6))
       }
     }
   }

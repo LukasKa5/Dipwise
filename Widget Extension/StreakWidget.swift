@@ -62,12 +62,12 @@ struct StreakWidgetView: View {
       default:
         VStack(alignment: .leading, spacing: 6) {
           HStack(alignment: .top) {
-            OwlMark().frame(width: 46)
+            WidgetOwl(size: 46)
             Spacer()
             VStack(alignment: .trailing, spacing: 0) {
               Image(systemName: "flame.fill")
                 .font(.title2)
-                .foregroundStyle(liveStreak > 0 ? Brand.amber : .secondary)
+                .foregroundStyle(liveStreak > 0 ? Brand.amber : .white.opacity(0.4))
               Text("\(liveStreak)")
                 .font(.system(size: 30, weight: .heavy, design: .rounded))
             }
@@ -77,8 +77,9 @@ struct StreakWidgetView: View {
             .font(.headline)
           Text(progress.briefDoneToday ? "See you tomorrow" : "1 minute with Dipp")
             .font(.caption)
-            .foregroundStyle(progress.briefDoneToday ? .secondary : Brand.amber)
+            .foregroundStyle(progress.briefDoneToday ? .white.opacity(0.6) : Brand.amber)
         }
+        .foregroundStyle(.white)
       }
     }
     .dipwiseWidgetBackground()

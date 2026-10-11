@@ -1,3 +1,4 @@
+import AppIntents
 import SwiftUI
 import WidgetKit
 
@@ -10,7 +11,7 @@ struct PlansWidget: Widget {
       PlansWidgetView(entry: entry)
     }
     .configurationDisplayName("Your Plans")
-    .description("See which stocks are closest to your buy and sell zones.")
+    .description("Dipp shows which stocks are closest to your plans. Tap to flip through them.")
     .supportedFamilies([.systemSmall, .systemMedium, .systemLarge, .accessoryRectangular, .accessoryCircular, .accessoryInline])
   }
 }
@@ -18,6 +19,7 @@ struct PlansWidget: Widget {
 struct PlansEntry: TimelineEntry {
   var date: Date
   var statuses: [TargetStatus]
+  var index: Int = 0
 }
 
 struct PlansProvider: TimelineProvider {
@@ -27,14 +29,14 @@ struct PlansProvider: TimelineProvider {
 
   func getSnapshot(in context: Context, completion: @escaping (PlansEntry) -> Void) {
     let statuses = TargetStatus.sorted(targets: TargetSnapshotStore.loadTargets(), quotes: TargetSnapshotStore.loadQuotes())
-    completion(PlansEntry(date: .now, statuses: statuses.isEmpty && context.isPreview ? Self.sample : statuses))
+    completion(PlansEntry(date: .now, statuses: statuses.isEmpty && context.isPreview ? Self.sample : statuses, index: WidgetState.planIndex))
   }
 
   func getTimeline(in context: Context, completion: @escaping (Timeline<PlansEntry>) -> Void) {
     Task {
       let targets = TargetSnapshotStore.loadTargets()
       let quotes = await WidgetData.quotes(for: targets.map(\.symbol))
-      let entry = PlansEntry(date: .now, statuses: TargetStatus.sorted(targets: targets, quotes: quotes))
+      let entry = PlansEntry(date: .now, statuses: TargetStatus.sorted(targets: targets, quotes: quotes), index: WidgetState.planIndex)
       completion(Timeline(entries: [entry], policy: .after(.now.addingTimeInterval(WidgetData.refresh))))
     }
   }
@@ -49,7 +51,7 @@ struct PlansProvider: TimelineProvider {
       quote: Quote(symbol: "AAPL", name: "Apple", currency: "USD", price: 247.3, previousClose: 243, closes: [], updatedAt: .now)
     ),
     TargetStatus(
-      target: WatchedTarget(id: UUID(), symbol: "MSFT", name: "Microsoft", rule: AlertRule(kind: .buyZone, lower: 470, upper: 490)),
+      target: WatchedTarget(id: UUID(), symbol: "MSFT", name: "Microsoft", rule: AlertRule(kind: .rsiOversold, level: 30)),
       quote: Quote(symbol: "MSFT", name: "Microsoft", currency: "USD", price: 512.3, previousClose: 508, closes: [], updatedAt: .now)
     ),
   ]
@@ -58,6 +60,10 @@ struct PlansProvider: TimelineProvider {
 struct PlansWidgetView: View {
   var entry: PlansEntry
   @Environment(\.widgetFamily) private var family
+
+  private var current: TargetStatus? {
+    entry.statuses.isEmpty ? nil : entry.statuses[entry.index % entry.statuses.count]
+  }
 
   var body: some View {
     Group {
@@ -70,36 +76,50 @@ struct PlansWidgetView: View {
       default: small
       }
     }
+    .foregroundStyle(.white)
     .dipwiseWidgetBackground()
-    .widgetURL(entry.statuses.first.map { URL(string: "dipwise://stock/\($0.target.symbol)")! } ?? URL(string: "dipwise://alerts"))
+    .widgetURL(current.map { URL(string: "dipwise://stock/\($0.target.symbol)")! } ?? URL(string: "dipwise://alerts"))
   }
 
   @ViewBuilder
   private var small: some View {
-    if let status = entry.statuses.first {
+    if let status = current {
       let color = status.target.rule.kind.side.brandColor
-      VStack(alignment: .leading, spacing: 6) {
-        HStack {
-          WidgetBadge(symbol: status.target.symbol)
+      VStack(alignment: .leading, spacing: 5) {
+        HStack(spacing: 6) {
+          WidgetBadge(symbol: status.target.symbol, size: 24)
           Text(status.target.symbol).font(.headline)
           Spacer(minLength: 0)
-          OwlMark().frame(width: 22)
+          if entry.statuses.count > 1 {
+            Button(intent: NextPlanIntent()) {
+              Image(systemName: "chevron.forward.circle.fill")
+                .font(.title3)
+                .foregroundStyle(.white.opacity(0.8))
+            }
+            .buttonStyle(.plain)
+          }
         }
         Spacer(minLength: 0)
         Text(distanceText(status.distance))
           .font(.system(size: 30, weight: .bold, design: .rounded))
-          .foregroundStyle(status.distance == 0 ? color : .primary)
+          .foregroundStyle(status.distance == 0 ? color : .white)
           .minimumScaleFactor(0.6)
           .lineLimit(1)
-        Text("to \(status.target.rule.kind.title.lowercased())")
+          .contentTransition(.numericText())
+        Text(status.target.rule.kind.title.lowercased())
           .font(.caption)
-          .foregroundStyle(.secondary)
-        WidgetTrack(progress: status.progress, color: color)
-        Text(status.summary)
-          .font(.caption2.weight(.semibold))
-          .foregroundStyle(color)
+          .foregroundStyle(.white.opacity(0.6))
           .lineLimit(1)
-          .minimumScaleFactor(0.7)
+        WidgetTrack(progress: status.progress, color: color)
+        HStack {
+          Text(status.summary)
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(color)
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+          Spacer(minLength: 0)
+          WidgetOwl(size: 18)
+        }
       }
     } else {
       empty
@@ -112,11 +132,19 @@ struct PlansWidgetView: View {
       empty
     } else {
       VStack(alignment: .leading, spacing: family == .systemLarge ? 12 : 8) {
-        HStack {
-          Text("Your plans")
+        HStack(spacing: 8) {
+          WidgetOwl(size: 24)
+          Text(dippSays(entry.statuses))
             .font(.subheadline.weight(.bold))
-          Spacer()
-          OwlMark().frame(width: 20)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+          Spacer(minLength: 0)
+          Button(intent: RefreshWidgetsIntent()) {
+            Image(systemName: "arrow.clockwise")
+              .font(.caption.weight(.bold))
+              .foregroundStyle(.white.opacity(0.7))
+          }
+          .buttonStyle(.plain)
         }
         ForEach(entry.statuses.prefix(count)) { status in
           let color = status.target.rule.kind.side.brandColor
@@ -124,7 +152,7 @@ struct PlansWidgetView: View {
             HStack(spacing: 10) {
               WidgetBadge(symbol: status.target.symbol, size: 26)
               VStack(alignment: .leading, spacing: 3) {
-                HStack {
+                HStack(spacing: 6) {
                   Text(status.target.symbol).font(.subheadline.bold())
                   Text(status.summary)
                     .font(.caption)
@@ -136,7 +164,7 @@ struct PlansWidgetView: View {
               }
               Text(distanceText(status.distance))
                 .font(.subheadline.weight(.semibold).monospacedDigit())
-                .foregroundStyle((status.distance ?? 1) < 0.035 ? color : .primary)
+                .foregroundStyle((status.distance ?? 1) < 0.035 ? color : .white)
                 .frame(width: 54, alignment: .trailing)
             }
           }
@@ -148,11 +176,11 @@ struct PlansWidgetView: View {
 
   private var empty: some View {
     VStack(spacing: 8) {
-      OwlMark().frame(height: 48)
+      WidgetOwl(size: 46)
       Text("Set a buy zone in Dipwise")
         .font(.caption.weight(.semibold))
         .multilineTextAlignment(.center)
-        .foregroundStyle(.secondary)
+        .foregroundStyle(.white.opacity(0.7))
     }
   }
 
@@ -191,7 +219,7 @@ struct PlansWidgetView: View {
 
   private var inline: some View {
     if let status = entry.statuses.first {
-      Text("\(status.target.symbol) \(distanceText(status.distance)) to \(status.target.rule.kind.title.lowercased())")
+      Text("\(status.target.symbol) \(distanceText(status.distance)) · \(status.target.rule.kind.title.lowercased())")
     } else {
       Text("Dipwise: no plans")
     }
