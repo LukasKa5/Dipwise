@@ -13,8 +13,18 @@ struct HeroCard: View {
   @Binding var period: ChartPeriod
   var earliest: Date
   var openDetails: (() -> Void)?
+  var mood: OwlMood = .calm
 
   @State private var selectedIndex: Int?
+
+  private var moodSymbol: String {
+    switch mood {
+    case .sleeping: "moon.zzz.fill"
+    case .celebrating: "party.popper.fill"
+    case .reassuring: "heart.fill"
+    case .calm: "binoculars.fill"
+    }
+  }
 
   private var isIntraday: Bool {
     guard let first = dates.first, let last = dates.last else { return false }
@@ -31,7 +41,7 @@ struct HeroCard: View {
       header
 
       if values.count > 1 {
-        InteractiveChart(values: values, dates: dates, selectedIndex: $selectedIndex)
+        InteractiveChart(values: values, dates: dates, owlMood: mood, selectedIndex: $selectedIndex)
           .frame(height: 190)
       } else {
         HStack {
@@ -41,6 +51,11 @@ struct HeroCard: View {
         }
         .padding(.vertical, 20)
       }
+
+      Label(mood.message(change: change), systemImage: moodSymbol)
+        .font(.footnote.weight(.semibold))
+        .foregroundStyle(.secondary)
+        .contentTransition(.opacity)
 
       PeriodPicker(period: $period, presets: [.day, .week, .month, .threeMonths, .year], earliest: earliest)
 

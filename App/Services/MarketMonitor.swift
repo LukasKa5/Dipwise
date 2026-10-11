@@ -13,6 +13,9 @@ enum MarketMonitor {
     let events = AlertEngine.evaluate(alerts, quotes: quotes.quotes, headsUpThreshold: headsUp)
     try? context.save()
     await NotificationManager.post(events)
+    if let first = events.first(where: { $0.kind == .reached }) {
+      ToastCenter.shared.show("\(first.alert.symbol): \(first.alert.kind.title)!", systemImage: "bell.badge.fill")
+    }
     if let flock {
       for event in events where event.kind == .reached {
         await flock.markTriggered(event.alert, price: event.quote.price)

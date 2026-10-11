@@ -28,6 +28,7 @@ struct InteractiveChart: View {
   var zones: [Zone] = []
   var showsOwl = true
   var owlSize: CGFloat = 52
+  var owlMood: OwlMood = .calm
   @Binding var selectedIndex: Int?
 
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -139,7 +140,7 @@ struct InteractiveChart: View {
            let plotFrame = proxy.plotFrame,
            let position = proxy.position(for: (x: index, y: values[index])) {
           let origin = geometry[plotFrame].origin
-          LivelyOwl(hopsOnTap: false)
+          LivelyOwl(hopsOnTap: false, mood: owlMood)
             .frame(width: owlSize, height: owlSize * 1.15)
             .owlFlight(trigger: flights, direction: flightDirection, height: 60, isEnabled: !reduceMotion)
             .shadow(color: .black.opacity(0.3), radius: 5, y: 3)

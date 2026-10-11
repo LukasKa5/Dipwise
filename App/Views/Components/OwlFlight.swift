@@ -88,6 +88,7 @@ extension EnvironmentValues {
 struct LivelyOwl: View {
   var lookOffset: CGSize = .zero
   var hopsOnTap = true
+  var mood: OwlMood = .calm
   @Environment(\.owlWingSpread) private var wingSpread
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @State private var hops = 0
@@ -96,17 +97,20 @@ struct LivelyOwl: View {
   @State private var look = CGSize.zero
   @State private var stretch = 0.0
   @State private var breathing = false
+  @State private var awake = false
+  @State private var recentTaps: [Date] = []
+  @State private var spin = 0.0
 
   var body: some View {
-    OwlMark(wingSpread: max(wingSpread, stretch), blink: blink, lookOffset: lookOffset == .zero ? look : lookOffset)
-      .scaleEffect(x: 1, y: breathing ? 1.025 : 1, anchor: .bottom)
-      .contentShape(.rect)
-      .onTapGesture {
-        guard hopsOnTap else { return }
-        hops += 1
-        taps += 1
-        blinkOnce()
+    let isAsleep = mood == .sleeping && !awake
+    OwlMark(wingSpread: max(wingSpread, stretch), blink: isAsleep ? 1 : blink, lookOffset: lookOffset == .zero ? look : lookOffset)
+      .scaleEffect(x: 1, y: breathing ? (isAsleep ? 1.04 : 1.025) : 1, anchor: .bottom)
+      .rotation3DEffect(.degrees(spin), axis: (x: 0, y: 1, z: 0))
+      .overlay(alignment: .topTrailing) {
+        if isAsleep { SleepingZs().offset(x: 14, y: -10) }
       }
+      .contentShape(.rect)
+      .onTapGesture { handleTap() }
       .owlFlight(trigger: hops, direction: hops.isMultiple(of: 2) ? 1 : -1, height: 22, isEnabled: !reduceMotion)
       .sensoryFeedback(.impact(weight: .light), trigger: taps)
       .onAppear {
@@ -119,6 +123,27 @@ struct LivelyOwl: View {
       }
   }
 
+  private func handleTap() {
+    guard hopsOnTap || mood == .sleeping else { return }
+    taps += 1
+    if mood == .sleeping && !awake {
+      withAnimation(.snappy) { awake = true }
+      Task {
+        try? await Task.sleep(for: .seconds(4))
+        withAnimation(.smooth) { awake = false }
+      }
+    }
+    hops += 1
+    blinkOnce()
+    // Five quick taps: a barrel roll.
+    recentTaps = recentTaps.filter { Date.now.timeIntervalSince($0) < 2 } + [.now]
+    if recentTaps.count >= 5, !reduceMotion {
+      recentTaps = []
+      withAnimation(.spring(duration: 0.9, bounce: 0.3)) { spin += 360 }
+      ToastCenter.shared.show("Wheee! Hoo hoo!", systemImage: "tornado")
+    }
+  }
+
   private func blinkOnce() {
     withAnimation(.easeIn(duration: 0.07)) { blink = 1 }
     withAnimation(.easeOut(duration: 0.12).delay(0.1)) { blink = 0 }
@@ -128,6 +153,11 @@ struct LivelyOwl: View {
   private func liveForever() async {
     while !Task.isCancelled {
       try? await Task.sleep(for: .seconds(Double.random(in: 1.6...3.8)))
+      if mood == .sleeping && !awake { continue }
+      if mood == .celebrating, Int.random(in: 0..<3) == 0 {
+        hops += 1
+        continue
+      }
       switch Int.random(in: 0..<20) {
       case 0..<9:
         blinkOnce()
@@ -148,5 +178,28 @@ struct LivelyOwl: View {
         if hopsOnTap { hops += 1 } else { blinkOnce() }
       }
     }
+  }
+}
+
+/// Floating "z" letters for a sleeping owl.
+private struct SleepingZs: View {
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+  var body: some View {
+    TimelineView(.animation(minimumInterval: 1 / 15, paused: reduceMotion)) { timeline in
+      let t = timeline.date.timeIntervalSinceReferenceDate
+      ZStack {
+        ForEach(0..<3) { index in
+          let phase = (t / 2.4 + Double(index) / 3).truncatingRemainder(dividingBy: 1)
+          Text("z")
+            .font(.system(size: 9 + CGFloat(index) * 3, weight: .heavy, design: .rounded))
+            .foregroundStyle(.secondary.opacity(1 - phase))
+            .offset(x: phase * 14, y: -phase * 26)
+        }
+      }
+    }
+    .frame(width: 24, height: 30)
+    .allowsHitTesting(false)
+    .accessibilityHidden(true)
   }
 }

@@ -113,7 +113,8 @@ struct HomeView: View {
         format: format,
         period: $period,
         earliest: summary.earliestDate,
-        openDetails: { showsPortfolio = true }
+        openDetails: { showsPortfolio = true },
+        mood: OwlMood.current(dayChange: summary.dayChange)
       )
     }
     let focus = summary.nearestAlerts.first?.holding ?? holdings.first
@@ -136,7 +137,8 @@ struct HomeView: View {
       format: { quote?.formatted($0) ?? $0.formatted() },
       period: $period,
       earliest: quote?.dates.first ?? .now.addingTimeInterval(-365 * 86_400),
-      openDetails: nil
+      openDetails: nil,
+      mood: OwlMood.current(dayChange: quote?.change)
     )
   }
 
