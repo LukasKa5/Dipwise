@@ -25,7 +25,7 @@ struct Achievement: Identifiable {
   @MainActor
   static func all(progress: ProgressStore, holdings: [Holding], quotes: [String: Quote]) -> [Achievement] {
     let alerts = holdings.flatMap { $0.alerts ?? [] }
-    let maxBuyTiers = holdings.map { $0.buyZones.count }.max() ?? 0
+    let smartKinds = Set(alerts.filter { $0.kind.requiresPro }.map(\.kind)).count
     let hasFullPlan = holdings.contains { $0.buyZone != nil && $0.sellZone != nil }
     let caughtDip = alerts.contains { $0.kind.side == .buy && $0.triggeredAt != nil }
     let oldestActiveDays = alerts.filter(\.isActive).map { Date.now.timeIntervalSince($0.createdAt) / 86_400 }.max() ?? 0
@@ -38,9 +38,9 @@ struct Achievement: Identifiable {
       Achievement(id: "full-plan", title: "Full Plan", detail: "Set a buy zone and a sell zone on the same stock.",
                   explanation: "Knowing where you'd buy more and where you'd take profit turns a hunch into a complete plan.",
                   systemImage: "arrow.up.and.down", current: hasFullPlan ? 1 : 0, goal: 1),
-      Achievement(id: "ladder", title: "Ladder Builder", detail: "Plan three buy tiers on one stock.",
-                  explanation: "Buying in tiers lowers your average price if a dip deepens, without betting everything on one level.",
-                  systemImage: "chart.bar.fill", current: Double(maxBuyTiers), goal: 3, unit: "tiers"),
+      Achievement(id: "toolkit", title: "Smart Toolkit", detail: "Use three different kinds of smart alerts.",
+                  explanation: "Trend, momentum, and position alerts each catch different moments. Using several means fewer surprises.",
+                  systemImage: "sparkles", current: Double(smartKinds), goal: 3, unit: "kinds"),
       Achievement(id: "diversified", title: "Diversified", detail: "Watch five different stocks.",
                   explanation: "Spreading attention across several companies means one bad day doesn't define your portfolio.",
                   systemImage: "square.grid.2x2.fill", current: Double(holdings.count), goal: 5, unit: "stocks"),
@@ -66,7 +66,7 @@ struct Achievement: Identifiable {
                   explanation: "Dividends pay you to wait. Reinvested, they've historically made up a big part of long-term returns.",
                   systemImage: "leaf.fill", current: earnsDividends ? 1 : 0, goal: 1),
       Achievement(id: "wise", title: "Wise Owl", detail: "Reach level 6.",
-                  explanation: "Earned through steady habits: briefs, plans, votes, and journaling. Ollie is proud.",
+                  explanation: "Earned through steady habits: briefs, plans, votes, and journaling. Dipp is proud.",
                   systemImage: "graduationcap.fill", current: Double(progress.level), goal: 6, unit: "levels"),
     ]
   }

@@ -20,6 +20,7 @@ struct RootView: View {
         }
       }
     }
+    .overlay { ToastOverlay(center: ToastCenter.shared) }
     .tint(Palette.green)
     .fontDesign(.rounded)
     .preferredColorScheme(appearance.colorScheme)

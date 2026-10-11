@@ -60,7 +60,8 @@ struct FlockEvent: Identifiable, Hashable {
     case .dropFromHigh: return "Watching for a \(percent) dip from the high"
     case .dailyMove: return "Watching for \(percent) daily moves"
     case .trailingStop: return "Protecting gains with a \(percent) trailing stop"
-    case .belowAverage: return "Watching the long-term average"
+    case .belowAverage, .aboveAverage: return "Watching the long-term average"
+    default: return "Set a \(entry.kind.title.lowercased()) alert"
     }
   }
 }

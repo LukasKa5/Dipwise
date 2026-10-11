@@ -166,17 +166,17 @@ struct StockDetailView: View {
     }
     let fired = (holding.alerts ?? []).filter { !$0.isActive }.sorted { ($0.triggeredAt ?? $0.createdAt) > ($1.triggeredAt ?? $1.createdAt) }
     return VStack(alignment: .leading, spacing: 14) {
-      SectionHeader(title: "Your Plan", subtitle: "Everything Ollie watches on \(symbol)") {
+      SectionHeader(title: "Your Plan", subtitle: "Everything Dipp watches on \(symbol)") {
         Button("Build", systemImage: "wand.and.stars") { showsPlanBuilder = true }
           .font(.subheadline.weight(.semibold))
       }
       VStack(alignment: .leading, spacing: 0) {
-        if let quote, !(holding.buyZones + holding.sellZones).isEmpty {
+        if let quote, ![holding.buyZone, holding.sellZone].compactMap { $0 }.isEmpty {
           let report = flock.reports[symbol]
           VStack(alignment: .leading, spacing: 10) {
             ZoneTrack(
               price: quote.price,
-              bands: (holding.buyZones + holding.sellZones).map { ZoneTrack.Band(range: $0.targetPrice...max($0.targetPrice, $0.upperPrice), side: $0.kind.side, isCrowd: false) }
+              bands: [holding.buyZone, holding.sellZone].compactMap { $0 }.map { ZoneTrack.Band(range: $0.targetPrice...max($0.targetPrice, $0.upperPrice), side: $0.kind.side, isCrowd: false) }
                 + [report?.buyZone.map { ZoneTrack.Band(range: $0, side: .buy, isCrowd: true) },
                    report?.sellZone.map { ZoneTrack.Band(range: $0, side: .sell, isCrowd: true) }].compactMap { $0 },
               low: quote.low52,
@@ -194,7 +194,7 @@ struct StockDetailView: View {
             LivelyOwl().frame(width: 56, height: 64)
             Text("No plan for \(symbol) yet")
               .font(.headline)
-            Text("Tell Ollie where you'd buy more and where you'd take profit.")
+            Text("Tell Dipp where you'd buy more and where you'd take profit.")
               .font(.subheadline)
               .foregroundStyle(.secondary)
               .multilineTextAlignment(.center)
@@ -233,14 +233,6 @@ struct StockDetailView: View {
         }
         .buttonStyle(.plain)
         .foregroundStyle(.tint)
-
-        if let ladder = holding.ladder {
-          Divider()
-          Label("If every funded buy tier fills: \(ladder.shares.formatted(.number.precision(.fractionLength(0...2)))) shares at an average of \(format(ladder.averagePrice)).", systemImage: "equal.circle.fill")
-            .font(.footnote)
-            .foregroundStyle(.secondary)
-            .padding(16)
-        }
 
         if !fired.isEmpty {
           Divider()

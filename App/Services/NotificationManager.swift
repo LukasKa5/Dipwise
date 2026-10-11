@@ -43,18 +43,18 @@ enum NotificationManager {
       case .priceAbove:
         content.title = "\(symbol) rose above \(quote.formatted(rule.lower))"
         content.body = "Now \(price). Your target is here."
-      case .dropFromHigh:
-        content.title = "\(symbol) is \(percent) below its 52-week high"
-        content.body = "Now \(price), down from \(quote.formatted(quote.high52))."
-      case .dailyMove:
-        content.title = "\(symbol) moved \(quote.change.formatted(.percent.precision(.fractionLength(1)).sign(strategy: .always()))) today"
-        content.body = "Now \(price). Big moves are worth a look."
       case .trailingStop:
         content.title = "\(symbol) hit your \(percent) trailing stop"
         content.body = "Now \(price), down from its peak of \(quote.formatted(rule.peak))."
-      case .belowAverage:
-        content.title = "\(symbol) fell below its \(rule.averageDays)-day average"
-        content.body = "Now \(price). Long-term trend just turned."
+      case .stopLoss:
+        content.title = "\(symbol) hit your stop loss"
+        content.body = "Now \(price), \(percent) below your cost of \(quote.formatted(rule.lower))."
+      case .profitTarget:
+        content.title = "\(symbol) reached your profit target"
+        content.body = "Now \(price), up \(percent) from your cost. Time to take some profit?"
+      default:
+        content.title = "\(symbol) · \(alert.kind.title)"
+        content.body = "Now \(price). \(alert.summary(for: quote))."
       }
     }
     if !alert.note.isEmpty {

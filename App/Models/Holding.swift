@@ -24,21 +24,12 @@ final class Holding {
     (alerts ?? []).filter(\.isActive).sorted { $0.createdAt < $1.createdAt }
   }
 
-  /// Buy tiers, nearest to the price first.
-  var buyZones: [PriceAlert] { activeAlerts.filter { $0.kind == .buyZone }.sorted { $0.upperPrice > $1.upperPrice } }
-  /// Sell tiers, nearest to the price first.
-  var sellZones: [PriceAlert] { activeAlerts.filter { $0.kind == .sellZone }.sorted { $0.targetPrice < $1.targetPrice } }
-  var buyZone: PriceAlert? { buyZones.first }
-  var sellZone: PriceAlert? { sellZones.first }
-
-  /// What happens if every funded buy tier fills at its midpoint.
-  var ladder: (budget: Double, shares: Double, averagePrice: Double)? {
-    let funded = buyZones.filter { $0.budget > 0 && ($0.rule.referencePrice ?? 0) > 0 }
-    guard !funded.isEmpty else { return nil }
-    let budget = funded.reduce(0) { $0 + $1.budget }
-    let shares = funded.reduce(0) { $0 + $1.budget / ($1.rule.referencePrice ?? 1) }
-    return (budget, shares, budget / shares)
-  }
+  /// The one buy plan for this stock: a buy zone or an exact buy price.
+  var buyZone: PriceAlert? { activeAlerts.first { $0.kind == .buyZone || $0.kind == .priceBelow } }
+  /// The one sell plan for this stock: a sell zone or an exact sell price.
+  var sellZone: PriceAlert? { activeAlerts.first { $0.kind == .sellZone || $0.kind == .priceAbove } }
+  /// Smart alerts beyond the buy and sell plan.
+  var smartAlerts: [PriceAlert] { activeAlerts.filter { $0.kind.requiresPro } }
 
   var isOwned: Bool { shares > 0 }
 

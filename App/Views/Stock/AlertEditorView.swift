@@ -16,6 +16,9 @@ struct AlertEditorView: View {
   @State private var intent: AlertIntent = .buy
   @State private var exactPrice = false
   @State private var smartKind: AlertKind = .dropFromHigh
+  @State private var smartCategory: AlertCategory = .moves
+  @State private var level: Double = 30
+  @State private var periodDays = 5
   @State private var showsOptions = false
   @State private var lower: Double = 0
   @State private var upper: Double = 0
@@ -47,22 +50,23 @@ struct AlertEditorView: View {
     case .priceBelow: intent = .buy; exactPrice = true
     case .sellZone: intent = .sell; exactPrice = false
     case .priceAbove: intent = .sell; exactPrice = true
-    default: intent = .smart; smartKind = kind
+    default: intent = .smart; smartKind = kind; smartCategory = kind.category
     }
   }
 
   private var rule: AlertRule {
-    AlertRule(kind: kind, lower: lower, upper: kind.isZone ? upper : 0, percent: kind.usesPercent ? percent : 0,
-              averageDays: averageDays, peak: alert?.peakPrice ?? quote?.price ?? 0)
+    AlertRule(kind: kind, lower: kind.category == .zones || kind.needsCost ? lower : 0, upper: kind.isZone ? upper : 0,
+              percent: kind.usesPercent ? percent : 0, averageDays: averageDays, peak: alert?.peakPrice ?? quote?.price ?? 0,
+              level: kind.usesLevel ? level : 0, days: periodDays)
   }
 
   private var isLocked: Bool { kind.requiresPro && !subscription.isPro }
   private var isValid: Bool {
     switch kind {
     case .buyZone, .sellZone: lower > 0 && upper > lower
-    case .priceBelow, .priceAbove: lower > 0
-    case .dropFromHigh, .dailyMove, .trailingStop: percent > 0
-    case .belowAverage: true
+    case .priceBelow, .priceAbove, .breakEven: lower > 0
+    case .stopLoss, .profitTarget: lower > 0 && percent > 0
+    default: !kind.usesPercent || percent > 0
     }
   }
 
@@ -146,8 +150,12 @@ struct AlertEditorView: View {
       .sheet(isPresented: $showsPaywall) { PaywallView() }
       .onAppear(perform: load)
       .onChange(of: kind) { oldKind, newKind in
-        if oldKind.side != newKind.side || oldKind.isZone != newKind.isZone { suggestLevels() }
-        if newKind.usesPercent && oldKind != newKind { percent = defaultPercent(for: newKind) }
+        guard didLoad, oldKind != newKind else { return }
+        if newKind.category == .zones {
+          if oldKind.category != .zones || oldKind.side != newKind.side { loadSlotOrSuggest() }
+        } else {
+          applyDefaults(for: newKind)
+        }
       }
       .sensoryFeedback(.selection, trigger: kind)
       .task {
@@ -190,7 +198,13 @@ struct AlertEditorView: View {
 
       case .smart:
         Section {
-          ForEach([AlertKind.dropFromHigh, .trailingStop, .dailyMove, .belowAverage]) { option in
+          Picker("Category", selection: $smartCategory.animation(.snappy)) {
+            ForEach(AlertCategory.allCases.filter { $0 != .zones }) { Text($0.title).tag($0) }
+          }
+          .pickerStyle(.segmented)
+          .listRowBackground(Color.clear)
+          .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+          ForEach(AlertKind.smart.filter { $0.category == smartCategory }) { option in
             Button {
               withAnimation(.snappy) { smartKind = option }
             } label: {
@@ -225,37 +239,9 @@ struct AlertEditorView: View {
         }
 
         Section {
-          if kind == .belowAverage {
-            Picker("Average", selection: $averageDays) {
-              Text("50-day").tag(50)
-              Text("100-day").tag(100)
-              Text("200-day").tag(200)
-            }
-            .pickerStyle(.segmented)
-          } else {
-            VStack(alignment: .leading, spacing: 12) {
-              HStack {
-                Text(kind == .dailyMove ? "Move size" : "Drop")
-                Spacer()
-                Text(percent, format: .percent.precision(.fractionLength(0)))
-                  .font(.title3.bold().monospacedDigit())
-                  .foregroundStyle(kind.side.color)
-              }
-              Slider(value: $percent, in: percentRange) {
-                Text("Percentage")
-              } minimumValueLabel: {
-                Text(percentRange.lowerBound, format: .percent.precision(.fractionLength(0)))
-              } maximumValueLabel: {
-                Text(percentRange.upperBound, format: .percent.precision(.fractionLength(0)))
-              }
-            }
-          }
+          smartControls(for: quote)
         } footer: {
-          if kind == .belowAverage, let average = quote.movingAverage(days: averageDays) {
-            Text("The \(averageDays)-day average is \(format(average)). Today's price is \(abs(quote.price / average - 1).formatted(.percent.precision(.fractionLength(1)))) \(quote.price >= average ? "above" : "below") it.")
-          } else {
-            Text(percentDescription(for: quote))
-          }
+          Text(smartDescription(for: quote))
         }
       }
     } else {
@@ -324,35 +310,130 @@ struct AlertEditorView: View {
 
   private var percentRange: ClosedRange<Double> {
     switch kind {
-    case .dailyMove: 0.02...0.15
-    case .trailingStop: 0.03...0.30
+    case .dailyMove, .gapMove: 0.02...0.15
+    case .weeklyDrop: 0.03...0.30
+    case .trailingStop, .stopLoss: 0.03...0.30
+    case .profitTarget: 0.05...1.0
     default: 0.05...0.50
     }
   }
 
-  private func percentDescription(for quote: Quote) -> String {
+  @ViewBuilder
+  private func smartControls(for quote: Quote) -> some View {
+    if kind.usesPercent {
+      VStack(alignment: .leading, spacing: 12) {
+        HStack {
+          Text(percentLabel)
+          Spacer()
+          Text(percent, format: .percent.precision(.fractionLength(0)))
+            .font(.title3.bold().monospacedDigit())
+            .foregroundStyle(kind.side.color)
+        }
+        Slider(value: $percent, in: percentRange) {
+          Text(percentLabel)
+        } minimumValueLabel: {
+          Text(percentRange.lowerBound, format: .percent.precision(.fractionLength(0)))
+        } maximumValueLabel: {
+          Text(percentRange.upperBound, format: .percent.precision(.fractionLength(0)))
+        }
+      }
+    }
+    if kind == .weeklyDrop {
+      Picker("Within", selection: $periodDays) {
+        Text("3 days").tag(3)
+        Text("1 week").tag(5)
+        Text("2 weeks").tag(10)
+        Text("1 month").tag(21)
+      }
+      .pickerStyle(.segmented)
+    }
+    if kind.usesAverage {
+      Picker("Average", selection: $averageDays) {
+        Text("50-day").tag(50)
+        Text("100-day").tag(100)
+        Text("200-day").tag(200)
+      }
+      .pickerStyle(.segmented)
+    }
+    if kind == .rsiOversold || kind == .rsiOverbought {
+      Stepper(value: $level, in: kind == .rsiOversold ? 10...45 : 55...90, step: 5) {
+        LabeledContent("RSI level", value: "\(Int(level))")
+      }
+    }
+    if kind == .volumeSpike {
+      Picker("Volume", selection: $level) {
+        Text("1.5×").tag(1.5)
+        Text("2×").tag(2.0)
+        Text("3×").tag(3.0)
+        Text("5×").tag(5.0)
+      }
+      .pickerStyle(.segmented)
+    }
+    if kind.needsCost {
+      LabeledContent("Your average cost") { priceField($lower) }
+    }
+    if !kind.usesPercent && !kind.usesAverage && !kind.usesLevel && !kind.needsCost && kind != .weeklyDrop {
+      Label("No settings needed. Dipp handles it.", systemImage: "checkmark.circle")
+        .foregroundStyle(.secondary)
+    }
+  }
+
+  private var percentLabel: String {
+    switch kind {
+    case .dailyMove, .gapMove: "Move size"
+    case .profitTarget: "Gain"
+    default: "Drop"
+    }
+  }
+
+  private func smartDescription(for quote: Quote) -> String {
     switch kind {
     case .dropFromHigh:
-      let level = quote.high52 * (1 - percent)
-      return "52-week high is \(format(quote.high52)), so this triggers at \(format(level)). Today the stock is \(abs(quote.drawdownFromHigh).formatted(.percent.precision(.fractionLength(1)))) below its high."
+      return "52-week high is \(format(quote.high52)), so this triggers at \(format(quote.high52 * (1 - percent))). Today it's \(abs(quote.drawdownFromHigh).formatted(.percent.precision(.fractionLength(1)))) below its high."
     case .trailingStop:
       let peak = max(alert?.peakPrice ?? 0, quote.price)
       return "Tracks the highest price from now on. Right now it would trigger at \(format(peak * (1 - percent)))."
-    case .dailyMove:
-      return "Fires when \(holding.symbol) rises or falls \(percent.formatted(.percent.precision(.fractionLength(0)))) or more in a single day."
+    case .weeklyDrop:
+      return "Over the last \(periodDays) trading days \(holding.symbol) moved \(quote.change(over: periodDays).formatted(.percent.precision(.fractionLength(1)).sign(strategy: .always())))."
+    case .belowAverage, .aboveAverage:
+      guard let average = quote.movingAverage(days: averageDays) else { return "Not enough price history for this average yet." }
+      return "The \(averageDays)-day average is \(format(average)). Today's price is \(abs(quote.price / average - 1).formatted(.percent.precision(.fractionLength(1)))) \(quote.price >= average ? "above" : "below") it."
+    case .goldenCross, .deathCross:
+      guard let fast = quote.movingAverage(days: 50), let slow = quote.movingAverage(days: 200) else { return "Needs about a year of price history." }
+      return "Today the 50-day average is \(format(fast)) and the 200-day is \(format(slow)). You'll hear about it the moment they cross."
+    case .rsiOversold, .rsiOverbought:
+      return quote.rsi().map { "RSI is \(Int($0)) today. Below 30 is usually called oversold, above 70 overbought." } ?? ""
+    case .macdBullish, .macdBearish:
+      return "Fires when momentum flips. Popular with trend followers."
+    case .volumeSpike:
+      return quote.volumeRatio.map { "Today's volume is \($0.formatted(.number.precision(.fractionLength(1))))× the 20-day average." } ?? ""
+    case .stopLoss:
+      return "Triggers at \(format(lower * (1 - percent)))."
+    case .profitTarget:
+      return "Triggers at \(format(lower * (1 + percent)))."
+    case .breakEven:
+      return "You'll know when \(holding.symbol) is back to what you paid."
+    case .dividendSoon:
+      return quote.daysToNextDividend.map { "Next dividend expected in about \($0) days." } ?? "\(holding.symbol) hasn't paid a dividend in the past year."
     default:
-      return ""
+      return kind.explanation
     }
   }
 
   // MARK: Actions
 
   private func defaultPercent(for kind: AlertKind) -> Double {
-    switch kind {
-    case .dailyMove: 0.05
-    case .trailingStop: 0.08
-    default: 0.2
-    }
+    let defaults = AlertRule.defaults(for: kind, price: quote?.price ?? 1, cost: holding.averageCost)
+    return defaults.percent > 0 ? defaults.percent : 0.1
+  }
+
+  /// Fills in starting values when the user picks a smart alert.
+  private func applyDefaults(for kind: AlertKind) {
+    let defaults = AlertRule.defaults(for: kind, price: quote?.price ?? 1, cost: holding.averageCost)
+    if kind.usesPercent { percent = defaults.percent }
+    if kind.usesLevel { level = defaults.level }
+    if kind.needsCost { lower = rounded(defaults.lower) }
+    if kind == .weeklyDrop { periodDays = defaults.days }
   }
 
   private func rounded(_ value: Double) -> Double {
@@ -385,6 +466,8 @@ struct AlertEditorView: View {
       upper = rule.upper
       percent = rule.percent > 0 ? rule.percent : defaultPercent(for: rule.kind)
       averageDays = rule.averageDays
+      level = rule.level > 0 ? rule.level : level
+      periodDays = rule.days
       budget = alert.budget > 0 ? alert.budget : nil
       repeats = alert.repeats
       expiry = alert.expiresAt == nil ? .never : .custom
@@ -392,13 +475,35 @@ struct AlertEditorView: View {
       showsOptions = alert.budget > 0 || alert.repeats || alert.expiresAt != nil || !alert.note.isEmpty
     } else if let initialRule {
       apply(kind: initialRule.kind)
-      percent = initialRule.percent > 0 ? initialRule.percent : defaultPercent(for: initialRule.kind)
-      if initialRule.lower > 0 {
+      if initialRule.kind.category != .zones {
+        applyDefaults(for: initialRule.kind)
+      } else if initialRule.lower > 0 {
         lower = rounded(initialRule.lower)
         upper = rounded(initialRule.upper)
       } else {
-        suggestLevels()
+        loadSlotOrSuggest()
       }
+    } else {
+      loadSlotOrSuggest()
+    }
+  }
+
+  /// A stock has one buy plan and one sell plan, so picking Buy or Sell edits the existing one.
+  private var slotAlert: PriceAlert? {
+    guard alert == nil else { return nil }
+    switch intent {
+    case .buy: return holding.buyZone
+    case .sell: return holding.sellZone
+    case .smart: return nil
+    }
+  }
+
+  private func loadSlotOrSuggest() {
+    if let existing = slotAlert {
+      exactPrice = !existing.kind.isZone
+      lower = existing.targetPrice
+      upper = existing.upperPrice
+      budget = existing.budget > 0 ? existing.budget : budget
     } else {
       suggestLevels()
     }
@@ -408,11 +513,12 @@ struct AlertEditorView: View {
     guard isValid else { return }
     let current = quote?.price ?? lower
     let target: PriceAlert
-    if let alert {
+    if let alert = alert ?? (kind.category == .zones ? slotAlert : nil) {
       let changed = alert.rule != rule
       alert.rule = rule
       if changed {
         alert.conditionMet = false
+        if let quote { alert.prime(with: quote) }
         alert.headsUpSentAt = nil
         Task {
           await flock.withdraw(alert)
@@ -424,8 +530,10 @@ struct AlertEditorView: View {
     } else {
       let alert = PriceAlert(rule: rule, priceAtCreation: current)
       alert.holding = holding
+      if let quote { alert.prime(with: quote) }
       modelContext.insert(alert)
       progress.record(.alertCreated)
+      ToastCenter.shared.show("Dipp is on it!", systemImage: "binoculars.fill")
       Task {
         await NotificationManager.requestAuthorization()
         await flock.share(alert)

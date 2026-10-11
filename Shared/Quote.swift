@@ -18,6 +18,8 @@ struct Quote: Codable, Hashable {
   /// Session dates matching `closes`.
   var dates: [Date] = []
   var dividends: [DividendPayment] = []
+  var opens: [Double] = []
+  var volumes: [Double] = []
   var updatedAt: Date
 
   var change: Double {
@@ -58,6 +60,69 @@ struct Quote: Codable, Hashable {
       return DividendPayment(date: date, amount: payment.amount)
     }
     .sorted { $0.date < $1.date }
+  }
+
+  // MARK: Indicators
+
+  /// Highest and lowest close before today.
+  var previousHigh: Double { closes.dropLast().max() ?? price }
+  var previousLow: Double { closes.dropLast().min() ?? price }
+
+  /// Price change over the last `sessions` trading days.
+  func change(over sessions: Int) -> Double {
+    guard closes.count > sessions, let then = closes.dropLast(sessions).last, then > 0 else { return 0 }
+    return price / then - 1
+  }
+
+  /// How far today's open gapped from yesterday's close.
+  var gap: Double {
+    guard let open = opens.last, previousClose > 0, open > 0 else { return 0 }
+    return open / previousClose - 1
+  }
+
+  /// Today's volume compared with the 20-day average.
+  var volumeRatio: Double? {
+    guard volumes.count > 21, let today = volumes.last, today > 0 else { return nil }
+    let average = volumes.dropLast().suffix(20).reduce(0, +) / 20
+    return average > 0 ? today / average : nil
+  }
+
+  /// Relative Strength Index with Wilder's smoothing.
+  func rsi(period: Int = 14) -> Double? {
+    guard closes.count > period + 1 else { return nil }
+    let changes = zip(closes.dropFirst(), closes).map { $0 - $1 }
+    var gain = changes.prefix(period).map { max($0, 0) }.reduce(0, +) / Double(period)
+    var loss = changes.prefix(period).map { max(-$0, 0) }.reduce(0, +) / Double(period)
+    for change in changes.dropFirst(period) {
+      gain = (gain * Double(period - 1) + max(change, 0)) / Double(period)
+      loss = (loss * Double(period - 1) + max(-change, 0)) / Double(period)
+    }
+    guard loss > 0 else { return 100 }
+    return 100 - 100 / (1 + gain / loss)
+  }
+
+  private static func ema(_ values: [Double], period: Int) -> [Double] {
+    guard let first = values.first else { return [] }
+    let k = 2 / Double(period + 1)
+    var result = [first]
+    for value in values.dropFirst() { result.append(value * k + (result.last ?? value) * (1 - k)) }
+    return result
+  }
+
+  /// MACD line and its signal line (12, 26, 9).
+  var macd: (line: Double, signal: Double)? {
+    guard closes.count > 35 else { return nil }
+    let fast = Self.ema(closes, period: 12)
+    let slow = Self.ema(closes, period: 26)
+    let line = zip(fast, slow).map { $0 - $1 }
+    let signal = Self.ema(line, period: 9)
+    guard let lastLine = line.last, let lastSignal = signal.last else { return nil }
+    return (lastLine, lastSignal)
+  }
+
+  /// Days until the next expected dividend.
+  var daysToNextDividend: Int? {
+    projectedDividends.first.map { Calendar.current.dateComponents([.day], from: .now, to: $0.date).day ?? 0 }
   }
 
   func formatted(_ value: Double) -> String {

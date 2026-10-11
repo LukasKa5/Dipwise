@@ -11,6 +11,8 @@ final class PriceAlert {
   var percent: Double = 0
   var averageDays: Int = 200
   var peakPrice: Double = 0
+  var level: Double = 0
+  var periodDays: Int = 5
   var priceAtCreation: Double = 0
   /// Money the user plans to invest when a buy alert triggers.
   var budget: Double = 0
@@ -51,7 +53,7 @@ final class PriceAlert {
 
   var rule: AlertRule {
     get {
-      AlertRule(kind: kind, lower: targetPrice, upper: upperPrice, percent: percent, averageDays: averageDays, peak: peakPrice)
+      AlertRule(kind: kind, lower: targetPrice, upper: upperPrice, percent: percent, averageDays: averageDays, peak: peakPrice, level: level, days: periodDays)
     }
     set {
       kind = newValue.kind
@@ -60,6 +62,8 @@ final class PriceAlert {
       percent = newValue.percent
       averageDays = newValue.averageDays
       peakPrice = newValue.peak
+      level = newValue.level
+      periodDays = newValue.days
     }
   }
 
@@ -84,6 +88,11 @@ final class PriceAlert {
   }
 
   var isExpired: Bool { expiresAt.map { $0 < .now } ?? false }
+
+  /// Records the current state so change-based alerts only fire on a new signal, not the one already showing.
+  func prime(with quote: Quote) {
+    if kind.firesOnChangeOnly { conditionMet = rule.isMet(by: quote) }
+  }
 
   /// Re-arms a triggered alert so it watches again.
   func rearm(currentPrice: Double) {

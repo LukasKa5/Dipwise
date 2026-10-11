@@ -139,7 +139,7 @@ private struct StockDetail: View {
   }
 }
 
-/// Ollie, the streak, and today's brief status.
+/// Dipp, the streak, and today's brief status.
 private struct StreakPage: View {
   @Environment(WatchTargetStore.self) private var store
 

@@ -168,7 +168,7 @@ private struct WelcomeStep: View {
   @State private var arrived = false
   private let lines = [
     "Hoo! Tap me.",
-    "I'm Ollie, your stock-watching owl.",
+    "I'm Dipp, your stock-watching owl.",
     "I watch your stocks day and night…",
     "…and tell you when it's time to act.",
     "Let's set me up in one minute!",
@@ -188,7 +188,7 @@ private struct WelcomeStep: View {
         .onAppear {
           withAnimation(.spring(duration: 1.2, bounce: 0.35)) { arrived = true }
         }
-        .accessibilityLabel("Ollie the owl")
+        .accessibilityLabel("Dipp the owl")
         .accessibilityAddTraits(.isButton)
       StepTitle(title: "Invest calmly. Let the owl watch.", message: "Dipwise sits between you and your broker, watching your plan so you don't have to.")
       Spacer()
@@ -331,7 +331,7 @@ private struct ScrubStep: View {
       }
 
       StepTitle(
-        title: scrubs > 15 ? "You startled Ollie!" : "Glance, don't stare",
+        title: scrubs > 15 ? "You startled Dipp!" : "Glance, don't stare",
         message: scrubs > 15 ? "He always flies off to find the next dip. That's his job." : "Read any day's price at a touch. Get close to the owl and see what happens."
       )
       .animation(.smooth, value: scrubs > 15)
@@ -409,7 +409,7 @@ private struct NotifyStep: View {
   private static let samples: [Banner] = [
     Banner(title: "NVDA entered your buy zone", message: "Now $177.40, inside $170–178. Your plan: about 5.6 shares.", symbol: "arrow.down.to.line.compact", color: Brand.buy),
     Banner(title: "AAPL reached your sell zone", message: "Now $256.10. Time to take some profit?", symbol: "arrow.up.to.line.compact", color: Brand.sell),
-    Banner(title: "Keep your streak going", message: "Your daily brief is ready. One minute with Ollie.", symbol: "flame.fill", color: Brand.amber),
+    Banner(title: "Keep your streak going", message: "Your daily brief is ready. One minute with Dipp.", symbol: "flame.fill", color: Brand.amber),
   ]
 
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -425,7 +425,7 @@ private struct NotifyStep: View {
           .zIndex(1)
         lockScreen
       }
-      StepTitle(title: "Never miss your moment", message: "Ollie taps you on the shoulder the moment a stock enters your zone, with your plan right in the notification.")
+      StepTitle(title: "Never miss your moment", message: "Dipp taps you on the shoulder the moment a stock enters your zone, with your plan right in the notification.")
       Spacer(minLength: 8)
     }
     .task { await play() }
@@ -513,7 +513,7 @@ private struct RevealStep: View {
       LivelyOwl()
         .frame(width: 130, height: 150)
         .owlFlight(trigger: shown ? 1 : 0, height: 50)
-      StepTitle(title: "Your owl is ready!", message: "Here's what Ollie will watch for you.")
+      StepTitle(title: "Your owl is ready!", message: "Here's what Dipp will watch for you.")
       VStack(spacing: 12) {
         HStack(spacing: -8) {
           ForEach(model.selected, id: \.self) { symbol in

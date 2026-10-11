@@ -17,8 +17,8 @@ struct WatchedStock: Codable, Hashable, Identifiable {
 
 /// Reads and writes the alert snapshot and cached quotes in the shared App Group.
 enum TargetSnapshotStore {
-  private static let targetsKey = "watchedTargets.v2"
-  private static let quotesKey = "cachedQuotes.v2"
+  private static let targetsKey = "watchedTargets.v3"
+  private static let quotesKey = "cachedQuotes.v3"
   private static let stocksKey = "watchedStocks.v1"
 
   static func loadStocks() -> [WatchedStock] {

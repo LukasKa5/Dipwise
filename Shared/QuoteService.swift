@@ -28,12 +28,18 @@ struct QuoteService: Sendable {
     let meta = result.meta
     let rawCloses = result.indicators.quote.first?.close ?? []
     let timestamps = result.timestamp ?? []
+    let rawOpens = result.indicators.quote.first?.open ?? []
+    let rawVolumes = result.indicators.quote.first?.volume ?? []
     var closes: [Double] = []
     var dates: [Date] = []
+    var opens: [Double] = []
+    var volumes: [Double] = []
     for (index, close) in rawCloses.enumerated() {
       guard let close, index < timestamps.count else { continue }
       closes.append(close)
       dates.append(Date(timeIntervalSince1970: TimeInterval(timestamps[index])))
+      opens.append((index < rawOpens.count ? rawOpens[index] : nil) ?? close)
+      volumes.append((index < rawVolumes.count ? rawVolumes[index] : nil) ?? 0)
     }
 
     // London listings quote in pence; normalise to pounds.
@@ -41,6 +47,7 @@ struct QuoteService: Sendable {
     let scale = isPence ? 0.01 : 1
     var price = (meta.regularMarketPrice ?? closes.last ?? 0) * scale
     closes = closes.map { $0 * scale }
+    opens = opens.map { $0 * scale }
     guard price > 0 || !closes.isEmpty else { throw QuoteError.noData }
     if price == 0 { price = closes.last ?? 0 }
     if closes.isEmpty {
@@ -65,6 +72,8 @@ struct QuoteService: Sendable {
       closes: closes,
       dates: dates,
       dividends: dividends,
+      opens: opens,
+      volumes: volumes,
       updatedAt: .now
     )
   }
@@ -139,6 +148,8 @@ private struct ChartResponse: Decodable {
   }
   struct QuoteSeries: Decodable {
     var close: [Double?]?
+    var open: [Double?]?
+    var volume: [Double?]?
   }
   struct Events: Decodable {
     var dividends: [String: Dividend]?
