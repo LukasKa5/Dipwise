@@ -2,7 +2,7 @@ import Charts
 import SwiftData
 import SwiftUI
 
-/// Every alert, grouped by stock, with sorting and filters.
+/// Every alert, shown as one card per stock with its price, chart, and zones up front.
 struct AlertsView: View {
   private enum Filter: String, CaseIterable, Identifiable {
     case active = "Active"
@@ -17,7 +17,7 @@ struct AlertsView: View {
     case closest = "Closest to trigger"
     case newest = "Newest"
     case symbol = "Stock A–Z"
-    case type = "Alert type"
+    case change = "Today's move"
     var id: Self { self }
   }
 
@@ -27,9 +27,8 @@ struct AlertsView: View {
   @Environment(FlockService.self) private var flock
   @Environment(\.modelContext) private var modelContext
   @AppStorage("alertsSort") private var sortRaw = Sort.closest.rawValue
-  @AppStorage("alertsGrouped") private var grouped = true
   @State private var filter: Filter = .active
-  @State private var editor: (holding: Holding, alert: PriceAlert?)?
+  @State private var editor: AlertEditorRequest?
   @State private var journalAlert: PriceAlert?
   @State private var planHolding: Holding?
   @State private var showsPaywall = false
@@ -40,8 +39,8 @@ struct AlertsView: View {
     switch filter {
     case .history: !alert.isActive
     case .active: alert.isActive
-    case .buy: alert.isActive && alert.kind.side == .buy && !alert.kind.requiresPro
-    case .sell: alert.isActive && alert.kind.side == .sell && !alert.kind.requiresPro
+    case .buy: alert.isActive && alert.kind.side == .buy
+    case .sell: alert.isActive && alert.kind.side == .sell
     case .smart: alert.isActive && alert.kind.requiresPro
     }
   }
@@ -50,87 +49,64 @@ struct AlertsView: View {
     quotes[alert.symbol].flatMap { alert.distance(for: $0) } ?? .infinity
   }
 
-  private func sorted(_ alerts: [PriceAlert]) -> [PriceAlert] {
-    alerts.sorted { lhs, rhs in
-      switch sort {
-      case .closest: filter == .history ? (lhs.triggeredAt ?? lhs.createdAt) > (rhs.triggeredAt ?? rhs.createdAt) : distance(of: lhs) < distance(of: rhs)
-      case .newest: lhs.createdAt > rhs.createdAt
-      case .symbol: (lhs.symbol, distance(of: lhs)) < (rhs.symbol, distance(of: rhs))
-      case .type: (AlertKind.allCases.firstIndex(of: lhs.kind) ?? 0, distance(of: lhs)) < (AlertKind.allCases.firstIndex(of: rhs.kind) ?? 0, distance(of: rhs))
-      }
-    }
-  }
-
-  private var allMatching: [PriceAlert] {
-    holdings.flatMap { $0.alerts ?? [] }.filter(matches)
-  }
-
-  /// Stocks with matching alerts, ordered by their closest alert or by name.
   private var groups: [(holding: Holding, alerts: [PriceAlert])] {
     let result = holdings.compactMap { holding -> (Holding, [PriceAlert])? in
-      let alerts = sorted((holding.alerts ?? []).filter(matches))
-      return alerts.isEmpty ? nil : (holding, alerts)
+      let alerts = (holding.alerts ?? []).filter(matches).sorted { lhs, rhs in
+        filter == .history ? (lhs.triggeredAt ?? lhs.createdAt) > (rhs.triggeredAt ?? rhs.createdAt) : distance(of: lhs) < distance(of: rhs)
+      }
+      // Show stocks without alerts too in the Active view, so they can get a plan.
+      if alerts.isEmpty && filter != .active { return nil }
+      return (holding, alerts)
     }
     switch sort {
     case .symbol: return result.sorted { $0.0.symbol < $1.0.symbol }
     case .newest: return result.sorted { ($0.1.first?.createdAt ?? .distantPast) > ($1.1.first?.createdAt ?? .distantPast) }
-    default: return result.sorted { distance(of: $0.1[0]) < distance(of: $1.1[0]) }
+    case .change: return result.sorted { abs(quotes[$0.0.symbol]?.change ?? 0) > abs(quotes[$1.0.symbol]?.change ?? 0) }
+    case .closest: return result.sorted { ($0.1.first.map(distance) ?? .infinity) < ($1.1.first.map(distance) ?? .infinity) }
     }
   }
 
   var body: some View {
     NavigationStack {
-      List {
-        Group {
-        Section {
-          Picker("Filter", selection: $filter.animation(.snappy)) {
-            ForEach(Filter.allCases) { Text($0.rawValue).tag($0) }
-          }
-          .pickerStyle(.segmented)
-          .listRowBackground(Color.clear)
-          .listRowInsets(EdgeInsets())
-        }
+      ScrollView {
+        VStack(alignment: .leading, spacing: 18) {
+          filterBar
 
-        if !subscription.isPro {
-          Section {
+          if !subscription.isPro {
             FreePlanUsage(used: holdings.flatMap(\.activeAlerts).count) { showsPaywall = true }
+              .padding(16)
+              .cardStyle()
           }
-        }
 
-        if grouped {
+          if holdings.isEmpty {
+            ContentUnavailableView("No Alerts Yet", systemImage: "bell.badge", description: Text("Add a stock, then set a green buy zone or a red sell zone. Dipp watches it day and night."))
+              .padding(.top, 40)
+          } else if groups.isEmpty {
+            EmptyHint(systemImage: "clock.arrow.circlepath", text: filter == .history ? "Alerts that fire will appear here, ready for your Dip Journal." : "No alerts match this filter.")
+          }
+
           ForEach(groups, id: \.holding.id) { group in
-            Section {
-              ForEach(group.alerts) { alert in
-                row(for: alert, holding: group.holding, showsSymbol: false)
-              }
-            } header: {
-              StockGroupHeader(holding: group.holding, quote: quotes[group.holding.symbol], count: group.alerts.count) {
-                addAlert(for: group.holding)
-              }
-            }
-          }
-        } else {
-          Section {
-            ForEach(sorted(allMatching)) { alert in
-              if let holding = alert.holding {
-                row(for: alert, holding: holding, showsSymbol: true)
-              }
-            }
+            StockAlertsCard(
+              holding: group.holding,
+              quote: quotes[group.holding.symbol],
+              alerts: group.alerts,
+              showsOdds: subscription.isPro,
+              edit: { alert in
+                if alert.isActive { editor = AlertEditorRequest(holding: group.holding, alert: alert) } else { journalAlert = alert }
+              },
+              add: { addAlert(for: group.holding) },
+              plan: { planHolding = group.holding },
+              delete: delete,
+              rearm: rearm,
+              journal: { journalAlert = $0 }
+            )
           }
         }
-
-        if allMatching.isEmpty && !holdings.isEmpty {
-          Section {
-            Text(filter == .history ? "Alerts that fire will appear here, ready for your Dip Journal." : "Nothing here yet. Tap + on a stock to build its plan.")
-              .foregroundStyle(.secondary)
-          }
-        }
-        }
-        .dipwiseRows()
+        .padding(.horizontal, 20)
+        .padding(.bottom, 32)
+        .frame(maxWidth: 700)
+        .frame(maxWidth: .infinity)
       }
-      .dipwiseListStyle()
-      .listStyle(.insetGrouped)
-      .scrollContentBackground(.hidden)
       .background(Palette.canvas)
       .navigationTitle("Alerts")
       .toolbar {
@@ -146,64 +122,48 @@ struct AlertsView: View {
             Picker("Sort by", selection: $sortRaw) {
               ForEach(Sort.allCases) { Text($0.rawValue).tag($0.rawValue) }
             }
-            Toggle("Group by stock", systemImage: "square.stack.3d.up", isOn: $grouped.animation(.snappy))
           }
         }
       }
       .refreshable { await MarketMonitor.refresh(context: modelContext, quotes: quotes, flock: flock) }
       .navigationDestination(for: String.self) { StockDetailView(symbol: $0) }
-      .sheet(isPresented: Binding(get: { editor != nil }, set: { if !$0 { editor = nil } })) {
-        if let editor { AlertEditorView(holding: editor.holding, alert: editor.alert) }
+      .sheet(item: $editor) { request in
+        AlertEditorView(holding: request.holding, alert: request.alert)
       }
       .sheet(item: $journalAlert) { alert in JournalSheet(alert: alert, quote: quotes[alert.symbol]) }
       .sheet(item: $planHolding) { holding in PlanBuilderView(holding: holding) }
       .sheet(isPresented: $showsPaywall) { PaywallView() }
-      .overlay {
-        if holdings.isEmpty {
-          ContentUnavailableView("No Alerts Yet", systemImage: "bell.badge", description: Text("Add a stock, then set a green buy zone or a red sell zone. Dipwise watches it day and night."))
-        }
-      }
     }
   }
 
-  private func row(for alert: PriceAlert, holding: Holding, showsSymbol: Bool) -> some View {
-    Button {
-      if alert.isActive { editor = (holding, alert) } else { journalAlert = alert }
-    } label: {
-      AlertListRow(alert: alert, quote: quotes[alert.symbol], showsSymbol: showsSymbol, showsOdds: subscription.isPro)
-    }
-    .buttonStyle(.plain)
-    .swipeActions {
-      Button("Delete", systemImage: "trash", role: .destructive) { delete(alert) }
-      if !alert.isActive {
-        Button("Re-arm", systemImage: "arrow.clockwise") { rearm(alert) }
-          .tint(Palette.buy)
+  private var filterBar: some View {
+    ScrollView(.horizontal) {
+      HStack(spacing: 8) {
+        ForEach(Filter.allCases) { item in
+          let isSelected = filter == item
+          Button(item.rawValue) {
+            withAnimation(.snappy) { filter = item }
+          }
+          .font(.subheadline.weight(.semibold))
+          .padding(.horizontal, 16)
+          .padding(.vertical, 9)
+          .foregroundStyle(isSelected ? .white : .primary)
+          .background(isSelected ? AnyShapeStyle(Brand.nightMiddle) : AnyShapeStyle(Palette.card), in: .capsule)
+          .overlay { Capsule().strokeBorder(.quaternary, lineWidth: isSelected ? 0 : 1) }
+          .buttonStyle(.plain)
+          .accessibilityAddTraits(isSelected ? .isSelected : [])
+        }
       }
     }
-    .swipeActions(edge: .leading) {
-      NavigationLink(value: holding.symbol) {
-        Label("Open \(holding.symbol)", systemImage: "chart.xyaxis.line")
-      }
-      .tint(.indigo)
-      if !alert.isActive {
-        Button("Journal", systemImage: "book.closed") { journalAlert = alert }
-          .tint(Palette.amber)
-      }
-    }
-    .contextMenu {
-      NavigationLink(value: holding.symbol) { Label("Open \(holding.symbol)", systemImage: "chart.xyaxis.line") }
-      Button("Edit", systemImage: "pencil") { editor = (holding, alert) }
-      if !alert.isActive {
-        Button("Log Decision", systemImage: "book.closed") { journalAlert = alert }
-        Button("Re-arm", systemImage: "arrow.clockwise") { rearm(alert) }
-      }
-      Button("Delete", systemImage: "trash", role: .destructive) { delete(alert) }
-    }
+    .scrollIndicators(.hidden)
+    .scrollClipDisabled()
+    .padding(.top, 8)
+    .sensoryFeedback(.selection, trigger: filter)
   }
 
   private func addAlert(for holding: Holding) {
     if AlertLimits.canAddAlert(in: modelContext, isPro: subscription.isPro) {
-      planHolding = holding
+      editor = AlertEditorRequest(holding: holding, alert: nil)
     } else {
       showsPaywall = true
     }
@@ -211,7 +171,7 @@ struct AlertsView: View {
 
   private func delete(_ alert: PriceAlert) {
     Task { await flock.withdraw(alert) }
-    modelContext.delete(alert)
+    withAnimation(.smooth) { modelContext.delete(alert) }
     try? modelContext.save()
     SnapshotPublisher.publish(context: modelContext)
   }
@@ -227,147 +187,197 @@ struct AlertsView: View {
   }
 }
 
-/// A stock's header in the grouped alert list: price, trend, and a shortcut to add alerts.
-private struct StockGroupHeader: View {
+struct AlertEditorRequest: Identifiable {
+  var holding: Holding
+  var alert: PriceAlert?
+  var id: String { alert.map { "\($0.id)" } ?? "new-\(holding.symbol)" }
+}
+
+/// One stock and all of its alerts.
+private struct StockAlertsCard: View {
   var holding: Holding
   var quote: Quote?
-  var count: Int
+  var alerts: [PriceAlert]
+  var showsOdds: Bool
+  var edit: (PriceAlert) -> Void
   var add: () -> Void
+  var plan: () -> Void
+  var delete: (PriceAlert) -> Void
+  var rearm: (PriceAlert) -> Void
+  var journal: (PriceAlert) -> Void
 
   var body: some View {
-    HStack(spacing: 10) {
+    VStack(alignment: .leading, spacing: 0) {
       NavigationLink(value: holding.symbol) {
-        HStack(spacing: 10) {
-          TickerBadge(symbol: holding.symbol, size: 32)
-          VStack(alignment: .leading, spacing: 1) {
-            Text(holding.symbol)
-              .font(.headline)
-              .foregroundStyle(.primary)
-            if let quote {
-              HStack(spacing: 6) {
-                Text(quote.formatted(quote.price))
-                  .monospacedDigit()
-                ChangeBadge(change: quote.change)
-              }
-              .font(.caption)
-              .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 12) {
+          HStack(spacing: 12) {
+            TickerBadge(symbol: holding.symbol, size: 48)
+            VStack(alignment: .leading, spacing: 2) {
+              Text(holding.symbol)
+                .font(.title3.bold())
+              Text(holding.name)
+                .font(.subheadline)
+                .foregroundStyle(.white.opacity(0.65))
+                .lineLimit(1)
             }
+            Spacer()
+            if let quote {
+              VStack(alignment: .trailing, spacing: 2) {
+                Text(quote.formatted(quote.price))
+                  .font(.title3.bold().monospacedDigit())
+                ChangeBadge(change: quote.change, positiveColor: Palette.gain, negativeColor: Palette.loss)
+              }
+            }
+            Image(systemName: "chevron.forward")
+              .font(.footnote.weight(.bold))
+              .foregroundStyle(.white.opacity(0.4))
           }
           if let quote {
-            Sparkline(values: quote.recent(22).values)
-              .frame(width: 64, height: 26)
+            MiniPlanChart(quote: quote, buyZone: holding.buyZone, sellZone: holding.sellZone)
+              .frame(height: 64)
           }
         }
+        .padding(16)
+        .contentShape(.rect)
       }
       .buttonStyle(.plain)
-      Spacer()
-      Button("Add alert for \(holding.symbol)", systemImage: "plus.circle.fill", action: add)
-        .labelStyle(.iconOnly)
-        .font(.title2)
-        .foregroundStyle(.tint)
+      .heroCardStyle(cornerRadius: 22)
+      .padding(6)
+
+      if alerts.isEmpty {
+        Text("No alerts yet. Give \(holding.symbol) a plan.")
+          .font(.subheadline)
+          .foregroundStyle(.secondary)
+          .padding(.horizontal, 18)
+          .padding(.vertical, 12)
+      }
+
+      ForEach(alerts) { alert in
+        Button {
+          edit(alert)
+        } label: {
+          AlertRow(alert: alert, quote: quote, showsOdds: showsOdds)
+        }
+        .buttonStyle(.plain)
+        .contextMenu {
+          Button(alert.isActive ? "Edit" : "Log Decision", systemImage: alert.isActive ? "pencil" : "book.closed") { edit(alert) }
+          if !alert.isActive {
+            Button("Re-arm", systemImage: "arrow.clockwise") { rearm(alert) }
+          }
+          Button("Delete", systemImage: "trash", role: .destructive) { delete(alert) }
+        }
+        if alert.id != alerts.last?.id {
+          Divider().padding(.leading, 64)
+        }
+      }
+
+      HStack(spacing: 10) {
+        Button(action: add) {
+          Label("Add alert", systemImage: "plus")
+            .frame(maxWidth: .infinity)
+        }
+        Button(action: plan) {
+          Label("Plan", systemImage: "wand.and.stars")
+            .frame(maxWidth: .infinity)
+        }
+      }
+      .font(.subheadline.weight(.semibold))
+      .buttonStyle(.bordered)
+      .padding(12)
     }
-    .textCase(nil)
-    .padding(.vertical, 4)
+    .cardStyle(cornerRadius: 26)
   }
 }
 
-struct Sparkline: View {
-  var values: [Double]
+/// A compact price chart with the stock's buy zone in green and sell zone in red.
+private struct MiniPlanChart: View {
+  var quote: Quote
+  var buyZone: PriceAlert?
+  var sellZone: PriceAlert?
 
   var body: some View {
+    let values = Array(quote.closes.suffix(44))
+    let zones = [buyZone, sellZone].compactMap { $0 }
+    let bounds = values + zones.flatMap { [$0.targetPrice, max($0.targetPrice, $0.upperPrice)] }
     let isUp = (values.last ?? 0) >= (values.first ?? 0)
-    Chart(Array(values.enumerated()), id: \.offset) { index, value in
-      LineMark(x: .value("Day", index), y: .value("Price", value))
-        .foregroundStyle(isUp ? Palette.gain : Palette.loss)
-        .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round))
-        .interpolationMethod(.monotone)
+    Chart {
+      ForEach(zones) { zone in
+        RectangleMark(yStart: .value("Low", zone.targetPrice), yEnd: .value("High", max(zone.targetPrice * 1.003, zone.upperPrice)))
+          .foregroundStyle(zone.kind.side.color.opacity(0.28))
+      }
+      ForEach(Array(values.enumerated()), id: \.offset) { index, value in
+        LineMark(x: .value("Day", index), y: .value("Price", value))
+          .foregroundStyle(isUp ? Palette.gain : Palette.loss)
+          .lineStyle(StrokeStyle(lineWidth: 2.5, lineCap: .round))
+          .interpolationMethod(.monotone)
+      }
+      if let last = values.last {
+        PointMark(x: .value("Day", values.count - 1), y: .value("Price", last))
+          .symbolSize(50)
+          .foregroundStyle(.white)
+      }
     }
     .chartXAxis(.hidden)
     .chartYAxis(.hidden)
-    .chartYScale(domain: (values.min() ?? 0)...(values.max() ?? 1))
+    .chartYScale(domain: (bounds.min() ?? 0) * 0.99...(bounds.max() ?? 1) * 1.01)
     .accessibilityHidden(true)
   }
 }
 
-private struct AlertListRow: View {
+private struct AlertRow: View {
   var alert: PriceAlert
   var quote: Quote?
-  var showsSymbol: Bool
   var showsOdds: Bool
 
-  private var tint: Color { alert.kind.side.color }
-
   var body: some View {
+    let tint = alert.kind.side.color
+    let distance = quote.flatMap { alert.distance(for: $0) }
     HStack(spacing: 12) {
       Image(systemName: alert.kind.systemImage)
         .font(.subheadline.weight(.bold))
         .foregroundStyle(tint)
         .frame(width: 36, height: 36)
         .background(tint.opacity(0.14), in: .circle)
-      VStack(alignment: .leading, spacing: 6) {
-        HStack {
-          Text(showsSymbol ? "\(alert.symbol) · \(alert.summary(for: quote))" : alert.summary(for: quote))
-            .font(.subheadline.weight(.semibold))
-            .lineLimit(1)
-            .minimumScaleFactor(0.8)
-          if alert.repeats {
-            Image(systemName: "repeat")
-              .font(.caption)
-              .foregroundStyle(.secondary)
-              .accessibilityLabel("Repeats")
-          }
-          Spacer()
-          status
-        }
+      VStack(alignment: .leading, spacing: 4) {
+        Text(alert.summary(for: quote))
+          .font(.subheadline.weight(.semibold))
+          .fixedSize(horizontal: false, vertical: true)
         if alert.isActive {
-          TargetTrack(progress: quote.map { alert.progress(for: $0) } ?? 0, isReached: quote.flatMap { alert.distance(for: $0) } == 0, tint: tint)
-          if showsOdds, let quote, let odds = AlertOdds(rule: alert.rule, quote: quote), (alert.distance(for: quote) ?? 1) > 0 {
-            Label("\(odds.headline) · \(odds.lastTriggeredText.lowercased())", systemImage: "dice")
+          if let quote {
+            TargetTrack(progress: alert.progress(for: quote), isReached: distance == 0, tint: tint)
+          }
+          if showsOdds, let quote, let odds = AlertOdds(rule: alert.rule, quote: quote), (distance ?? 1) > 0 {
+            Label(odds.headline, systemImage: "dice")
               .font(.caption)
               .foregroundStyle(Palette.amber)
-              .lineLimit(1)
-              .minimumScaleFactor(0.8)
           }
         } else if let price = alert.triggeredPrice {
           HStack(spacing: 6) {
             Text("Fired at \(quote?.formatted(price) ?? price.formatted())")
-            if let quote {
-              ChangeBadge(change: quote.price / price - 1, caption: "since")
-            }
-            Spacer()
-            if let action = alert.journalAction {
-              Label(action.title, systemImage: action.systemImage)
-                .foregroundStyle(Palette.amber)
-            } else {
-              Text("Log decision")
-                .foregroundStyle(.tint)
-            }
+            if let quote { ChangeBadge(change: quote.price / price - 1, caption: "since") }
           }
           .font(.caption)
           .foregroundStyle(.secondary)
+          Text(alert.journalAction.map { "You \($0.title.lowercased())" } ?? "Tap to log what you did")
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(alert.journalAction == nil ? AnyShapeStyle(.tint) : AnyShapeStyle(Palette.amber))
         }
       }
+      Spacer(minLength: 6)
+      if alert.isActive {
+        Text(distance == 0 ? "Now" : distance.map { $0.formatted(.percent.precision(.fractionLength(1))) } ?? "—")
+          .font(.subheadline.bold().monospacedDigit())
+          .foregroundStyle(distance == 0 || (distance ?? 1) < 0.035 ? tint : .secondary)
+      } else if let triggeredAt = alert.triggeredAt {
+        Text(triggeredAt, format: .relative(presentation: .named))
+          .font(.caption)
+          .foregroundStyle(.secondary)
+      }
     }
-    .padding(.vertical, 4)
+    .padding(.horizontal, 16)
+    .padding(.vertical, 12)
     .contentShape(.rect)
     .accessibilityElement(children: .combine)
-  }
-
-  @ViewBuilder
-  private var status: some View {
-    if alert.isActive, let quote, let distance = alert.distance(for: quote) {
-      Text(distance == 0 ? "Active now" : "\(distance.formatted(.percent.precision(.fractionLength(1)))) away")
-        .font(.caption.weight(.semibold).monospacedDigit())
-        .foregroundStyle(distance < 0.035 ? tint : .secondary)
-    } else if let triggeredAt = alert.triggeredAt {
-      Text(triggeredAt, format: .relative(presentation: .named))
-        .font(.caption)
-        .foregroundStyle(.secondary)
-    } else if alert.isExpired {
-      Text("Expired")
-        .font(.caption)
-        .foregroundStyle(.secondary)
-    }
   }
 }
 
@@ -390,7 +400,7 @@ private struct FreePlanUsage: View {
       Button(action: upgrade) {
         HStack {
           ProBadge()
-          Text("Unlimited plans, smart alerts & the full crowd report")
+          Text("Unlimited alerts, 20 smart alert types & odds")
             .font(.subheadline.weight(.semibold))
           Spacer()
           Image(systemName: "chevron.forward")
@@ -400,6 +410,5 @@ private struct FreePlanUsage: View {
       .buttonStyle(.plain)
       .foregroundStyle(.tint)
     }
-    .padding(.vertical, 4)
   }
 }
