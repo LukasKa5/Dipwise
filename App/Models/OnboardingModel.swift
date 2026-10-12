@@ -57,13 +57,9 @@ final class OnboardingModel {
   var zoneLower = 0.0
   var zoneUpper = 0.0
   var vote: Bool?
-  var smartKinds: Set<AlertKind> = []
-  /// Little tasks in the tour that teach a feature and earn XP.
+  /// Little tasks in the tour that teach a feature by doing it.
   private(set) var completedMissions: Set<String> = []
   private(set) var missionCelebration = 0
-  static let missionPoints = 10
-
-  var earnedXP: Int { completedMissions.count * Self.missionPoints }
 
   func complete(_ mission: String) {
     guard !completedMissions.contains(mission) else { return }
@@ -71,8 +67,6 @@ final class OnboardingModel {
     missionCelebration += 1
   }
 
-  /// Popular smart alerts offered during the tour.
-  static let suggestedSmart: [AlertKind] = [.rsiOversold, .trailingStop, .dropFromHigh, .goldenCross, .volumeSpike, .dividendSoon]
 
   var focusSymbol: String? { selected.first }
   var focusQuote: Quote? { focusSymbol.flatMap { quotes[$0] } }
@@ -137,17 +131,4 @@ final class OnboardingModel {
     return created
   }
 
-  /// Adds the smart alerts picked in the tour to the focus stock (they're part of Pro).
-  func commitSmartAlerts(context: ModelContext) {
-    guard let symbol = focusSymbol, let quote = quotes[symbol], !smartKinds.isEmpty else { return }
-    let holdings = (try? context.fetch(FetchDescriptor<Holding>())) ?? []
-    guard let holding = holdings.first(where: { $0.symbol == symbol }) else { return }
-    for kind in smartKinds where !holding.activeAlerts.contains(where: { $0.kind == kind }) {
-      let alert = PriceAlert(rule: AlertRule.defaults(for: kind, price: quote.price, cost: holding.averageCost), priceAtCreation: quote.price)
-      alert.holding = holding
-      alert.prime(with: quote)
-      context.insert(alert)
-    }
-    try? context.save()
-  }
 }

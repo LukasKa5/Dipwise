@@ -18,15 +18,14 @@ struct OnboardingView: View {
   @State private var page = 0
   @State private var showsPaywall = false
   @State private var celebration = 0
-  @State private var xpToast: Int?
 
-  private let pageCount = 12
+  private let pageCount = 11
 
   private var canContinue: Bool {
     switch page {
     case 1: !model.styles.isEmpty
     case 2: !model.selected.isEmpty
-    case 6: model.vote != nil
+    case 5: model.vote != nil
     default: true
     }
   }
@@ -34,11 +33,10 @@ struct OnboardingView: View {
   private var buttonTitle: String {
     switch page {
     case 2: model.selected.isEmpty ? "Pick at least one" : "Watch \(model.selected.count) \(model.selected.count == 1 ? "stock" : "stocks")"
-    case 5: model.smartKinds.isEmpty ? "Maybe later" : "Add \(model.smartKinds.count) smart \(model.smartKinds.count == 1 ? "alert" : "alerts")"
-    case 6: model.vote == nil ? "Cast your vote" : "Continue"
-    case 9: "Allow Notifications"
-    case 10: account.isSignedIn ? "Continue" : "Continue without an account"
-    case 11: "Start Watching"
+    case 5: model.vote == nil ? "Cast your vote" : "Continue"
+    case 8: "Allow Notifications"
+    case 9: account.isSignedIn ? "Continue" : "Continue without an account"
+    case 10: "Start Watching"
     default: "Continue"
     }
   }
@@ -55,12 +53,11 @@ struct OnboardingView: View {
           case 2: PickStep(model: model)
           case 3: ScrubStep(model: model)
           case 4: ZoneStep(model: model)
-          case 5: SmartStep(model: model)
-          case 6: FlockStep(model: model)
-          case 7: WidgetStep(model: model)
-          case 8: WatchStep(model: model)
-          case 9: NotifyStep()
-          case 10: AccountStep()
+          case 5: FlockStep(model: model)
+          case 6: WidgetStep(model: model)
+          case 7: WatchStep(model: model)
+          case 8: NotifyStep()
+          case 9: AccountStep()
           default: RevealStep(model: model, streak: max(1, progress.streak))
           }
         }
@@ -83,27 +80,12 @@ struct OnboardingView: View {
         .sensoryFeedback(.impact(weight: .light), trigger: page)
       }
       Confetti(trigger: celebration)
-      if let toast = xpToast {
-        XPToast(points: toast)
-          .transition(.scale(scale: 0.4).combined(with: .opacity).combined(with: .move(edge: .top)))
-          .frame(maxHeight: .infinity, alignment: .top)
-          .padding(.top, 60)
-      }
-    }
-    .onChange(of: model.missionCelebration) {
-      celebration += 1
-      withAnimation(.bouncy) { xpToast = OnboardingModel.missionPoints }
-      Task {
-        try? await Task.sleep(for: .seconds(1.4))
-        withAnimation(.smooth) { xpToast = nil }
-      }
     }
     .sensoryFeedback(.success, trigger: model.missionCelebration)
     .foregroundStyle(.white)
     .environment(\.colorScheme, .dark)
     .task { await model.loadQuotes() }
     .sheet(isPresented: $showsPaywall, onDismiss: {
-      if subscription.isPro { model.commitSmartAlerts(context: modelContext) }
       SnapshotPublisher.publish(context: modelContext)
       onFinish()
     }) {
@@ -132,12 +114,6 @@ struct OnboardingView: View {
       .animation(.snappy, value: page)
       .accessibilityElement()
       .accessibilityLabel("Step \(page + 1) of \(pageCount)")
-      Label("\(model.earnedXP)", systemImage: "bolt.fill")
-        .font(.subheadline.weight(.heavy).monospacedDigit())
-        .foregroundStyle(Brand.amber)
-        .contentTransition(.numericText())
-        .animation(.bouncy, value: model.earnedXP)
-        .accessibilityLabel("\(model.earnedXP) XP earned")
       Button("Skip") { showsPaywall = true }
         .font(.subheadline.weight(.semibold))
         .foregroundStyle(.white.opacity(0.7))
@@ -152,22 +128,21 @@ struct OnboardingView: View {
   private func advance() {
     switch page {
     case 3: model.prepareZone()
-    case 10:
-      if !account.isSignedIn { account.continueAsGuest() }
     case 9:
+      if !account.isSignedIn { account.continueAsGuest() }
+    case 8:
       Task {
         await NotificationManager.requestAuthorization()
         withAnimation(.smooth) { page += 1 }
         celebration += 1
       }
       return
-    case 11:
+    case 10:
       let created = model.commit(context: modelContext, quoteStore: quoteStore, isPro: subscription.isPro)
       for alert in created {
         Task { await flock.share(alert) }
       }
       progress.record(.onboarding)
-      progress.addBonus(model.earnedXP)
       SnapshotPublisher.publish(context: modelContext)
       showsPaywall = true
       return
@@ -244,51 +219,65 @@ private struct StyleStep: View {
 
   var body: some View {
     ScrollView {
-      VStack(spacing: 20) {
-        HStack(alignment: .top, spacing: 12) {
+      VStack(spacing: 18) {
+        VStack(spacing: 10) {
           LivelyOwl(hopsOnTap: false, mood: .calm)
-            .frame(width: 70, height: 80)
-            .owlFlight(trigger: hops, height: 24)
-          SpeechBubble(text: model.lastStyle?.owlReply ?? "What brings you here? Pick as many as you like.")
+            .frame(width: 74, height: 86)
+            .owlFlight(trigger: hops, height: 18)
+          SpeechBubble(text: model.lastStyle?.owlReply ?? "What brings you here?")
             .animation(.snappy, value: model.lastStyle)
+          Text("Choose all that apply")
+            .font(.subheadline)
+            .foregroundStyle(.white.opacity(0.6))
         }
-        .padding(.top, 12)
-        VStack(spacing: 12) {
+        .padding(.top, 16)
+
+        LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
           ForEach(InvestorStyle.allCases) { style in
             let isSelected = model.styles.contains(style)
             Button {
               withAnimation(.snappy) { model.toggle(style: style) }
-              if isSelected == false { hops += 1 }
+              if !isSelected { hops += 1 }
             } label: {
-              HStack(spacing: 14) {
-                Image(systemName: style.systemImage)
-                  .font(.title3)
-                  .frame(width: 30)
+              VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                  Image(systemName: style.systemImage)
+                    .font(.title3)
+                  Spacer()
+                  Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(.headline)
+                    .opacity(isSelected ? 1 : 0.5)
+                }
                 Text(style.title)
-                  .font(.headline)
-                Spacer()
-                Image(systemName: isSelected ? "checkmark.square.fill" : "square")
-                  .font(.title3)
+                  .font(.subheadline.weight(.semibold))
+                  .multilineTextAlignment(.leading)
+                  .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
               }
-              .padding(18)
+              .padding(14)
+              .frame(maxWidth: .infinity, minHeight: 104, alignment: .topLeading)
               .foregroundStyle(isSelected ? Brand.owlInk : .white)
               .background(isSelected ? AnyShapeStyle(Brand.buy) : AnyShapeStyle(.white.opacity(0.08)), in: .rect(cornerRadius: 18))
-              .scaleEffect(isSelected ? 1.02 : 1)
+              .overlay {
+                RoundedRectangle(cornerRadius: 18).strokeBorder(.white.opacity(isSelected ? 0 : 0.12))
+              }
             }
             .buttonStyle(.plain)
             .accessibilityAddTraits(isSelected ? .isSelected : [])
           }
-          if model.styles.contains(.other) {
-            TextField("What would you like Dippy to help with?", text: $model.otherGoal, axis: .vertical)
-              .lineLimit(1...3)
-              .padding(16)
-              .background(.white.opacity(0.1), in: .rect(cornerRadius: 16))
-              .transition(.move(edge: .top).combined(with: .opacity))
-          }
         }
-        .padding(.horizontal, 24)
-        .sensoryFeedback(.selection, trigger: model.styles)
+
+        if model.styles.contains(.other) {
+          TextField("What should Dippy help you with?", text: $model.otherGoal, axis: .vertical)
+            .lineLimit(1...3)
+            .padding(16)
+            .background(.white.opacity(0.1), in: .rect(cornerRadius: 16))
+            .transition(.move(edge: .top).combined(with: .opacity))
+        }
       }
+      .padding(.horizontal, 24)
+      .padding(.bottom, 12)
+      .sensoryFeedback(.selection, trigger: model.styles)
     }
     .scrollDismissesKeyboard(.interactively)
   }
@@ -445,21 +434,55 @@ private struct FlockStep: View {
   }
 
   var body: some View {
-    VStack(spacing: 22) {
-      Spacer()
-      LivelyOwl(hopsOnTap: false, mood: .calm)
-        .frame(width: 90, height: 104)
-        .owlFlight(trigger: flights, height: 40)
-      StepTitle(title: "Invest with the flock", message: model.vote == nil ? "Thousands of investors share their plans anonymously. What's your call?" : "You're part of the flock now. See where everyone buys and sells, on every stock.")
-        .animation(.smooth, value: model.vote)
-      MissionChip(text: "Vote with the flock", isDone: model.completedMissions.contains("flock"))
-      VoteCard(symbol: model.focusSymbol ?? "NVDA", votes: votes, userVote: model.vote) { bullish in
-        model.vote = bullish
-        flights += 1
-        model.complete("flock")
+    ScrollView {
+      VStack(spacing: 20) {
+        HStack(spacing: -14) {
+          ForEach(0..<3) { index in
+            LivelyOwl(hopsOnTap: false, mood: .calm)
+              .frame(width: index == 1 ? 74 : 54, height: index == 1 ? 86 : 62)
+              .owlFlight(trigger: flights, height: index == 1 ? 34 : 22)
+              .zIndex(index == 1 ? 1 : 0)
+          }
+        }
+        .padding(.top, 12)
+        StepTitle(title: "Meet the flock", message: "The flock is every Dipwise investor. Each alert they set is shared anonymously, and Dippy combines them to show where the crowd plans to buy and sell.")
+
+        if let quote = model.focusQuote {
+          VStack(alignment: .leading, spacing: 10) {
+            Text("\(model.focusSymbol ?? "") · what the crowd plans")
+              .font(.subheadline.weight(.semibold))
+            ZoneTrack(
+              price: quote.price,
+              bands: [
+                ZoneTrack.Band(range: (quote.price * 0.86)...(quote.price * 0.93), side: .buy, isCrowd: true),
+                ZoneTrack.Band(range: (quote.price * 1.12)...(quote.price * 1.2), side: .sell, isCrowd: true),
+                ZoneTrack.Band(range: model.zoneLower...max(model.zoneLower, model.zoneUpper), side: .buy, isCrowd: false),
+              ],
+              low: nil,
+              high: nil,
+              format: { quote.formatted($0) }
+            )
+            ZoneLegend()
+          }
+          .padding(16)
+          .background(.white.opacity(0.07), in: .rect(cornerRadius: 20))
+          .padding(.horizontal, 20)
+        }
+
+        MissionChip(text: "Vote with the flock", isDone: model.completedMissions.contains("flock"))
+        VoteCard(symbol: model.focusSymbol ?? "NVDA", votes: votes, userVote: model.vote) { bullish in
+          model.vote = bullish
+          flights += 1
+          model.complete("flock")
+        }
+        .padding(.horizontal, 20)
+        Text("Your own alerts stay private. Only the price levels are shared, never your name or holdings.")
+          .font(.caption)
+          .foregroundStyle(.white.opacity(0.55))
+          .multilineTextAlignment(.center)
+          .padding(.horizontal, 32)
       }
-      .padding(.horizontal, 20)
-      Spacer()
+      .padding(.bottom, 12)
     }
   }
 }
@@ -655,79 +678,20 @@ private struct WatchStep: View {
   }
 }
 
-/// A small task that teaches a feature; it turns green with a check when done.
+/// A gentle hint that teaches a feature by doing it; it turns green with a check when done.
 private struct MissionChip: View {
   var text: String
   var isDone: Bool
 
   var body: some View {
-    Label(isDone ? "\(text) · +\(OnboardingModel.missionPoints) XP" : text, systemImage: isDone ? "checkmark.circle.fill" : "target")
+    Label(isDone ? "Nice! \(text)" : "Try it: \(text)", systemImage: isDone ? "checkmark.circle.fill" : "hand.tap.fill")
       .font(.subheadline.weight(.bold))
       .foregroundStyle(isDone ? Brand.owlInk : Brand.amber)
       .padding(.horizontal, 14)
       .padding(.vertical, 8)
       .background(isDone ? AnyShapeStyle(Brand.buy) : AnyShapeStyle(Brand.amber.opacity(0.15)), in: .capsule)
       .animation(.bouncy, value: isDone)
-      .accessibilityLabel(isDone ? "Mission complete: \(text)" : "Mission: \(text)")
-  }
-}
-
-private struct SmartStep: View {
-  @Bindable var model: OnboardingModel
-
-  var body: some View {
-    ScrollView {
-      VStack(spacing: 20) {
-        MissionChip(text: "Pick a smart alert", isDone: model.completedMissions.contains("smart"))
-          .padding(.top, 12)
-        HStack(alignment: .top, spacing: 12) {
-          LivelyOwl(hopsOnTap: false, mood: .calm)
-            .frame(width: 64, height: 74)
-          SpeechBubble(text: model.smartKinds.isEmpty ? "I can watch more than prices. Pick as many as you like!" : "Great picks. I'll watch \(model.focusSymbol ?? "it") for those too.")
-            .animation(.snappy, value: model.smartKinds.isEmpty)
-        }
-        VStack(spacing: 10) {
-          ForEach(OnboardingModel.suggestedSmart) { kind in
-            let isOn = model.smartKinds.contains(kind)
-            Button {
-              withAnimation(.snappy) {
-                if isOn { model.smartKinds.remove(kind) } else { model.smartKinds.insert(kind) }
-              }
-              model.complete("smart")
-            } label: {
-              HStack(spacing: 12) {
-                Image(systemName: kind.systemImage)
-                  .font(.headline)
-                  .foregroundStyle(isOn ? Brand.owlInk : kind.side.brandColor)
-                  .frame(width: 34, height: 34)
-                  .background(isOn ? AnyShapeStyle(.white.opacity(0.5)) : AnyShapeStyle(kind.side.brandColor.opacity(0.2)), in: .circle)
-                VStack(alignment: .leading, spacing: 2) {
-                  Text(kind.title).font(.headline)
-                  Text(kind.explanation)
-                    .font(.caption)
-                    .opacity(0.75)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.leading)
-                }
-                Spacer()
-                Image(systemName: isOn ? "checkmark.square.fill" : "square")
-                  .font(.title3)
-              }
-              .padding(14)
-              .foregroundStyle(isOn ? Brand.owlInk : .white)
-              .background(isOn ? AnyShapeStyle(Brand.buy) : AnyShapeStyle(.white.opacity(0.08)), in: .rect(cornerRadius: 18))
-            }
-            .buttonStyle(.plain)
-            .accessibilityAddTraits(isOn ? .isSelected : [])
-          }
-        }
-        .padding(.horizontal, 20)
-        .sensoryFeedback(.selection, trigger: model.smartKinds)
-        Text("Smart alerts are part of Dipwise Pro. Try it free for 7 days.")
-          .font(.footnote)
-          .foregroundStyle(.white.opacity(0.6))
-      }
-    }
+      .accessibilityLabel(isDone ? "Done: \(text)" : "Try it: \(text)")
   }
 }
 
@@ -895,21 +859,9 @@ private struct RevealStep: View {
             .font(.headline)
             .foregroundStyle(Brand.buy)
         }
-        if !model.smartKinds.isEmpty {
-          Label("\(model.smartKinds.count) smart \(model.smartKinds.count == 1 ? "alert" : "alerts") ready to activate", systemImage: "sparkles")
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(.white.opacity(0.8))
-        }
-        HStack(spacing: 18) {
-          Label("Day \(streak) streak", systemImage: "flame.fill")
-            .foregroundStyle(Brand.amber)
-          Label("+\(50 + model.earnedXP) XP", systemImage: "bolt.fill")
-            .foregroundStyle(Brand.amber)
-        }
-        .font(.headline)
-        Text("\(model.completedMissions.count) of 8 missions completed")
-          .font(.caption)
-          .foregroundStyle(.white.opacity(0.6))
+        Label("Your streak starts today", systemImage: "flame.fill")
+          .font(.headline)
+          .foregroundStyle(Brand.amber)
       }
       .padding(20)
       .frame(maxWidth: .infinity)

@@ -63,9 +63,12 @@ struct FlockView: View {
     return VStack(alignment: .leading, spacing: 18) {
       HStack(alignment: .top, spacing: 16) {
         VStack(alignment: .leading, spacing: 6) {
-          Text("This week in the flock")
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(.secondary)
+          HStack(spacing: 2) {
+            Text("This week in the flock")
+              .font(.subheadline.weight(.semibold))
+              .foregroundStyle(.secondary)
+            InfoButton(topic: .flock)
+          }
           Text("\(overview.investors.formatted()) investors")
             .font(.title.bold())
           Text("set \(overview.alertsThisWeek.formatted()) new alerts")

@@ -16,6 +16,7 @@ enum HelpTopic: Identifiable, Hashable {
   case dividends
   case allocation
   case radar
+  case flock
   case category(AlertCategory)
   case alert(AlertKind)
 
@@ -43,6 +44,7 @@ enum HelpTopic: Identifiable, Hashable {
     case .dividends: "Dividend income"
     case .allocation: "Allocation"
     case .radar: "Dip Radar"
+    case .flock: "The flock"
     case .category(let category): category.title
     case .alert(let kind): kind.title
     }
@@ -51,7 +53,7 @@ enum HelpTopic: Identifiable, Hashable {
   var systemImage: String {
     switch self {
     case .zones: "arrow.up.and.down"
-    case .crowdZone, .conviction, .radar: "person.3.fill"
+    case .crowdZone, .conviction, .radar, .flock: "person.3.fill"
     case .medianAverage: "equal.circle"
     case .odds: "dice.fill"
     case .planHealth: "heart.text.square.fill"
@@ -95,6 +97,8 @@ enum HelpTopic: Identifiable, Hashable {
       "Expected income is based on what each stock paid over the last twelve months, times your shares. Yield on cost compares that income with what you originally paid."
     case .allocation:
       "Allocation shows how your money is spread across stocks, asset types, and currencies. If one position is a large share of the total, a bad day for it is a bad day for you."
+    case .flock:
+      "The flock is every Dipwise investor. When someone sets an alert, its price level is shared anonymously (never names, holdings, or notes). Dippy combines thousands of them to show where the crowd plans to buy (green) and sell (red), how strong its conviction is, and how past dip-buys worked out. Vote each week to add your view."
     case .radar:
       "Dip Radar lists popular stocks that are trading inside, or just above, the range where most Dipwise investors plan to buy."
     case .category(let category):
