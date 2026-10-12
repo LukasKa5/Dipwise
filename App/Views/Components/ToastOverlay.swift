@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Dipp flies in with a short message, then flies away.
+/// Dippy flies in with a short message, then flies away.
 struct ToastOverlay: View {
   var center: ToastCenter
   @State private var flights = 0

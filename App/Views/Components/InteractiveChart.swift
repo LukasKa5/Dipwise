@@ -28,13 +28,15 @@ struct InteractiveChart: View {
   var zones: [Zone] = []
   var showsOwl = true
   var owlSize: CGFloat = 52
-  var owlMood: OwlMood = .calm
+  /// Nil follows the market clock, like everywhere else in the app.
+  var owlMood: OwlMood? = nil
   @Binding var selectedIndex: Int?
 
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @State private var perchIndex: Int?
   @State private var flights = 0
   @State private var flightDirection = 1.0
+  @State private var landed = false
 
   private var points: [(offset: Int, element: Double)] {
     values.enumerated().map { ($0.offset, $0.element) }
@@ -51,8 +53,19 @@ struct InteractiveChart: View {
     }
   }
 
+  /// The lowest local dip, or the lowest point before today when the series is too short for dips.
   private var defaultPerch: Int? {
-    perches.min { values[$0] < values[$1] }
+    if let dip = perches.min(by: { values[$0] < values[$1] }) { return dip }
+    guard values.count >= 2 else { return nil }
+    return values.indices.dropLast().min { values[$0] < values[$1] }
+  }
+
+  /// Dippy watches the finger as it scrubs.
+  private var gaze: CGSize {
+    guard let selectedIndex, let perch = perchIndex ?? defaultPerch else { return .zero }
+    let dx = Double(selectedIndex - perch) / Double(max(values.count / 4, 1))
+    let dy = values.indices.contains(selectedIndex) && values[selectedIndex] > values[perch] ? -0.5 : 0.3
+    return CGSize(width: max(-1, min(1, dx)), height: dy)
   }
 
   private var trendColor: Color {
@@ -140,8 +153,10 @@ struct InteractiveChart: View {
            let plotFrame = proxy.plotFrame,
            let position = proxy.position(for: (x: index, y: values[index])) {
           let origin = geometry[plotFrame].origin
-          LivelyOwl(hopsOnTap: false, mood: owlMood)
+          LivelyOwl(lookOffset: gaze, hopsOnTap: false, mood: owlMood)
             .frame(width: owlSize, height: owlSize * 1.15)
+            .offset(landed || reduceMotion ? .zero : CGSize(width: owlSize * 2, height: -owlSize * 3))
+            .opacity(landed || reduceMotion ? 1 : 0)
             .owlFlight(trigger: flights, direction: flightDirection, height: 60, isEnabled: !reduceMotion)
             .shadow(color: .black.opacity(0.3), radius: 5, y: 3)
             .position(x: origin.x + position.x, y: origin.y + position.y - owlSize * 0.57)
@@ -154,6 +169,16 @@ struct InteractiveChart: View {
       if let index { scareOwl(near: index) }
     }
     .onChange(of: values) { perchIndex = nil }
+    .onAppear {
+      // Dippy flies in and lands on the dip the first time the chart appears.
+      guard !landed, !reduceMotion, showsOwl, (owlMood ?? (MarketClock.isOpen() ? .calm : .sleeping)) != .sleeping else {
+        landed = true
+        return
+      }
+      flightDirection = -1
+      flights += 1
+      withAnimation(.smooth(duration: 0.9).delay(0.15)) { landed = true }
+    }
     .accessibilityElement()
     .accessibilityLabel("Price chart")
     .accessibilityValue(summary)

@@ -27,7 +27,7 @@ struct PaywallView: View {
     ScrollView {
       VStack(spacing: 26) {
         VStack(spacing: 14) {
-          LivelyOwl()
+          LivelyOwl(mood: .calm)
             .frame(width: 96, height: 110)
           Text("Dipwise Pro")
             .font(.largeTitle.bold())

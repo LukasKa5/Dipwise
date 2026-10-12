@@ -200,7 +200,7 @@ struct PlanBuilderView: View {
     if !draft.sellZone, let zone = holding.sellZone { modelContext.delete(zone) }
     try? modelContext.save()
     SnapshotPublisher.publish(context: modelContext)
-    ToastCenter.shared.show("Dipp is watching \(holding.symbol)", systemImage: "binoculars.fill")
+    ToastCenter.shared.show("Dippy is watching \(holding.symbol)", systemImage: "binoculars.fill")
     Task { await NotificationManager.requestAuthorization() }
     dismiss()
   }

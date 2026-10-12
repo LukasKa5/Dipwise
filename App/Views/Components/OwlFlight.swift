@@ -85,10 +85,12 @@ extension EnvironmentValues {
 }
 
 /// An owl that feels alive: it breathes, blinks, looks around, stretches its wings, and hops when tapped.
+/// Unless told otherwise, Dippy sleeps whenever the US market is closed, everywhere in the app.
 struct LivelyOwl: View {
   var lookOffset: CGSize = .zero
   var hopsOnTap = true
-  var mood: OwlMood = .calm
+  /// Nil follows the market clock.
+  var mood: OwlMood? = nil
   @Environment(\.owlWingSpread) private var wingSpread
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @State private var hops = 0
@@ -97,41 +99,92 @@ struct LivelyOwl: View {
   @State private var look = CGSize.zero
   @State private var stretch = 0.0
   @State private var breathing = false
-  @State private var awake = false
+  @State private var peek = 0.0
   @State private var recentTaps: [Date] = []
   @State private var spin = 0.0
+  @State private var bubble: String?
+  @State private var ruffle = 0
 
-  var body: some View {
-    let isAsleep = mood == .sleeping && !awake
-    OwlMark(wingSpread: max(wingSpread, stretch), blink: isAsleep ? 1 : blink, lookOffset: lookOffset == .zero ? look : lookOffset)
-      .scaleEffect(x: 1, y: breathing ? (isAsleep ? 1.04 : 1.025) : 1, anchor: .bottom)
-      .rotation3DEffect(.degrees(spin), axis: (x: 0, y: 1, z: 0))
-      .overlay(alignment: .topTrailing) {
-        if isAsleep { SleepingZs().offset(x: 14, y: -10) }
-      }
-      .contentShape(.rect)
-      .onTapGesture { handleTap() }
-      .owlFlight(trigger: hops, direction: hops.isMultiple(of: 2) ? 1 : -1, height: 22, isEnabled: !reduceMotion)
-      .sensoryFeedback(.impact(weight: .light), trigger: taps)
-      .onAppear {
-        guard !reduceMotion else { return }
-        withAnimation(.easeInOut(duration: 1.8).repeatForever(autoreverses: true)) { breathing = true }
-      }
-      .task {
-        guard !reduceMotion else { return }
-        await liveForever()
-      }
+  private var effectiveMood: OwlMood {
+    mood ?? (MarketClock.isOpen() ? .calm : .sleeping)
   }
 
-  private func handleTap() {
-    guard hopsOnTap || mood == .sleeping else { return }
-    taps += 1
-    if mood == .sleeping && !awake {
-      withAnimation(.snappy) { awake = true }
-      Task {
-        try? await Task.sleep(for: .seconds(4))
-        withAnimation(.smooth) { awake = false }
+  var body: some View {
+    let isAsleep = effectiveMood == .sleeping
+    OwlMark(
+      wingSpread: max(wingSpread, stretch),
+      blink: isAsleep ? 1 : blink,
+      lookOffset: lookOffset == .zero ? look : lookOffset,
+      rightEyeOpen: peek
+    )
+    .scaleEffect(x: 1, y: breathing ? (isAsleep ? 1.04 : 1.025) : 1, anchor: .bottom)
+    .keyframeAnimator(initialValue: 0.0, trigger: ruffle) { view, angle in
+      view.rotationEffect(.degrees(angle), anchor: .bottom)
+    } keyframes: { _ in
+      KeyframeTrack {
+        LinearKeyframe(-7, duration: 0.06)
+        LinearKeyframe(7, duration: 0.08)
+        LinearKeyframe(-5, duration: 0.08)
+        LinearKeyframe(4, duration: 0.08)
+        SpringKeyframe(0, duration: 0.25, spring: .bouncy)
       }
+    }
+    .rotation3DEffect(.degrees(spin), axis: (x: 0, y: 1, z: 0))
+    .overlay(alignment: .topTrailing) {
+      if isAsleep && peek < 0.5 { SleepingZs().offset(x: 14, y: -10) }
+    }
+    .overlay(alignment: .top) {
+      if let bubble {
+        Text(bubble)
+          .font(.caption.weight(.heavy))
+          .foregroundStyle(Brand.owlInk)
+          .padding(.horizontal, 8)
+          .padding(.vertical, 4)
+          .background(.white, in: .capsule)
+          .fixedSize()
+          .offset(y: -22)
+          .transition(.scale(scale: 0.5, anchor: .bottom).combined(with: .opacity))
+      }
+    }
+    .contentShape(.rect)
+    .onTapGesture { handleTap(isAsleep: isAsleep) }
+    .onLongPressGesture(minimumDuration: 0.45) { hoot() }
+    .owlFlight(trigger: hops, direction: hops.isMultiple(of: 2) ? 1 : -1, height: 22, isEnabled: !reduceMotion)
+    .sensoryFeedback(.impact(weight: .light), trigger: taps)
+    .sensoryFeedback(.impact(weight: .medium), trigger: ruffle)
+    .onAppear {
+      guard !reduceMotion else { return }
+      withAnimation(.easeInOut(duration: 1.8).repeatForever(autoreverses: true)) { breathing = true }
+    }
+    .task {
+      guard !reduceMotion else { return }
+      await liveForever()
+    }
+  }
+
+  private func say(_ text: String, for seconds: Double = 1.4) {
+    withAnimation(.bouncy) { bubble = text }
+    Task {
+      try? await Task.sleep(for: .seconds(seconds))
+      withAnimation(.smooth) { if bubble == text { bubble = nil } }
+    }
+  }
+
+  private func handleTap(isAsleep: Bool) {
+    taps += 1
+    if isAsleep {
+      // A sleepy peek with one eye, then back to sleep.
+      withAnimation(.easeOut(duration: 0.25)) { peek = 1 }
+      say("?")
+      Task {
+        try? await Task.sleep(for: .seconds(1.3))
+        withAnimation(.easeIn(duration: 0.45)) { peek = 0 }
+      }
+      return
+    }
+    guard hopsOnTap else {
+      blinkOnce()
+      return
     }
     hops += 1
     blinkOnce()
@@ -140,8 +193,23 @@ struct LivelyOwl: View {
     if recentTaps.count >= 5, !reduceMotion {
       recentTaps = []
       withAnimation(.spring(duration: 0.9, bounce: 0.3)) { spin += 360 }
-      ToastCenter.shared.show("Wheee! Hoo hoo!", systemImage: "tornado")
+      say("Wheee!")
     }
+  }
+
+  /// Long press: Dippy hoots and ruffles his feathers.
+  private func hoot() {
+    if effectiveMood == .sleeping {
+      say("zzz…")
+      return
+    }
+    ruffle += 1
+    withAnimation(.easeOut(duration: 0.2)) { stretch = 0.6 }
+    Task {
+      try? await Task.sleep(for: .seconds(0.35))
+      withAnimation(.easeIn(duration: 0.3)) { stretch = 0 }
+    }
+    say(["Hoo hoo!", "Hoo!", "Buy low!", "Patience…"].randomElement() ?? "Hoo!")
   }
 
   private func blinkOnce() {
@@ -153,8 +221,8 @@ struct LivelyOwl: View {
   private func liveForever() async {
     while !Task.isCancelled {
       try? await Task.sleep(for: .seconds(Double.random(in: 1.6...3.8)))
-      if mood == .sleeping && !awake { continue }
-      if mood == .celebrating, Int.random(in: 0..<3) == 0 {
+      if effectiveMood == .sleeping { continue }
+      if effectiveMood == .celebrating, Int.random(in: 0..<3) == 0 {
         hops += 1
         continue
       }

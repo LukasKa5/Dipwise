@@ -169,7 +169,7 @@ private struct WelcomeStep: View {
   @State private var arrived = false
   private let lines = [
     "Hoo! Tap me.",
-    "I'm Dipp, your stock-watching owl.",
+    "I'm Dippy, your stock-watching owl.",
     "I watch your stocks day and night…",
     "…and tell you when it's time to act.",
     "Let's set me up in one minute!",
@@ -180,7 +180,7 @@ private struct WelcomeStep: View {
       Spacer()
       SpeechBubble(text: lines[min(taps, lines.count - 1)])
         .animation(.snappy, value: taps)
-      LivelyOwl()
+      LivelyOwl(mood: .calm)
         .frame(width: 180, height: 206)
         .simultaneousGesture(TapGesture().onEnded { taps += 1 })
         .offset(x: arrived ? 0 : 260, y: arrived ? 0 : -520)
@@ -189,7 +189,7 @@ private struct WelcomeStep: View {
         .onAppear {
           withAnimation(.spring(duration: 1.2, bounce: 0.35)) { arrived = true }
         }
-        .accessibilityLabel("Dipp the owl")
+        .accessibilityLabel("Dippy the owl")
         .accessibilityAddTraits(.isButton)
       StepTitle(title: "Invest calmly. Let the owl watch.", message: "Dipwise sits between you and your broker, watching your plan so you don't have to.")
       Spacer()
@@ -205,7 +205,7 @@ private struct StyleStep: View {
     ScrollView {
       VStack(spacing: 20) {
         HStack(alignment: .top, spacing: 12) {
-          LivelyOwl(hopsOnTap: false)
+          LivelyOwl(hopsOnTap: false, mood: .calm)
             .frame(width: 70, height: 80)
             .owlFlight(trigger: hops, height: 24)
           SpeechBubble(text: model.lastStyle?.owlReply ?? "What brings you here? Pick as many as you like.")
@@ -238,7 +238,7 @@ private struct StyleStep: View {
             .accessibilityAddTraits(isSelected ? .isSelected : [])
           }
           if model.styles.contains(.other) {
-            TextField("What would you like Dipp to help with?", text: $model.otherGoal, axis: .vertical)
+            TextField("What would you like Dippy to help with?", text: $model.otherGoal, axis: .vertical)
               .lineLimit(1...3)
               .padding(16)
               .background(.white.opacity(0.1), in: .rect(cornerRadius: 16))
@@ -332,7 +332,7 @@ private struct ScrubStep: View {
       .padding(.horizontal, 28)
 
       if series.values.count > 1 {
-        InteractiveChart(values: series.values, dates: series.dates, gridColor: .white.opacity(0.08), owlSize: 56, selectedIndex: $selectedIndex)
+        InteractiveChart(values: series.values, dates: series.dates, gridColor: .white.opacity(0.08), owlSize: 56, owlMood: .calm, selectedIndex: $selectedIndex)
           .frame(height: 240)
           .padding(.horizontal, 20)
           .onChange(of: selectedIndex) { _, index in if index != nil { scrubs += 1 } }
@@ -341,7 +341,7 @@ private struct ScrubStep: View {
       }
 
       StepTitle(
-        title: scrubs > 15 ? "You startled Dipp!" : "Glance, don't stare",
+        title: scrubs > 15 ? "You startled Dippy!" : "Glance, don't stare",
         message: scrubs > 15 ? "He always flies off to find the next dip. That's his job." : "Read any day's price at a touch. Get close to the owl and see what happens."
       )
       .animation(.smooth, value: scrubs > 15)
@@ -392,7 +392,7 @@ private struct FlockStep: View {
   var body: some View {
     VStack(spacing: 22) {
       Spacer()
-      LivelyOwl(hopsOnTap: false)
+      LivelyOwl(hopsOnTap: false, mood: .calm)
         .frame(width: 90, height: 104)
         .owlFlight(trigger: flights, height: 40)
       StepTitle(title: "Invest with the flock", message: model.vote == nil ? "Thousands of investors share their plans anonymously. What's your call?" : "You're part of the flock now. See where everyone buys and sells, on every stock.")
@@ -456,7 +456,7 @@ private struct WidgetStep: View {
       .padding(18)
       .background(Brand.nightTop, in: .rect(cornerRadius: 36))
       .overlay { RoundedRectangle(cornerRadius: 36).strokeBorder(.white.opacity(0.15), lineWidth: 2) }
-      StepTitle(title: "Dipp on your Home Screen", message: "Tap the widgets. They flip through your plans, show zones, and update themselves.")
+      StepTitle(title: "Dippy on your Home Screen", message: "Tap the widgets. They flip through your plans, show zones, and update themselves.")
       Spacer(minLength: 8)
     }
     .sensoryFeedback(.selection, trigger: index)
@@ -674,7 +674,7 @@ private struct NotifyStep: View {
   private static let samples: [Banner] = [
     Banner(title: "NVDA entered your buy zone", message: "Now $177.40, inside $170–178. Your plan: about 5.6 shares.", symbol: "arrow.down.to.line.compact", color: Brand.buy),
     Banner(title: "AAPL reached your sell zone", message: "Now $256.10. Time to take some profit?", symbol: "arrow.up.to.line.compact", color: Brand.sell),
-    Banner(title: "Keep your streak going", message: "Your daily brief is ready. One minute with Dipp.", symbol: "flame.fill", color: Brand.amber),
+    Banner(title: "Keep your streak going", message: "Your daily brief is ready. One minute with Dippy.", symbol: "flame.fill", color: Brand.amber),
   ]
 
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -684,13 +684,13 @@ private struct NotifyStep: View {
     VStack(spacing: 26) {
       Spacer(minLength: 8)
       VStack(spacing: 0) {
-        LivelyOwl()
+        LivelyOwl(mood: .calm)
           .frame(width: 84, height: 96)
           .padding(.bottom, -10)
           .zIndex(1)
         lockScreen
       }
-      StepTitle(title: "Never miss your moment", message: "Dipp taps you on the shoulder the moment a stock enters your zone, with your plan right in the notification.")
+      StepTitle(title: "Never miss your moment", message: "Dippy taps you on the shoulder the moment a stock enters your zone, with your plan right in the notification.")
       Spacer(minLength: 8)
     }
     .task { await play() }
@@ -775,10 +775,10 @@ private struct RevealStep: View {
   var body: some View {
     VStack(spacing: 22) {
       Spacer()
-      LivelyOwl()
+      LivelyOwl(mood: .calm)
         .frame(width: 130, height: 150)
         .owlFlight(trigger: shown ? 1 : 0, height: 50)
-      StepTitle(title: "Your owl is ready!", message: "Here's what Dipp will watch for you.")
+      StepTitle(title: "Your owl is ready!", message: "Here's what Dippy will watch for you.")
       VStack(spacing: 12) {
         HStack(spacing: -8) {
           ForEach(model.selected, id: \.self) { symbol in

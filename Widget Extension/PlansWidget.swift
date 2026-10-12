@@ -11,7 +11,7 @@ struct PlansWidget: Widget {
       PlansWidgetView(entry: entry)
     }
     .configurationDisplayName("Your Plans")
-    .description("Dipp shows which stocks are closest to your plans. Tap to flip through them.")
+    .description("Dippy shows which stocks are closest to your plans. Tap to flip through them.")
     .supportedFamilies([.systemSmall, .systemMedium, .systemLarge, .accessoryRectangular, .accessoryCircular, .accessoryInline])
   }
 }

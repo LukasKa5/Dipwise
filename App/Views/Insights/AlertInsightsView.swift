@@ -127,7 +127,7 @@ struct AlertInsightsView: View {
   private func trackRecord(_ insights: AlertInsights) -> some View {
     InsightSection(title: "How your alerts worked out", subtitle: "Price change since each alert fired", systemImage: "checkmark.seal.fill", isLocked: !isPro, message: "See your alert track record") {
       if insights.buyOutcomes.isEmpty && insights.sellOutcomes.isEmpty {
-        Text("When your alerts fire, Dipp tracks what the price did next.")
+        Text("When your alerts fire, Dippy tracks what the price did next.")
           .font(.subheadline)
           .foregroundStyle(.secondary)
       } else {

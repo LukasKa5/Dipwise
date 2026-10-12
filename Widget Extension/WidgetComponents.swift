@@ -46,7 +46,7 @@ struct WidgetBadge: View {
   }
 }
 
-/// Dipp, asleep while the market is closed.
+/// Dippy, asleep while the market is closed.
 struct WidgetOwl: View {
   var size: CGFloat
 
@@ -99,7 +99,7 @@ func changeText(_ change: Double) -> String {
   change.formatted(.percent.precision(.fractionLength(1)).sign(strategy: .always()))
 }
 
-/// A one-line, Dipp-voiced summary of what matters most right now.
+/// A one-line, Dippy-voiced summary of what matters most right now.
 func dippSays(_ statuses: [TargetStatus]) -> String {
   guard let first = statuses.first else { return "Set a buy zone and I'll watch it." }
   if first.distance == 0 { return "\(first.target.symbol) is in your plan right now!" }

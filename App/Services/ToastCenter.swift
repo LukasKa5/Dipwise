@@ -1,7 +1,7 @@
 import Foundation
 import Observation
 
-/// Short celebratory messages from Dipp, shown at the top of the app.
+/// Short celebratory messages from Dippy, shown at the top of the app.
 @MainActor
 @Observable
 final class ToastCenter {

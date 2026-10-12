@@ -14,7 +14,7 @@ struct ContentView: View {
   }
 }
 
-/// Dipp's greeting and every stock with alerts, closest to triggering first.
+/// Dippy's greeting and every stock with alerts, closest to triggering first.
 private struct PlansPage: View {
   @Environment(WatchTargetStore.self) private var store
 
@@ -42,7 +42,7 @@ private struct PlansPage: View {
   }
 }
 
-/// Dipp with a one-line take on what matters most.
+/// Dippy with a one-line take on what matters most.
 private struct DippHeader: View {
   var statuses: [TargetStatus]
   @State private var hops = 0
@@ -175,7 +175,7 @@ private struct StockDetail: View {
   }
 }
 
-/// Dipp, the streak, and today's brief.
+/// Dippy, the streak, and today's brief.
 private struct StreakPage: View {
   @Environment(WatchTargetStore.self) private var store
   @State private var flaps = 0

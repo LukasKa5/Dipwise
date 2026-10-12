@@ -1,7 +1,7 @@
 import SwiftUI
 import WidgetKit
 
-/// Dipp with your streak and whether today's brief is done.
+/// Dippy with your streak and whether today's brief is done.
 struct StreakWidget: Widget {
   let kind = "StreakWidget"
 
@@ -10,7 +10,7 @@ struct StreakWidget: Widget {
       StreakWidgetView(entry: entry)
     }
     .configurationDisplayName("Streak")
-    .description("Your daily brief streak, with Dipp the owl.")
+    .description("Your daily brief streak, with Dippy the owl.")
     .supportedFamilies([.systemSmall, .accessoryCircular, .accessoryInline])
   }
 }
@@ -75,7 +75,7 @@ struct StreakWidgetView: View {
           Spacer(minLength: 0)
           Text(progress.briefDoneToday ? "Brief done" : "Brief ready")
             .font(.headline)
-          Text(progress.briefDoneToday ? "See you tomorrow" : "1 minute with Dipp")
+          Text(progress.briefDoneToday ? "See you tomorrow" : "1 minute with Dippy")
             .font(.caption)
             .foregroundStyle(progress.briefDoneToday ? .white.opacity(0.6) : Brand.amber)
         }

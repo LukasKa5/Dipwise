@@ -6,13 +6,16 @@ struct OwlMark: View, Animatable {
   var wingSpread: Double = 0
   var blink: Double = 0
   var lookOffset: CGSize = .zero
+  /// Opens just the right eye, for a sleepy peek.
+  var rightEyeOpen: Double = 0
 
-  var animatableData: AnimatablePair<AnimatablePair<Double, Double>, AnimatablePair<CGFloat, CGFloat>> {
-    get { AnimatablePair(AnimatablePair(wingSpread, blink), AnimatablePair(lookOffset.width, lookOffset.height)) }
+  var animatableData: AnimatablePair<AnimatablePair<Double, Double>, AnimatablePair<AnimatablePair<CGFloat, CGFloat>, Double>> {
+    get { AnimatablePair(AnimatablePair(wingSpread, blink), AnimatablePair(AnimatablePair(lookOffset.width, lookOffset.height), rightEyeOpen)) }
     set {
       wingSpread = newValue.first.first
       blink = newValue.first.second
-      lookOffset = CGSize(width: newValue.second.first, height: newValue.second.second)
+      lookOffset = CGSize(width: newValue.second.first.first, height: newValue.second.first.second)
+      rightEyeOpen = newValue.second.second
     }
   }
 
@@ -151,8 +154,8 @@ struct OwlMark: View, Animatable {
     }
     context.stroke(chest, with: .color(Brand.owlFeather), style: StrokeStyle(lineWidth: 9, lineCap: .round, lineJoin: .round))
 
-    let openness = max(0.08, 1 - blink)
     for x in [CGFloat(446), 578] {
+      let openness = max(0.08, x > 512 ? max(1 - blink, rightEyeOpen) : 1 - blink)
       let center = CGPoint(x: x, y: 468)
       var eye = context
       eye.translateBy(x: center.x, y: center.y)

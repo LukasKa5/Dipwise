@@ -373,7 +373,7 @@ struct AlertEditorView: View {
       LabeledContent("Your average cost") { priceField($lower) }
     }
     if !kind.usesPercent && !kind.usesAverage && !kind.usesLevel && !kind.needsCost && kind != .weeklyDrop {
-      Label("No settings needed. Dipp handles it.", systemImage: "checkmark.circle")
+      Label("No settings needed. Dippy handles it.", systemImage: "checkmark.circle")
         .foregroundStyle(.secondary)
     }
   }
@@ -533,7 +533,7 @@ struct AlertEditorView: View {
       if let quote { alert.prime(with: quote) }
       modelContext.insert(alert)
       progress.record(.alertCreated)
-      ToastCenter.shared.show("Dipp is on it!", systemImage: "binoculars.fill")
+      ToastCenter.shared.show("Dippy is on it!", systemImage: "binoculars.fill")
       Task {
         await NotificationManager.requestAuthorization()
         await flock.share(alert)

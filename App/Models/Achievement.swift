@@ -66,7 +66,7 @@ struct Achievement: Identifiable {
                   explanation: "Dividends pay you to wait. Reinvested, they've historically made up a big part of long-term returns.",
                   systemImage: "leaf.fill", current: earnsDividends ? 1 : 0, goal: 1),
       Achievement(id: "wise", title: "Wise Owl", detail: "Reach level 6.",
-                  explanation: "Earned through steady habits: briefs, plans, votes, and journaling. Dipp is proud.",
+                  explanation: "Earned through steady habits: briefs, plans, votes, and journaling. Dippy is proud.",
                   systemImage: "graduationcap.fill", current: Double(progress.level), goal: 6, unit: "levels"),
     ]
   }

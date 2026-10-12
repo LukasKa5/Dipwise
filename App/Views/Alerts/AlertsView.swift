@@ -79,7 +79,7 @@ struct AlertsView: View {
           }
 
           if holdings.isEmpty {
-            ContentUnavailableView("No Alerts Yet", systemImage: "bell.badge", description: Text("Add a stock, then set a green buy zone or a red sell zone. Dipp watches it day and night."))
+            ContentUnavailableView("No Alerts Yet", systemImage: "bell.badge", description: Text("Add a stock, then set a green buy zone or a red sell zone. Dippy watches it day and night."))
               .padding(.top, 40)
           } else if groups.isEmpty {
             EmptyHint(systemImage: "clock.arrow.circlepath", text: filter == .history ? "Alerts that fire will appear here, ready for your Dip Journal." : "No alerts match this filter.")
