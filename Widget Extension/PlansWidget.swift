@@ -59,7 +59,10 @@ struct PlansProvider: TimelineProvider {
 
 struct PlansWidgetView: View {
   var entry: PlansEntry
-  @Environment(\.widgetFamily) private var family
+  /// Lets the app preview a specific size.
+  var previewFamily: WidgetFamily?
+  @Environment(\.widgetFamily) private var environmentFamily
+  private var family: WidgetFamily { previewFamily ?? environmentFamily }
 
   private var current: TargetStatus? {
     entry.statuses.isEmpty ? nil : entry.statuses[entry.index % entry.statuses.count]
@@ -85,10 +88,14 @@ struct PlansWidgetView: View {
   private var small: some View {
     if let status = current {
       let color = status.target.rule.kind.side.brandColor
-      VStack(alignment: .leading, spacing: 5) {
+      VStack(alignment: .leading, spacing: 4) {
         HStack(spacing: 6) {
           WidgetBadge(symbol: status.target.symbol, size: 24)
-          Text(status.target.symbol).font(.headline)
+          Text(status.target.symbol)
+            .font(.headline)
+            .lineLimit(1)
+            .minimumScaleFactor(0.5)
+            .layoutPriority(1)
           Spacer(minLength: 0)
           if entry.statuses.count > 1 {
             Button(intent: NextPlanIntent()) {
@@ -106,19 +113,23 @@ struct PlansWidgetView: View {
           .minimumScaleFactor(0.6)
           .lineLimit(1)
           .contentTransition(.numericText())
-        Text(status.target.rule.kind.title.lowercased())
-          .font(.caption)
-          .foregroundStyle(.white.opacity(0.6))
+        Text(compactSummary(status))
+          .font(.caption.weight(.semibold))
+          .foregroundStyle(color)
           .lineLimit(1)
+          .minimumScaleFactor(0.6)
         WidgetTrack(progress: status.progress, color: color)
-        HStack {
-          Text(status.summary)
-            .font(.caption2.weight(.semibold))
-            .foregroundStyle(color)
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
+          .padding(.vertical, 2)
+        HStack(alignment: .bottom) {
+          if let quote = status.quote {
+            Text(compactPrice(quote.price, currency: quote.currency))
+              .font(.caption2.weight(.semibold).monospacedDigit())
+              .foregroundStyle(.white.opacity(0.7))
+              .lineLimit(1)
+              .minimumScaleFactor(0.6)
+          }
           Spacer(minLength: 0)
-          WidgetOwl(size: 18)
+          WidgetOwl(size: 20)
         }
       }
     } else {
@@ -153,8 +164,11 @@ struct PlansWidgetView: View {
               WidgetBadge(symbol: status.target.symbol, size: 26)
               VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
-                  Text(status.target.symbol).font(.subheadline.bold())
-                  Text(status.summary)
+                  Text(status.target.symbol)
+                    .font(.subheadline.bold())
+                    .lineLimit(1)
+                    .fixedSize()
+                  Text(compactSummary(status))
                     .font(.caption)
                     .foregroundStyle(color)
                     .lineLimit(1)

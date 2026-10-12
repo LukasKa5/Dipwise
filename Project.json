@@ -67,6 +67,21 @@
         },
         {
           "path": "Shared"
+        },
+        {
+          "path": "Widget Extension/WidgetComponents.swift"
+        },
+        {
+          "path": "Widget Extension/PlansWidget.swift"
+        },
+        {
+          "path": "Widget Extension/StockPlanWidget.swift"
+        },
+        {
+          "path": "Widget Extension/StreakWidget.swift"
+        },
+        {
+          "path": "Widget Extension/WidgetIntents.swift"
         }
       ],
       "type": "application",

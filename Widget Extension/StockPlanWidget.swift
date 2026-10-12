@@ -87,7 +87,10 @@ struct StockPlanProvider: AppIntentTimelineProvider {
 
 struct StockPlanWidgetView: View {
   var entry: StockPlanEntry
-  @Environment(\.widgetFamily) private var family
+  /// Lets the app preview a specific size.
+  var previewFamily: WidgetFamily?
+  @Environment(\.widgetFamily) private var environmentFamily
+  private var family: WidgetFamily { previewFamily ?? environmentFamily }
 
   private var zones: [AlertRule] { entry.targets.map(\.rule).filter { $0.kind.isZone || $0.kind == .priceBelow || $0.kind == .priceAbove } }
 
@@ -95,23 +98,44 @@ struct StockPlanWidgetView: View {
     Group {
       if let symbol = entry.symbol, let quote = entry.quote {
         VStack(alignment: .leading, spacing: 8) {
-          HStack(spacing: 8) {
-            WidgetBadge(symbol: symbol)
-            VStack(alignment: .leading, spacing: 0) {
-              Text(symbol).font(.headline)
-              if family == .systemMedium {
+          if family == .systemMedium {
+            HStack(spacing: 8) {
+              WidgetBadge(symbol: symbol)
+              VStack(alignment: .leading, spacing: 0) {
+                Text(symbol)
+                  .font(.headline)
+                  .lineLimit(1)
+                  .minimumScaleFactor(0.5)
                 Text(quote.name).font(.caption2).foregroundStyle(.white.opacity(0.6)).lineLimit(1)
               }
+              Spacer(minLength: 0)
+              VStack(alignment: .trailing, spacing: 0) {
+                Text(compactPrice(quote.price, currency: quote.currency))
+                  .font(.headline.monospacedDigit())
+                  .lineLimit(1)
+                  .minimumScaleFactor(0.6)
+                Text(changeText(quote.change))
+                  .font(.caption.weight(.semibold))
+                  .foregroundStyle(quote.change >= 0 ? Brand.buy : Brand.sell)
+              }
             }
-            Spacer(minLength: 0)
-            VStack(alignment: .trailing, spacing: 0) {
-              Text(quote.formatted(quote.price))
-                .font(.headline.monospacedDigit())
-                .minimumScaleFactor(0.6)
+          } else {
+            VStack(alignment: .leading, spacing: 2) {
+              HStack(spacing: 6) {
+                WidgetBadge(symbol: symbol, size: 22)
+                Text(symbol)
+                  .font(.subheadline.bold())
+                  .lineLimit(1)
+                  .minimumScaleFactor(0.5)
+                Spacer(minLength: 0)
+                Text(changeText(quote.change))
+                  .font(.caption2.weight(.bold))
+                  .foregroundStyle(quote.change >= 0 ? Brand.buy : Brand.sell)
+              }
+              Text(compactPrice(quote.price, currency: quote.currency))
+                .font(.title3.bold().monospacedDigit())
                 .lineLimit(1)
-              Text(changeText(quote.change))
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(quote.change >= 0 ? Brand.buy : Brand.sell)
+                .minimumScaleFactor(0.5)
             }
           }
           if family == .systemMedium && WidgetState.showsZones {

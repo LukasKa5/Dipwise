@@ -1,6 +1,7 @@
 import AuthenticationServices
 import SwiftData
 import SwiftUI
+import WidgetKit
 
 /// An interactive tour that ends with the user's first stocks and buy zones being watched.
 struct OnboardingView: View {
@@ -470,140 +471,70 @@ private struct WidgetStep: View {
 
   private var symbols: [String] { model.selected.isEmpty ? ["NVDA", "AAPL", "MSFT"] : model.selected }
 
+  /// Sample plans built from the stocks the user just picked, rendered with the real widget views.
+  private var statuses: [TargetStatus] {
+    symbols.enumerated().compactMap { offset, symbol in
+      guard let quote = model.quotes[symbol] else { return nil }
+      let rule = symbol == model.focusSymbol && model.zoneUpper > 0
+        ? AlertRule(kind: .buyZone, lower: model.zoneLower, upper: model.zoneUpper)
+        : AlertRule(kind: offset.isMultiple(of: 2) ? .buyZone : .sellZone,
+                    lower: quote.price * (offset.isMultiple(of: 2) ? 0.88 : 1.08),
+                    upper: quote.price * (offset.isMultiple(of: 2) ? 0.94 : 1.15))
+      return TargetStatus(target: WatchedTarget(id: UUID(), symbol: symbol, name: quote.name, rule: rule), quote: quote)
+    }
+    .sorted { ($0.distance ?? 1) < ($1.distance ?? 1) }
+  }
+
   var body: some View {
-    VStack(spacing: 24) {
+    VStack(spacing: 22) {
       Spacer(minLength: 8)
-      VStack(spacing: 18) {
-        HStack(spacing: 16) {
-          appIcon(.appIconPreview)
-          ForEach([Color.blue, .green, .orange], id: \.self) { color in
-            RoundedRectangle(cornerRadius: 14).fill(color.gradient).frame(width: 56, height: 56)
-          }
-        }
-        HStack(alignment: .top, spacing: 14) {
-          Button {
-            withAnimation(.bouncy) { index = (index + 1) % symbols.count }
-            model.complete("widget")
-          } label: {
-            smallWidget
-          }
-          .buttonStyle(.plain)
-          .accessibilityLabel("Plans widget. Tap to see the next stock.")
-          VStack(spacing: 14) {
-            HStack(spacing: 16) {
-              ForEach([Color.pink, .purple], id: \.self) { color in
-                RoundedRectangle(cornerRadius: 14).fill(color.gradient).frame(width: 56, height: 56)
-              }
+      VStack(spacing: 16) {
+        HStack(alignment: .top, spacing: 16) {
+          PlansWidgetView(entry: PlansEntry(date: .now, statuses: statuses, index: index), previewFamily: .systemSmall)
+            .padding(14)
+            .frame(width: 150, height: 150)
+            .background(Brand.nightMiddle, in: .rect(cornerRadius: 24))
+            .allowsHitTesting(false)
+            .contentShape(.rect)
+            .onTapGesture {
+              withAnimation(.bouncy) { index += 1 }
             }
-            HStack(spacing: 16) {
-              ForEach([Color.teal, .indigo], id: \.self) { color in
-                RoundedRectangle(cornerRadius: 14).fill(color.gradient).frame(width: 56, height: 56)
-              }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Plans widget. Tap to see the next stock.")
+            .accessibilityAddTraits(.isButton)
+          LazyVGrid(columns: [GridItem(.fixed(58)), GridItem(.fixed(58))], spacing: 16) {
+            Image(.appIconPreview).resizable().frame(width: 58, height: 58).clipShape(.rect(cornerRadius: 14))
+            ForEach([Color.blue, .green, .orange], id: \.self) { color in
+              RoundedRectangle(cornerRadius: 14).fill(color.gradient).frame(width: 58, height: 58)
             }
           }
         }
-        Button {
-          withAnimation(.smooth) { showsZones.toggle() }
-        } label: {
-          mediumWidget
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Stock plan widget. Tap to switch between chart and zones.")
+        StockPlanWidgetView(entry: StockPlanEntry(date: .now, symbol: model.focusSymbol ?? symbols.first,
+                                                  quote: (model.focusSymbol ?? symbols.first).flatMap { model.quotes[$0] },
+                                                  targets: statuses.map(\.target).filter { $0.symbol == (model.focusSymbol ?? symbols.first) }),
+                            previewFamily: .systemMedium)
+          .padding(14)
+          .frame(width: 316, height: 150)
+          .background(Brand.nightMiddle, in: .rect(cornerRadius: 24))
+          .allowsHitTesting(false)
+          .contentShape(.rect)
+          .onTapGesture {
+            WidgetState.showsZones.toggle()
+            withAnimation(.smooth) { showsZones.toggle() }
+          }
+          .id(showsZones)
+          .accessibilityElement(children: .combine)
+          .accessibilityLabel("Stock plan widget. Tap to switch between chart and zones.")
+          .accessibilityAddTraits(.isButton)
       }
       .padding(18)
       .background(Brand.nightTop, in: .rect(cornerRadius: 36))
       .overlay { RoundedRectangle(cornerRadius: 36).strokeBorder(.white.opacity(0.15), lineWidth: 2) }
-      MissionChip(text: "Tap a widget", isDone: model.completedMissions.contains("widget"))
-      StepTitle(title: "Dippy on your Home Screen", message: "Tap the widgets. They flip through your plans, show zones, and update themselves.")
+      StepTitle(title: "Dippy on your Home Screen", message: "These are the real widgets. Tap them: they flip through your plans and switch between chart and zones.")
       Spacer(minLength: 8)
     }
     .sensoryFeedback(.selection, trigger: index)
     .sensoryFeedback(.selection, trigger: showsZones)
-  }
-
-  private func appIcon(_ resource: ImageResource) -> some View {
-    Image(resource).resizable().frame(width: 56, height: 56).clipShape(.rect(cornerRadius: 14))
-  }
-
-  private var smallWidget: some View {
-    let symbol = symbols[index % symbols.count]
-    let quote = model.quotes[symbol]
-    let distance = Double(index + 2) * 1.7 / 100
-    return VStack(alignment: .leading, spacing: 6) {
-      HStack {
-        TickerBadge(symbol: symbol, size: 26)
-        Text(symbol).font(.headline)
-        Spacer(minLength: 0)
-        OwlMark().frame(width: 20)
-      }
-      Spacer(minLength: 0)
-      Text(distance, format: .percent.precision(.fractionLength(1)))
-        .font(.system(size: 28, weight: .bold, design: .rounded))
-        .contentTransition(.numericText())
-      Text("to buy zone")
-        .font(.caption)
-        .foregroundStyle(.white.opacity(0.6))
-      GeometryReader { geometry in
-        ZStack(alignment: .leading) {
-          Capsule().fill(.white.opacity(0.15))
-          Capsule().fill(Brand.buy).frame(width: geometry.size.width * (1 - distance * 4))
-        }
-      }
-      .frame(height: 6)
-      if let quote {
-        Text(quote.formatted(quote.price)).font(.caption2.weight(.semibold)).foregroundStyle(.white.opacity(0.7))
-      }
-    }
-    .padding(14)
-    .frame(width: 140, height: 140)
-    .background(Brand.nightMiddle, in: .rect(cornerRadius: 22))
-    .id(symbol)
-    .transition(.push(from: .trailing))
-  }
-
-  private var mediumWidget: some View {
-    let symbol = model.focusSymbol ?? symbols[0]
-    let quote = model.quotes[symbol]
-    return HStack(spacing: 14) {
-      VStack(alignment: .leading, spacing: 4) {
-        HStack {
-          TickerBadge(symbol: symbol, size: 26)
-          Text(symbol).font(.headline)
-        }
-        if let quote {
-          Text(quote.formatted(quote.price)).font(.title3.bold().monospacedDigit())
-          Text(quote.change, format: .percent.precision(.fractionLength(1)).sign(strategy: .always()))
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(quote.change >= 0 ? Brand.buy : Brand.sell)
-        }
-      }
-      Spacer()
-      if showsZones {
-        VStack(alignment: .leading, spacing: 8) {
-          Label("Buy zone", systemImage: "circle.fill").foregroundStyle(Brand.buy)
-          Label("Sell zone", systemImage: "circle.fill").foregroundStyle(Brand.sell)
-          GeometryReader { geometry in
-            ZStack(alignment: .leading) {
-              Capsule().fill(.white.opacity(0.15)).frame(height: 8)
-              Capsule().fill(Brand.buy).frame(width: geometry.size.width * 0.25, height: 8).offset(x: geometry.size.width * 0.1)
-              Capsule().fill(Brand.sell).frame(width: geometry.size.width * 0.2, height: 8).offset(x: geometry.size.width * 0.72)
-              Capsule().fill(.white).frame(width: 3, height: 18).offset(x: geometry.size.width * 0.5)
-            }
-          }
-          .frame(height: 18)
-        }
-        .font(.caption.weight(.semibold))
-        .frame(width: 150)
-        .transition(.opacity.combined(with: .scale))
-      } else if let quote {
-        Sparkline(values: Array(quote.closes.suffix(30)))
-          .frame(width: 150, height: 60)
-          .transition(.opacity.combined(with: .scale))
-      }
-    }
-    .padding(16)
-    .frame(width: 302, height: 140)
-    .background(Brand.nightMiddle, in: .rect(cornerRadius: 22))
   }
 }
 

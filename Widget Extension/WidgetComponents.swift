@@ -90,6 +90,25 @@ struct WidgetSparkline: View {
   }
 }
 
+/// Prices without unneeded decimals, so big numbers like Bitcoin fit.
+func compactPrice(_ value: Double, currency: String) -> String {
+  value.formatted(.currency(code: currency).precision(.fractionLength(value >= 1000 ? 0 : 2)))
+}
+
+/// A short form of an alert for small spaces, like "Buy 58,000–61,000".
+func compactSummary(_ status: TargetStatus) -> String {
+  let rule = status.target.rule
+  let currency = status.quote?.currency ?? "USD"
+  let format: (Double) -> String = { compactPrice($0, currency: currency) }
+  switch rule.kind {
+  case .buyZone: return "Buy \(format(rule.lower))–\(format(rule.upper))"
+  case .sellZone: return "Sell \(format(rule.lower))–\(format(rule.upper))"
+  case .priceBelow: return "Buy below \(format(rule.lower))"
+  case .priceAbove: return "Sell above \(format(rule.lower))"
+  default: return rule.kind.title
+  }
+}
+
 func distanceText(_ distance: Double?) -> String {
   guard let distance else { return "—" }
   return distance == 0 ? "Now" : distance.formatted(.percent.precision(.fractionLength(1)))
@@ -105,4 +124,20 @@ func dippSays(_ statuses: [TargetStatus]) -> String {
   if first.distance == 0 { return "\(first.target.symbol) is in your plan right now!" }
   if !MarketClock.isOpen() { return "Markets closed. \(statuses.count) plans on watch." }
   return "\(first.target.symbol) is \(distanceText(first.distance)) away."
+}
+
+/// Loads cached quotes, refreshes them from the network, and saves them back for the app.
+enum WidgetData {
+  static func quotes(for symbols: [String]) async -> [String: Quote] {
+    var quotes = TargetSnapshotStore.loadQuotes()
+    let fresh = await QuoteService().quotes(for: symbols + [Benchmark.symbol])
+    if let market = fresh[Benchmark.symbol] { Benchmark.quote = market }
+    if !fresh.isEmpty {
+      quotes.merge(fresh) { _, new in new }
+      TargetSnapshotStore.save(quotes: quotes)
+    }
+    return quotes
+  }
+
+  static let refresh: TimeInterval = 30 * 60
 }
