@@ -318,6 +318,8 @@ struct AlertEditorView: View {
     case .weeklyDrop: 0.03...0.30
     case .trailingStop, .stopLoss: 0.03...0.30
     case .profitTarget: 0.05...1.0
+    case .yieldAbove: 0.01...0.10
+    case .beatsMarket, .lagsMarket: 0.02...0.25
     default: 0.05...0.50
     }
   }
@@ -342,12 +344,20 @@ struct AlertEditorView: View {
         }
       }
     }
-    if kind == .weeklyDrop {
-      Picker("Within", selection: $periodDays) {
-        Text("3 days").tag(3)
+    if kind == .losingStreak {
+      Picker("Days in a row", selection: $periodDays) {
+        Text("3").tag(3)
+        Text("4").tag(4)
+        Text("5").tag(5)
+        Text("7").tag(7)
+      }
+      .pickerStyle(.segmented)
+    } else if kind.usesDays {
+      Picker("Over", selection: $periodDays) {
         Text("1 week").tag(5)
         Text("2 weeks").tag(10)
         Text("1 month").tag(21)
+        Text("3 months").tag(63)
       }
       .pickerStyle(.segmented)
     }
@@ -376,7 +386,7 @@ struct AlertEditorView: View {
     if kind.needsCost {
       LabeledContent("Your average cost") { priceField($lower) }
     }
-    if !kind.usesPercent && !kind.usesAverage && !kind.usesLevel && !kind.needsCost && kind != .weeklyDrop {
+    if !kind.usesPercent && !kind.usesAverage && !kind.usesLevel && !kind.needsCost && !kind.usesDays {
       Label("No settings needed. Dippy handles it.", systemImage: "checkmark.circle")
         .foregroundStyle(.secondary)
     }
@@ -386,6 +396,9 @@ struct AlertEditorView: View {
     switch kind {
     case .dailyMove, .gapMove: "Move size"
     case .profitTarget: "Gain"
+    case .yieldAbove: "Yield"
+    case .beatsMarket: "Ahead by"
+    case .lagsMarket: "Behind by"
     default: "Drop"
     }
   }
@@ -417,6 +430,12 @@ struct AlertEditorView: View {
       return "Triggers at \(format(lower * (1 + percent)))."
     case .breakEven:
       return "You'll know when \(holding.symbol) is back to what you paid."
+    case .losingStreak:
+      return "\(holding.symbol) has closed lower \(quote.losingStreak) days in a row right now."
+    case .yieldAbove:
+      return quote.dividendYield > 0 ? "Today's yield is \(quote.dividendYield.formatted(.percent.precision(.fractionLength(2)))). It rises when the price falls." : "\(holding.symbol) hasn't paid a dividend in the past year."
+    case .beatsMarket, .lagsMarket:
+      return quote.relativeToMarket(over: periodDays).map { "Over the last \(periodDays) trading days \(holding.symbol) is \($0.formatted(.percent.precision(.fractionLength(1)).sign(strategy: .always()))) versus the S&P 500." } ?? "Comparing with the S&P 500 once its prices load."
     case .dividendSoon:
       return quote.daysToNextDividend.map { "Next dividend expected in about \($0) days." } ?? "\(holding.symbol) hasn't paid a dividend in the past year."
     default:

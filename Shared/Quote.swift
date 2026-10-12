@@ -120,6 +120,23 @@ struct Quote: Codable, Hashable {
     return (lastLine, lastSignal)
   }
 
+  /// How many sessions in a row the stock has closed lower.
+  var losingStreak: Int {
+    var count = 0
+    var index = closes.count - 1
+    while index > 0, closes[index] < closes[index - 1] {
+      count += 1
+      index -= 1
+    }
+    return count
+  }
+
+  /// This stock's move minus the market's over the same `sessions`.
+  func relativeToMarket(over sessions: Int) -> Double? {
+    guard let market = Benchmark.quote, market.closes.count > sessions else { return nil }
+    return change(over: sessions) - market.change(over: sessions)
+  }
+
   /// Bollinger Bands (20-day average ± 2 standard deviations).
   var bollinger: (lower: Double, middle: Double, upper: Double)? {
     guard closes.count >= 20 else { return nil }

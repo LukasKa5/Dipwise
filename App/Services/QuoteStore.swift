@@ -27,7 +27,8 @@ final class QuoteStore {
     guard !symbols.isEmpty else { return }
     isRefreshing = true
     defer { isRefreshing = false }
-    let fresh = await service.quotes(for: symbols)
+    let fresh = await service.quotes(for: symbols + [Benchmark.symbol])
+    if let market = fresh[Benchmark.symbol] { Benchmark.quote = market }
     lastError = fresh.isEmpty ? QuoteService.QuoteError.noData : nil
     quotes.merge(fresh) { _, new in new }
     TargetSnapshotStore.save(quotes: quotes)

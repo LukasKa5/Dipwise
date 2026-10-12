@@ -113,7 +113,7 @@ struct PaywallView: View {
       Text("Let Dippy watch everything")
         .font(.largeTitle.bold())
         .multilineTextAlignment(.center)
-      Text("Unlimited alerts, 23 smart signals, odds for every plan, and the whole flock.")
+      Text("Unlimited alerts, 27 smart alerts, odds for every plan, and the whole flock.")
         .font(.headline)
         .foregroundStyle(.white.opacity(0.7))
         .multilineTextAlignment(.center)
@@ -146,7 +146,7 @@ struct PaywallView: View {
   private var comparison: some View {
     let rows: [(String, String, String)] = [
       ("Price alerts", "3", "Unlimited"),
-      ("Smart alerts (RSI, MACD, crosses…)", "–", "23 types"),
+      ("Smart alerts (RSI, MACD, crosses…)", "–", "27 types"),
       ("Odds for each alert", "1", "All"),
       ("Live signals on your stocks", "2", "All"),
       ("Full crowd report & Dip Radar", "Preview", "✓"),

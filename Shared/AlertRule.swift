@@ -32,22 +32,22 @@ enum AlertCategory: String, CaseIterable, Identifiable {
 
 enum AlertKind: String, Codable, CaseIterable, Identifiable {
   case buyZone, sellZone, priceBelow, priceAbove
-  case dropFromHigh, weeklyDrop, dailyMove, gapMove, newLow, newHigh, reboundFromLow
-  case belowAverage, aboveAverage, goldenCross, deathCross
+  case dropFromHigh, weeklyDrop, losingStreak, dailyMove, gapMove, newLow, newHigh, reboundFromLow
+  case belowAverage, aboveAverage, goldenCross, deathCross, beatsMarket, lagsMarket
   case rsiOversold, rsiOverbought, macdBullish, macdBearish, bollingerLow, bollingerHigh, volumeSpike
   case trailingStop, stopLoss, profitTarget, breakEven
-  case dividendSoon
+  case dividendSoon, yieldAbove
 
   var id: Self { self }
 
   var category: AlertCategory {
     switch self {
     case .buyZone, .sellZone, .priceBelow, .priceAbove: .zones
-    case .dropFromHigh, .weeklyDrop, .dailyMove, .gapMove, .newLow, .newHigh, .reboundFromLow: .moves
-    case .belowAverage, .aboveAverage, .goldenCross, .deathCross: .trend
+    case .dropFromHigh, .weeklyDrop, .losingStreak, .dailyMove, .gapMove, .newLow, .newHigh, .reboundFromLow: .moves
+    case .belowAverage, .aboveAverage, .goldenCross, .deathCross, .beatsMarket, .lagsMarket: .trend
     case .rsiOversold, .rsiOverbought, .macdBullish, .macdBearish, .bollingerLow, .bollingerHigh, .volumeSpike: .momentum
     case .trailingStop, .stopLoss, .profitTarget, .breakEven: .position
-    case .dividendSoon: .income
+    case .dividendSoon, .yieldAbove: .income
     }
   }
 
@@ -59,6 +59,10 @@ enum AlertKind: String, Codable, CaseIterable, Identifiable {
     case .priceAbove: "Price above"
     case .dropFromHigh: "Dip from high"
     case .weeklyDrop: "Fast drop"
+    case .losingStreak: "Losing streak"
+    case .beatsMarket: "Beats the market"
+    case .lagsMarket: "Lags the market"
+    case .yieldAbove: "Dividend yield"
     case .dailyMove: "Big daily move"
     case .gapMove: "Opening gap"
     case .newLow: "New 52-week low"
@@ -91,6 +95,10 @@ enum AlertKind: String, Codable, CaseIterable, Identifiable {
     case .priceAbove: "One exact price to sell at."
     case .dropFromHigh: "The stock falls a set amount below its 52-week high."
     case .weeklyDrop: "The stock falls sharply over a few days."
+    case .losingStreak: "The stock closes lower several days in a row. Long streaks often end with a bounce."
+    case .beatsMarket: "The stock outperforms the S&P 500 by a set amount. Leaders often keep leading."
+    case .lagsMarket: "The stock trails the S&P 500 by a set amount. A sign something may be wrong."
+    case .yieldAbove: "The dividend yield rises above your target, so you buy more income for your money."
     case .dailyMove: "The stock jumps or slides a lot in one day."
     case .gapMove: "The stock opens far above or below yesterday's close."
     case .newLow: "The price hits its lowest level in a year."
@@ -123,6 +131,10 @@ enum AlertKind: String, Codable, CaseIterable, Identifiable {
     case .priceAbove: "arrow.up.to.line"
     case .dropFromHigh: "chart.line.downtrend.xyaxis"
     case .weeklyDrop: "arrow.down.right.circle"
+    case .losingStreak: "calendar.badge.minus"
+    case .beatsMarket: "trophy.fill"
+    case .lagsMarket: "tortoise.fill"
+    case .yieldAbove: "percent"
     case .dailyMove: "bolt.fill"
     case .gapMove: "arrow.up.and.down.circle"
     case .newLow: "arrow.down.to.line.circle"
@@ -149,14 +161,16 @@ enum AlertKind: String, Codable, CaseIterable, Identifiable {
 
   var side: TradeSide {
     switch self {
-    case .buyZone, .priceBelow, .dropFromHigh, .weeklyDrop, .newLow, .goldenCross, .rsiOversold, .macdBullish, .bollingerLow, .reboundFromLow: .buy
-    case .sellZone, .priceAbove, .newHigh, .deathCross, .rsiOverbought, .macdBearish, .bollingerHigh, .trailingStop, .stopLoss, .profitTarget, .breakEven: .sell
+    case .buyZone, .priceBelow, .dropFromHigh, .weeklyDrop, .losingStreak, .newLow, .goldenCross, .rsiOversold, .macdBullish, .bollingerLow, .reboundFromLow, .beatsMarket, .yieldAbove: .buy
+    case .sellZone, .priceAbove, .newHigh, .deathCross, .rsiOverbought, .macdBearish, .bollingerHigh, .trailingStop, .stopLoss, .profitTarget, .breakEven, .lagsMarket: .sell
     case .dailyMove, .gapMove, .belowAverage, .aboveAverage, .volumeSpike, .dividendSoon: .watch
     }
   }
 
   var isZone: Bool { self == .buyZone || self == .sellZone }
-  var usesPercent: Bool { [.dropFromHigh, .weeklyDrop, .dailyMove, .gapMove, .trailingStop, .stopLoss, .profitTarget, .reboundFromLow].contains(self) }
+  var usesPercent: Bool { [.dropFromHigh, .weeklyDrop, .dailyMove, .gapMove, .trailingStop, .stopLoss, .profitTarget, .reboundFromLow, .beatsMarket, .lagsMarket, .yieldAbove].contains(self) }
+  /// Alerts measured over a number of trading days.
+  var usesDays: Bool { [.weeklyDrop, .losingStreak, .beatsMarket, .lagsMarket].contains(self) }
   var usesAverage: Bool { self == .belowAverage || self == .aboveAverage }
   var usesLevel: Bool { [.rsiOversold, .rsiOverbought, .volumeSpike].contains(self) }
   /// Alerts measured from what the user paid.
@@ -221,6 +235,10 @@ struct AlertRule: Codable, Hashable {
     case .dailyMove: return abs(quote.change) >= percent
     case .gapMove: return abs(quote.gap) >= percent
     case .weeklyDrop: return quote.change(over: days) <= -percent
+    case .losingStreak: return quote.losingStreak >= days
+    case .beatsMarket: return quote.relativeToMarket(over: days).map { $0 >= percent } ?? false
+    case .lagsMarket: return quote.relativeToMarket(over: days).map { $0 <= -percent } ?? false
+    case .yieldAbove: return quote.dividendYield >= percent && percent > 0
     case .goldenCross, .deathCross:
       guard let fast = quote.movingAverage(days: 50), let slow = quote.movingAverage(days: 200) else { return false }
       return kind == .goldenCross ? fast > slow : fast < slow
@@ -245,6 +263,10 @@ struct AlertRule: Codable, Hashable {
     case .dailyMove: return max(0, percent - abs(quote.change))
     case .gapMove: return max(0, percent - abs(quote.gap))
     case .weeklyDrop: return max(0, percent + quote.change(over: days))
+    case .losingStreak: return Double(max(0, days - quote.losingStreak)) / Double(max(days, 1)) * 0.2
+    case .beatsMarket: return quote.relativeToMarket(over: days).map { max(0, percent - $0) }
+    case .lagsMarket: return quote.relativeToMarket(over: days).map { max(0, percent + $0) }
+    case .yieldAbove: return quote.dividendYield > 0 ? max(0, percent - quote.dividendYield) : nil
     case .goldenCross, .deathCross:
       guard let fast = quote.movingAverage(days: 50), let slow = quote.movingAverage(days: 200) else { return nil }
       return abs(fast - slow) / quote.price
@@ -265,7 +287,7 @@ struct AlertRule: Codable, Hashable {
   func progress(for quote: Quote) -> Double {
     guard let distance = distance(for: quote) else { return 0 }
     let span: Double = switch kind {
-    case .dailyMove, .gapMove, .weeklyDrop: max(percent, 0.01)
+    case .dailyMove, .gapMove, .weeklyDrop, .beatsMarket, .lagsMarket, .yieldAbove: max(percent, 0.01)
     case .rsiOversold, .rsiOverbought: 0.4
     case .volumeSpike, .dividendSoon: 1
     case .goldenCross, .deathCross, .macdBullish, .macdBearish: 0.08
@@ -300,6 +322,10 @@ struct AlertRule: Codable, Hashable {
     case .priceAbove: return "Sell above \(format(lower))"
     case .dropFromHigh: return "Buy after a \(p) dip from the high"
     case .weeklyDrop: return "Falls \(p) in \(days) days"
+    case .losingStreak: return "Down \(days) days in a row"
+    case .beatsMarket: return "Beats the S&P 500 by \(p) over \(days) days"
+    case .lagsMarket: return "Trails the S&P 500 by \(p) over \(days) days"
+    case .yieldAbove: return "Dividend yield rises above \(percent.formatted(.percent.precision(.fractionLength(1))))"
     case .dailyMove: return "Moves \(p) in one day"
     case .gapMove: return "Opens \(p) higher or lower"
     case .newLow: return "Hits a new 52-week low"
@@ -345,6 +371,9 @@ struct AlertRule: Codable, Hashable {
     case .rsiOverbought: rule.level = 70
     case .volumeSpike: rule.level = 2
     case .reboundFromLow: rule.percent = 0.15
+    case .losingStreak: rule.days = 5
+    case .beatsMarket, .lagsMarket: rule.percent = 0.05; rule.days = 21
+    case .yieldAbove: rule.percent = 0.04
     default: break
     }
     return rule
