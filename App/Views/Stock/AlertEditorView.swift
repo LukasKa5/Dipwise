@@ -254,7 +254,7 @@ struct AlertEditorView: View {
   }
 
   private func priceField(_ value: Binding<Double>) -> some View {
-    TextField("Price", value: value, format: .number.precision(.fractionLength(2)))
+    TextField("Price", value: Binding(get: { value.wrappedValue }, set: { value.wrappedValue = max(0, $0) }), format: .number.precision(.fractionLength(2)))
       .keyboardType(.decimalPad)
       .multilineTextAlignment(.trailing)
       .font(.body.weight(.semibold).monospacedDigit())
@@ -287,12 +287,10 @@ struct AlertEditorView: View {
     let price = quote.price
     var options: [(String, Double, Double)]
     if kind.side == .buy {
-      options = [("−3 to −6%", price * 0.94, price * 0.97), ("−5 to −10%", price * 0.90, price * 0.95), ("−10 to −15%", price * 0.85, price * 0.90)]
-      options.append(("Near 52-week low", quote.low52, quote.low52 * 1.04))
+      options = [("Near 52-week low", quote.low52, quote.low52 * 1.04)]
       if let zone = report?.buyZone { options.insert(("Crowd zone", zone.lowerBound, zone.upperBound), at: 0) }
     } else {
-      options = [("+5 to +10%", price * 1.05, price * 1.10), ("+10 to +20%", price * 1.10, price * 1.20)]
-      options.append(("Near 52-week high", quote.high52 * 0.97, quote.high52))
+      options = [("Near 52-week high", quote.high52 * 0.97, quote.high52)]
       if let zone = report?.sellZone { options.insert(("Crowd zone", zone.lowerBound, zone.upperBound), at: 0) }
     }
     if !kind.isZone {
@@ -797,7 +795,7 @@ struct FlockComparisonRow: View {
         LabeledContent("Crowd \(side == .buy ? "buy" : "sell") zone") {
           Text("\(format(zone.lowerBound))–\(format(zone.upperBound))")
             .monospacedDigit()
-            .foregroundStyle(Palette.crowd)
+            .foregroundStyle(side.color)
         }
       }
       if isPro {

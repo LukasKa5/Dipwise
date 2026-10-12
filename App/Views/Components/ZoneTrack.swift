@@ -38,14 +38,14 @@ struct ZoneTrack: View {
             .offset(y: 25)
 
           ForEach(bands.sorted { $0.isCrowd && !$1.isCrowd }) { band in
-            let color = band.isCrowd ? Palette.crowd : band.side.color
+            let color = band.side.color
             let start = x(band.range.lowerBound)
             let bandWidth = max(6, x(band.range.upperBound) - start)
             if band.isCrowd {
               // The crowd's zone sits on the line as a dashed outline around it.
               Capsule()
                 .strokeBorder(color, style: StrokeStyle(lineWidth: 2.5, dash: [5, 3]))
-                .background(color.opacity(0.22), in: .capsule)
+                .background(color.opacity(0.14), in: .capsule)
                 .frame(width: bandWidth, height: 24)
                 .offset(x: start, y: 18)
             } else {
@@ -93,7 +93,7 @@ struct ZoneLegend: View {
       legend(color: Palette.buy, text: "Buy", dashed: false)
       legend(color: Palette.sell, text: "Sell", dashed: false)
       if showsCrowd {
-        legend(color: Palette.crowd, text: "Crowd", dashed: true)
+        legend(color: .secondary, text: "Crowd", dashed: true)
       }
     }
     .font(.caption2.weight(.semibold))

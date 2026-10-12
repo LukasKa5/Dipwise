@@ -84,11 +84,11 @@ struct InteractiveChart: View {
           yStart: .value("Low", zone.range.lowerBound),
           yEnd: .value("High", zone.range.upperBound)
         )
-        .foregroundStyle(zone.isCrowd ? Palette.crowd.opacity(0.18) : zone.side.color.opacity(0.18))
+        .foregroundStyle(zone.side.color.opacity(zone.isCrowd ? 0.1 : 0.18))
         .annotation(position: .overlay, alignment: .leading) {
           Text(zone.label)
             .font(.caption2.bold())
-            .foregroundStyle(zone.isCrowd ? Palette.crowd : zone.side.color)
+            .foregroundStyle(zone.side.color)
             .padding(.leading, 4)
         }
       }

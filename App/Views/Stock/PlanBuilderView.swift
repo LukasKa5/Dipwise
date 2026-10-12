@@ -27,7 +27,7 @@ struct PlanBuilderView: View {
     guard let quote else { return [] }
     var draft = draft
     draft.budget = budget ?? 0
-    return draft.rules(price: quote.price, cost: holding.averageCost, round: round)
+    return draft.rules(price: quote.price, cost: holding.averageCost)
   }
 
   /// New alerts this plan adds (zones replace the existing buy or sell plan).
@@ -72,35 +72,46 @@ struct PlanBuilderView: View {
               Label("Buy zone", systemImage: "arrow.down.to.line.compact")
                 .foregroundStyle(Palette.buy)
             }
-            if draft.buyZone {
-              Picker("How deep", selection: $draft.depth) {
-                ForEach(PlanDraft.Depth.allCases) { Text($0.title).tag($0) }
-              }
-              .pickerStyle(.segmented)
+            if draft.buyZone, let quote {
+              ZoneEditorChart(values: quote.recent(64).values, side: .buy, lower: $draft.buyLower, upper: $draft.buyUpper,
+                              crowdZone: flock.reports[holding.symbol]?.buyZone, format: format)
+                .frame(height: 210)
+                .padding(.vertical, 4)
+              LabeledContent("Zone", value: "\(format(draft.buyLower)) – \(format(draft.buyUpper))")
+                .foregroundStyle(Palette.buy)
               LabeledContent("Budget") {
-                TextField("Optional", value: $budget, format: .currency(code: quote?.currency ?? "USD"))
+                TextField("Optional", value: $budget, format: .currency(code: quote.currency))
                   .keyboardType(.decimalPad)
                   .multilineTextAlignment(.trailing)
               }
             }
-            Toggle(isOn: $draft.sellZone.animation(.snappy)) {
-              Label("Sell zone", systemImage: "arrow.up.to.line.compact")
-                .foregroundStyle(Palette.sell)
-            }
-            if draft.sellZone {
-              Picker("Target", selection: $draft.sellTarget) {
-                ForEach(PlanDraft.SellTarget.allCases) { Text($0.title).tag($0) }
-              }
-              .pickerStyle(.segmented)
-            }
           } header: {
             HStack {
-              Text("Buy & sell")
+              Text("Buy")
               Spacer()
               InfoButton(topic: .zones)
             }
           } footer: {
-            Text(holding.buyZone != nil || holding.sellZone != nil ? "This replaces \(holding.symbol)'s current buy and sell zones." : "One buy zone and one sell zone keep the plan simple.")
+            Text("Drag the green handles to the range where you'd happily buy.")
+          }
+
+          Section {
+            Toggle(isOn: $draft.sellZone.animation(.snappy)) {
+              Label("Sell zone", systemImage: "arrow.up.to.line.compact")
+                .foregroundStyle(Palette.sell)
+            }
+            if draft.sellZone, let quote {
+              ZoneEditorChart(values: quote.recent(64).values, side: .sell, lower: $draft.sellLower, upper: $draft.sellUpper,
+                              crowdZone: flock.reports[holding.symbol]?.sellZone, format: format)
+                .frame(height: 210)
+                .padding(.vertical, 4)
+              LabeledContent("Zone", value: "\(format(draft.sellLower)) – \(format(draft.sellUpper))")
+                .foregroundStyle(Palette.sell)
+            }
+          } header: {
+            Text("Sell")
+          } footer: {
+            Text("Drag the red handles to where you'd take profit.")
           }
 
           ForEach(AlertCategory.allCases.filter { $0 != .zones }) { category in
@@ -133,6 +144,22 @@ struct PlanBuilderView: View {
       .sheet(isPresented: $showsPaywall) { PaywallView() }
       .onAppear {
         draft.smart = Set(holding.smartAlerts.map(\.kind))
+        guard let quote else { return }
+        if let zone = holding.buyZone {
+          draft.buyLower = zone.targetPrice
+          draft.buyUpper = max(zone.upperPrice, zone.targetPrice * 1.01)
+          budget = zone.budget > 0 ? zone.budget : nil
+        } else {
+          draft.buyLower = round(quote.price * 0.90)
+          draft.buyUpper = round(quote.price * 0.95)
+        }
+        if let zone = holding.sellZone {
+          draft.sellLower = zone.targetPrice
+          draft.sellUpper = max(zone.upperPrice, zone.targetPrice * 1.01)
+        } else {
+          draft.sellLower = round(quote.price * 1.10)
+          draft.sellUpper = round(quote.price * 1.18)
+        }
       }
     }
   }

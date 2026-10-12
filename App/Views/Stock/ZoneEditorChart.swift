@@ -44,7 +44,7 @@ struct ZoneEditorChart: View {
       .accessibilityValue(upper == nil ? format(lower) : "\(format(lower)) to \(format(upperValue))")
       .accessibilityAdjustableAction { direction in
         let step = (values.last ?? 100) * 0.005
-        let delta = direction == .increment ? step : -step
+        let delta = max(direction == .increment ? step : -step, minimumPrice - lower)
         lower = round(lower + delta)
         upper?.wrappedValue = round(upperValue + delta)
         makeRoom(for: lower...upperValue)
@@ -55,11 +55,11 @@ struct ZoneEditorChart: View {
   private var marks: some ChartContent {
     if let crowdZone {
       RectangleMark(yStart: .value("Low", crowdZone.lowerBound), yEnd: .value("High", crowdZone.upperBound))
-        .foregroundStyle(Palette.crowd.opacity(0.22))
+        .foregroundStyle(tint.opacity(0.12))
         .annotation(position: .overlay, alignment: .leading) {
           Text("Crowd")
             .font(.caption2.bold())
-            .foregroundStyle(Palette.crowd)
+            .foregroundStyle(tint)
             .padding(.leading, 4)
         }
     }
@@ -141,7 +141,7 @@ struct ZoneEditorChart: View {
         if isUpper {
           upper?.wrappedValue = round(max(value, lower + minimumGap))
         } else {
-          lower = round(upper == nil ? value : min(value, upperValue - minimumGap))
+          lower = max(minimumPrice, round(upper == nil ? value : min(value, upperValue - minimumGap)))
         }
       }
       .onEnded { _ in makeRoom(for: lower...max(lower, upperValue)) }
@@ -163,7 +163,8 @@ struct ZoneEditorChart: View {
             guard let start = dragStart,
                   let from = price(atY: drag.startLocation.y, proxy: proxy, frame: frame),
                   let to = price(atY: drag.location.y, proxy: proxy, frame: frame) else { return }
-            let delta = to - from
+            // Never let the zone slide below zero.
+            let delta = max(to - from, minimumPrice - start.lower)
             lower = round(start.lower + delta)
             upper?.wrappedValue = round(start.upper + delta)
           }
@@ -188,6 +189,7 @@ struct ZoneEditorChart: View {
   }
 
   private var minimumGap: Double { (values.last ?? 100) * 0.005 }
+  private var minimumPrice: Double { (values.last ?? 1) >= 10 ? 0.05 : 0.001 }
 
   private var initialDomain: ClosedRange<Double> {
     let all = values + [lower, upperValue] + [crowdZone?.lowerBound, crowdZone?.upperBound].compactMap { $0 }

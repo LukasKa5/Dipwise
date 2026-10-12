@@ -1,55 +1,23 @@
 import Foundation
 
-/// The choices in the multi-alert builder, turned into alert rules.
+/// The choices in the multi-alert builder.
 struct PlanDraft: Equatable {
-  enum Depth: String, CaseIterable, Identifiable {
-    case shallow, standard, deep
-    var id: Self { self }
-    var title: String {
-      switch self {
-      case .shallow: "−3 to −7%"
-      case .standard: "−5 to −10%"
-      case .deep: "−10 to −18%"
-      }
-    }
-    var range: ClosedRange<Double> {
-      switch self {
-      case .shallow: 0.03...0.07
-      case .standard: 0.05...0.10
-      case .deep: 0.10...0.18
-      }
-    }
-  }
-
-  enum SellTarget: String, CaseIterable, Identifiable {
-    case near, medium, far
-    var id: Self { self }
-    var range: ClosedRange<Double> {
-      switch self {
-      case .near: 0.08...0.15
-      case .medium: 0.15...0.25
-      case .far: 0.25...0.40
-      }
-    }
-    var title: String { "+\(Int(range.lowerBound * 100))–\(Int(range.upperBound * 100))%" }
-  }
-
   var buyZone = true
-  var depth: Depth = .standard
+  var buyLower = 0.0
+  var buyUpper = 0.0
   var budget: Double = 0
   var sellZone = true
-  var sellTarget: SellTarget = .medium
+  var sellLower = 0.0
+  var sellUpper = 0.0
   var smart: Set<AlertKind> = []
 
-  init() {}
-
-  func rules(price: Double, cost: Double, round: (Double) -> Double) -> [(rule: AlertRule, budget: Double)] {
+  func rules(price: Double, cost: Double) -> [(rule: AlertRule, budget: Double)] {
     var rules: [(AlertRule, Double)] = []
-    if buyZone {
-      rules.append((AlertRule(kind: .buyZone, lower: round(price * (1 - depth.range.upperBound)), upper: round(price * (1 - depth.range.lowerBound))), budget))
+    if buyZone, buyUpper > buyLower, buyLower > 0 {
+      rules.append((AlertRule(kind: .buyZone, lower: buyLower, upper: buyUpper), budget))
     }
-    if sellZone {
-      rules.append((AlertRule(kind: .sellZone, lower: round(price * (1 + sellTarget.range.lowerBound)), upper: round(price * (1 + sellTarget.range.upperBound))), 0))
+    if sellZone, sellUpper > sellLower, sellLower > 0 {
+      rules.append((AlertRule(kind: .sellZone, lower: sellLower, upper: sellUpper), 0))
     }
     for kind in AlertKind.smart where smart.contains(kind) {
       rules.append((AlertRule.defaults(for: kind, price: price, cost: cost), 0))
