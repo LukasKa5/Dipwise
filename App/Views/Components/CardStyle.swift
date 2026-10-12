@@ -1,5 +1,10 @@
 import SwiftUI
 
+extension EnvironmentValues {
+  /// True inside the navy hero cards, so things like help sheets can match them.
+  @Entry var isOnNavyCard = false
+}
+
 extension View {
   /// The standard Dipwise card: a raised surface with a soft shadow in light mode and a hairline in dark mode.
   func cardStyle(cornerRadius: CGFloat = 24) -> some View {
@@ -51,5 +56,6 @@ private struct HeroCardStyle: ViewModifier {
       }
       .shadow(color: Brand.nightBottom.opacity(0.25), radius: 18, y: 8)
       .environment(\.colorScheme, .dark)
+      .environment(\.isOnNavyCard, true)
   }
 }

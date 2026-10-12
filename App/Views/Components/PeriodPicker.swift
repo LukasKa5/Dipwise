@@ -79,7 +79,6 @@ private struct CustomPeriodSheet: View {
             Text("Pick any period to see how prices moved.")
           }
           Section("Quick picks") {
-            quickPick("Last day", start: Calendar.current.date(byAdding: .day, value: -1, to: .now) ?? .now)
             quickPick("Year to date", start: Calendar.current.date(from: Calendar.current.dateComponents([.year], from: .now)) ?? .now)
             quickPick("Last 5 years", start: Calendar.current.date(byAdding: .year, value: -5, to: .now) ?? .now)
           }

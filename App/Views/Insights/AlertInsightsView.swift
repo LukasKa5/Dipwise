@@ -58,10 +58,6 @@ struct AlertInsightsView: View {
           .font(.system(size: 30, weight: .heavy, design: .rounded))
       }
       .frame(width: 92, height: 92)
-      .overlay(alignment: .topTrailing) {
-        // Dippy perches on the ring, leaving the text room to breathe.
-        LivelyOwl().frame(width: 32, height: 37).offset(x: 8, y: -16)
-      }
       VStack(alignment: .leading, spacing: 4) {
         HStack(spacing: 2) {
           Text("Plan health")
@@ -78,9 +74,16 @@ struct AlertInsightsView: View {
           .fixedSize(horizontal: false, vertical: true)
       }
       .frame(maxWidth: .infinity, alignment: .leading)
+      .padding(.trailing, 30)
     }
     .padding(20)
-    .padding(.top, 6)
+    .overlay(alignment: .topTrailing) {
+      // Dippy sits in the corner, clear of the score and the text.
+      LivelyOwl()
+        .frame(width: 36, height: 42)
+        .padding(.top, 14)
+        .padding(.trailing, 16)
+    }
     .heroCardStyle()
     .accessibilityElement(children: .combine)
   }

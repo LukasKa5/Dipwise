@@ -3,6 +3,7 @@ import SwiftUI
 /// A small "?" that opens a plain-language explanation from Dippy.
 struct InfoButton: View {
   var topic: HelpTopic
+  @Environment(\.isOnNavyCard) private var isOnNavyCard
   @State private var isPresented = false
 
   var body: some View {
@@ -18,17 +19,19 @@ struct InfoButton: View {
     .buttonStyle(.plain)
     .accessibilityLabel("What is \(topic.title)?")
     .sheet(isPresented: $isPresented) {
-      HelpSheet(topic: topic)
+      HelpSheet(topic: topic, isNavy: isOnNavyCard)
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
         .presentationCornerRadius(32)
-        .presentationBackground(Brand.nightMiddle)
+        .presentationBackground(isOnNavyCard ? Brand.nightMiddle : Palette.canvas)
     }
   }
 }
 
 struct HelpSheet: View {
   var topic: HelpTopic
+  /// Navy when opened from a navy card, otherwise the app's normal colors.
+  var isNavy = false
   @Environment(\.dismiss) private var dismiss
 
   var body: some View {
@@ -48,7 +51,7 @@ struct HelpSheet: View {
                 .foregroundStyle(.white)
                 .frame(width: 34, height: 34)
                 .background(Palette.amber, in: .circle)
-                .overlay { Circle().strokeBorder(Brand.nightMiddle, lineWidth: 3) }
+                .overlay { Circle().strokeBorder(isNavy ? Brand.nightMiddle : Palette.canvas, lineWidth: 3) }
                 .offset(x: 38, y: 36)
             }
             Text("Dippy explains")
@@ -67,18 +70,18 @@ struct HelpSheet: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .fixedSize(horizontal: false, vertical: true)
             .padding(18)
-            .background(.white.opacity(0.08), in: .rect(cornerRadius: 20))
+            .background(cardFill, in: .rect(cornerRadius: 20))
 
           if !topic.alertKinds.isEmpty {
             VStack(alignment: .leading, spacing: 0) {
               ForEach(topic.alertKinds) { kind in
                 AlertKindExplanation(kind: kind)
                 if kind != topic.alertKinds.last {
-                  Divider().overlay(.white.opacity(0.08)).padding(.leading, 62)
+                  Divider().padding(.leading, 62)
                 }
               }
             }
-            .background(.white.opacity(0.08), in: .rect(cornerRadius: 20))
+            .background(cardFill, in: .rect(cornerRadius: 20))
           }
 
           if let example = topic.example {
@@ -116,9 +119,26 @@ struct HelpSheet: View {
       .padding(.horizontal, 22)
       .padding(.bottom, 16)
     }
-    .foregroundStyle(.white)
-    .background(Brand.nightMiddle.ignoresSafeArea())
-    .environment(\.colorScheme, .dark)
+    .background((isNavy ? Brand.nightMiddle : Palette.canvas).ignoresSafeArea())
+    .environment(\.isOnNavyCard, false)
+    .modifier(NavyScheme(isOn: isNavy))
+  }
+
+  private var cardFill: AnyShapeStyle {
+    isNavy ? AnyShapeStyle(.white.opacity(0.08)) : AnyShapeStyle(Palette.card)
+  }
+}
+
+/// Forces dark mode only for the navy version, so the normal sheet follows the system.
+private struct NavyScheme: ViewModifier {
+  var isOn: Bool
+
+  func body(content: Content) -> some View {
+    if isOn {
+      content.environment(\.colorScheme, .dark)
+    } else {
+      content
+    }
   }
 }
 
@@ -138,7 +158,7 @@ struct AlertKindExplanation: View {
           .font(.subheadline.weight(.semibold))
         Text(kind.explanation)
           .font(.footnote)
-          .foregroundStyle(.white.opacity(0.7))
+          .foregroundStyle(.secondary)
           .fixedSize(horizontal: false, vertical: true)
       }
       Spacer(minLength: 0)

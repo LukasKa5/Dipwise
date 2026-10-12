@@ -107,6 +107,7 @@ struct AlertsView: View {
         .frame(maxWidth: 700)
         .frame(maxWidth: .infinity)
       }
+      .swipeActionsContainerIfAvailable()
       .background(Palette.canvas)
       .navigationTitle("Alerts")
       .toolbar {
@@ -256,7 +257,7 @@ private struct StockAlertsCard: View {
           .padding(.vertical, 12)
       }
 
-      ForEach(alerts) { alert in
+      FoldedAlertList(alerts: alerts, quote: quote, delete: delete) { alert in
         Button {
           edit(alert)
         } label: {
@@ -269,9 +270,6 @@ private struct StockAlertsCard: View {
             Button("Re-arm", systemImage: "arrow.clockwise") { rearm(alert) }
           }
           Button("Delete", systemImage: "trash", role: .destructive) { delete(alert) }
-        }
-        if alert.id != alerts.last?.id {
-          Divider().padding(.leading, 64)
         }
       }
 

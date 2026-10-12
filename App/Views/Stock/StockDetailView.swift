@@ -89,6 +89,7 @@ struct StockDetailView: View {
       .frame(maxWidth: 700)
       .frame(maxWidth: .infinity)
     }
+    .swipeActionsContainerIfAvailable()
     .refreshable { await quotes.refresh(symbols: [symbol]) }
     .toolbar {
       ToolbarItem(placement: .topBarTrailing) {
@@ -145,13 +146,6 @@ struct StockDetailView: View {
         InteractiveChart(
           values: series.values,
           dates: series.dates,
-          levels: holding.activeAlerts.filter { !$0.kind.isZone }.compactMap { alert in
-            quote.flatMap { alert.rule.triggerLevel(for: $0) }.map { InteractiveChart.Level(price: $0, side: alert.kind.side, label: alert.kind.title) }
-          },
-          zones: holding.activeAlerts.filter(\.kind.isZone).map { alert in
-            InteractiveChart.Zone(range: alert.targetPrice...max(alert.targetPrice, alert.upperPrice), side: alert.kind.side,
-                                  label: alert.kind == .buyZone ? "Buy zone" : "Sell zone")
-          },
           owlSize: 44,
           selectedIndex: $selectedIndex
         )
@@ -220,15 +214,19 @@ struct StockDetailView: View {
           .padding(20)
           .frame(maxWidth: .infinity)
         } else {
-          ForEach(active) { alert in
+          FoldedAlertList(alerts: active, quote: quote, delete: deleteAlert) { alert in
             Button {
               editor = AlertEditorTarget(alert: alert)
             } label: {
               PlanRow(alert: alert, quote: quote, showsOdds: subscription.isPro || alert.id == active.first?.id)
             }
             .buttonStyle(.plain)
-            Divider().padding(.leading, 64)
+            .contextMenu {
+              Button("Edit", systemImage: "pencil") { editor = AlertEditorTarget(alert: alert) }
+              Button("Delete", systemImage: "trash", role: .destructive) { deleteAlert(alert) }
+            }
           }
+          Divider()
         }
 
         if !active.isEmpty {
@@ -357,6 +355,13 @@ struct StockDetailView: View {
   }
 
   // MARK: Actions
+
+  private func deleteAlert(_ alert: PriceAlert) {
+    Task { await flock.withdraw(alert) }
+    withAnimation(.smooth) { modelContext.delete(alert) }
+    try? modelContext.save()
+    SnapshotPublisher.publish(context: modelContext)
+  }
 
   private func remove(_ holding: Holding) {
     let alerts = holding.alerts ?? []
