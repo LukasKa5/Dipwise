@@ -3,6 +3,7 @@ import Observation
 
 enum AppTab: Hashable {
   case home
+  case watchlist
   case alerts
   case flock
   case settings

@@ -42,7 +42,6 @@ struct HomeView: View {
             hero
             nearTargets
             dipRadar
-            stocks
             flockPulse
           }
           DisclaimerFooter(lastUpdated: quotes.lastUpdated)
