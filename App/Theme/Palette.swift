@@ -12,6 +12,8 @@ enum Palette {
   static let green = buy
   /// The owl's accent: highlights, streaks, and "almost there".
   static let amber = Color("BrandAmber")
+  /// The flock's zones: a vivid orange so they never blend with your own green and red.
+  static let crowd = Color(red: 1.0, green: 0.45, blue: 0.0)
   static let canvas = Color("CanvasBackground")
   static let card = Color("CardBackground")
 }

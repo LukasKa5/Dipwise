@@ -38,16 +38,16 @@ struct ZoneTrack: View {
             .offset(y: 25)
 
           ForEach(bands.sorted { $0.isCrowd && !$1.isCrowd }) { band in
-            let color = band.side.color
+            let color = band.isCrowd ? Palette.crowd : band.side.color
             let start = x(band.range.lowerBound)
             let bandWidth = max(6, x(band.range.upperBound) - start)
             if band.isCrowd {
               // The crowd's zone sits on the line as a dashed outline around it.
               Capsule()
-                .strokeBorder(color, style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
-                .background(color.opacity(0.12), in: .capsule)
-                .frame(width: bandWidth, height: 20)
-                .offset(x: start, y: 20)
+                .strokeBorder(color, style: StrokeStyle(lineWidth: 2.5, dash: [5, 3]))
+                .background(color.opacity(0.22), in: .capsule)
+                .frame(width: bandWidth, height: 24)
+                .offset(x: start, y: 18)
             } else {
               Capsule()
                 .fill(color)
@@ -93,7 +93,7 @@ struct ZoneLegend: View {
       legend(color: Palette.buy, text: "Buy", dashed: false)
       legend(color: Palette.sell, text: "Sell", dashed: false)
       if showsCrowd {
-        legend(color: .secondary, text: "Crowd", dashed: true)
+        legend(color: Palette.crowd, text: "Crowd", dashed: true)
       }
     }
     .font(.caption2.weight(.semibold))
@@ -104,7 +104,8 @@ struct ZoneLegend: View {
     HStack(spacing: 5) {
       if dashed {
         RoundedRectangle(cornerRadius: 3)
-          .strokeBorder(color, style: StrokeStyle(lineWidth: 1.2, dash: [3, 2]))
+          .strokeBorder(color, style: StrokeStyle(lineWidth: 1.6, dash: [3, 2]))
+          .background(color.opacity(0.2), in: .rect(cornerRadius: 3))
           .frame(width: 16, height: 9)
       } else {
         Capsule().fill(color).frame(width: 16, height: 6)
