@@ -82,7 +82,7 @@ struct StreakWidgetView: View {
         .foregroundStyle(.white)
       }
     }
-    .dipwiseWidgetBackground()
+    .dipwiseWidgetBackground(glow: progress.briefDoneToday ? nil : Brand.amber)
     .widgetURL(URL(string: "dipwise://brief"))
   }
 }

@@ -6,6 +6,7 @@ struct DipwiseWidgets: WidgetBundle {
   var body: some Widget {
     PlansWidget()
     StockPlanWidget()
+    MoversWidget()
     StreakWidget()
   }
 }

@@ -82,6 +82,9 @@
         },
         {
           "path": "Widget Extension/WidgetIntents.swift"
+        },
+        {
+          "path": "Widget Extension/MoversWidget.swift"
         }
       ],
       "type": "application",

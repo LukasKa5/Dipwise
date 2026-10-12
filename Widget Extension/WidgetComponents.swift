@@ -3,9 +3,56 @@ import SwiftUI
 import WidgetKit
 
 extension View {
-  /// Widgets use the same navy as the app's main cards and icon.
-  func dipwiseWidgetBackground() -> some View {
-    containerBackground(for: .widget) { Brand.nightMiddle }
+  /// Widgets use the same navy as the app's main cards and icon, with a soft glow in the color of what matters now.
+  func dipwiseWidgetBackground(glow: Color? = nil) -> some View {
+    containerBackground(for: .widget) { WidgetBackdrop(glow: glow) }
+  }
+}
+
+/// Deep navy with a gentle top light, and an optional green or red glow.
+struct WidgetBackdrop: View {
+  var glow: Color?
+
+  var body: some View {
+    ZStack {
+      LinearGradient(colors: [Brand.nightTop, Brand.nightMiddle, Brand.nightBottom], startPoint: .topLeading, endPoint: .bottomTrailing)
+      if let glow {
+        RadialGradient(colors: [glow.opacity(0.32), glow.opacity(0)], center: .topTrailing, startRadius: 4, endRadius: 170)
+      }
+    }
+  }
+}
+
+/// Small dots showing which of several plans is on screen.
+struct WidgetPageDots: View {
+  var count: Int
+  var index: Int
+
+  var body: some View {
+    HStack(spacing: 4) {
+      ForEach(0..<min(count, 6), id: \.self) { dot in
+        Capsule()
+          .fill(.white.opacity(dot == index % min(count, 6) ? 0.95 : 0.3))
+          .frame(width: dot == index % min(count, 6) ? 10 : 4, height: 4)
+      }
+    }
+    .accessibilityHidden(true)
+  }
+}
+
+/// A day change as a small green or red pill.
+struct WidgetChangePill: View {
+  var change: Double
+
+  var body: some View {
+    Text(changeText(change))
+      .font(.caption2.weight(.bold).monospacedDigit())
+      .foregroundStyle(change >= 0 ? Brand.buy : Brand.sell)
+      .padding(.horizontal, 6)
+      .padding(.vertical, 2)
+      .background((change >= 0 ? Brand.buy : Brand.sell).opacity(0.18), in: .capsule)
+      .lineLimit(1)
+      .fixedSize()
   }
 }
 
@@ -140,4 +187,6 @@ enum WidgetData {
   }
 
   static let refresh: TimeInterval = 30 * 60
+  /// How often rotating widgets move on to the next stock.
+  static let rotation: TimeInterval = 5 * 60
 }

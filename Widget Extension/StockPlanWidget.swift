@@ -47,7 +47,7 @@ struct StockPlanWidget: Widget {
       StockPlanWidgetView(entry: entry)
     }
     .configurationDisplayName("Stock Plan")
-    .description("A stock's price with your green buy zones and red sell zones.")
+    .description("A stock's price with your green buy zones and red sell zones. Leave the stock empty to tour all of them.")
     .supportedFamilies([.systemSmall, .systemMedium])
   }
 }
@@ -75,13 +75,20 @@ struct StockPlanProvider: AppIntentTimelineProvider {
   }
 
   func timeline(for configuration: SelectStockIntent, in context: Context) async -> Timeline<StockPlanEntry> {
-    let symbol = configuration.stock?.id ?? TargetSnapshotStore.loadStocks().first?.symbol
-    var entry = StockPlanEntry(date: .now, symbol: symbol, quote: nil, targets: [])
-    if let symbol {
-      entry.quote = await WidgetData.quotes(for: [symbol])[symbol]
-      entry.targets = TargetSnapshotStore.loadTargets().filter { $0.symbol == symbol }
+    let targets = TargetSnapshotStore.loadTargets()
+    // With no stock chosen, the widget tours every stock you watch, a few minutes each.
+    let symbols = configuration.stock.map { [$0.id] } ?? TargetSnapshotStore.loadStocks().map(\.symbol)
+    guard !symbols.isEmpty else {
+      return Timeline(entries: [StockPlanEntry(date: .now, symbol: nil, quote: nil, targets: [])], policy: .after(.now.addingTimeInterval(WidgetData.refresh)))
     }
-    return Timeline(entries: [entry], policy: .after(.now.addingTimeInterval(WidgetData.refresh)))
+    let quotes = await WidgetData.quotes(for: symbols)
+    let steps = symbols.count > 1 ? 10 : 1
+    let entries = (0..<steps).map { step in
+      let symbol = symbols[step % symbols.count]
+      return StockPlanEntry(date: .now.addingTimeInterval(Double(step) * WidgetData.rotation), symbol: symbol,
+                            quote: quotes[symbol], targets: targets.filter { $0.symbol == symbol })
+    }
+    return Timeline(entries: entries, policy: .after(.now.addingTimeInterval(WidgetData.refresh)))
   }
 }
 
@@ -131,9 +138,7 @@ struct StockPlanWidgetView: View {
                   .lineLimit(1)
                   .minimumScaleFactor(0.5)
                 Spacer(minLength: 0)
-                Text(changeText(quote.change))
-                  .font(.caption2.weight(.bold))
-                  .foregroundStyle(quote.change >= 0 ? Brand.buy : Brand.sell)
+                WidgetChangePill(change: quote.change)
               }
               Text(compactPrice(quote.price, currency: quote.currency))
                 .font(.title3.bold().monospacedDigit())
@@ -180,7 +185,7 @@ struct StockPlanWidgetView: View {
       }
     }
     .foregroundStyle(.white)
-    .dipwiseWidgetBackground()
+    .dipwiseWidgetBackground(glow: entry.quote.map { $0.change >= 0 ? Brand.buy : Brand.sell })
     .widgetURL(entry.symbol.flatMap { URL(string: "dipwise://stock/\($0)") })
   }
 }

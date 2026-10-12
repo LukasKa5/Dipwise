@@ -11,7 +11,7 @@ struct PlansWidget: Widget {
       PlansWidgetView(entry: entry)
     }
     .configurationDisplayName("Your Plans")
-    .description("Dippy shows which stocks are closest to your plans. Tap to flip through them.")
+    .description("Your plans, closest first. It flips through them on its own, or tap the arrow.")
     .supportedFamilies([.systemSmall, .systemMedium, .systemLarge, .accessoryRectangular, .accessoryCircular, .accessoryInline])
   }
 }
@@ -36,8 +36,14 @@ struct PlansProvider: TimelineProvider {
     Task {
       let targets = TargetSnapshotStore.loadTargets()
       let quotes = await WidgetData.quotes(for: targets.map(\.symbol))
-      let entry = PlansEntry(date: .now, statuses: TargetStatus.sorted(targets: targets, quotes: quotes), index: WidgetState.planIndex)
-      completion(Timeline(entries: [entry], policy: .after(.now.addingTimeInterval(WidgetData.refresh))))
+      let statuses = TargetStatus.sorted(targets: targets, quotes: quotes)
+      // The small widget flips to the next plan every few minutes by itself.
+      let steps = statuses.count > 1 ? 10 : 1
+      let start = WidgetState.planIndex
+      let entries = (0..<steps).map { step in
+        PlansEntry(date: .now.addingTimeInterval(Double(step) * WidgetData.rotation), statuses: statuses, index: start + step)
+      }
+      completion(Timeline(entries: entries, policy: .after(.now.addingTimeInterval(WidgetData.refresh))))
     }
   }
 
@@ -68,6 +74,14 @@ struct PlansWidgetView: View {
     entry.statuses.isEmpty ? nil : entry.statuses[entry.index % entry.statuses.count]
   }
 
+  private var glow: Color? {
+    switch family {
+    case .systemSmall: current.map { $0.target.rule.kind.side.brandColor }
+    case .systemMedium, .systemLarge: entry.statuses.first.map { $0.target.rule.kind.side.brandColor }
+    default: nil
+    }
+  }
+
   var body: some View {
     Group {
       switch family {
@@ -80,7 +94,7 @@ struct PlansWidgetView: View {
       }
     }
     .foregroundStyle(.white)
-    .dipwiseWidgetBackground()
+    .dipwiseWidgetBackground(glow: glow)
     .widgetURL(current.map { URL(string: "dipwise://stock/\($0.target.symbol)")! } ?? URL(string: "dipwise://alerts"))
   }
 
@@ -88,50 +102,65 @@ struct PlansWidgetView: View {
   private var small: some View {
     if let status = current {
       let color = status.target.rule.kind.side.brandColor
-      VStack(alignment: .leading, spacing: 4) {
-        HStack(spacing: 6) {
-          WidgetBadge(symbol: status.target.symbol, size: 24)
-          Text(status.target.symbol)
-            .font(.headline)
-            .lineLimit(1)
-            .minimumScaleFactor(0.5)
-            .layoutPriority(1)
+      VStack(alignment: .leading, spacing: 0) {
+        HStack(spacing: 7) {
+          WidgetBadge(symbol: status.target.symbol, size: 26)
+          VStack(alignment: .leading, spacing: 0) {
+            Text(status.target.symbol)
+              .font(.subheadline.bold())
+              .lineLimit(1)
+              .minimumScaleFactor(0.6)
+            if let quote = status.quote {
+              Text(compactPrice(quote.price, currency: quote.currency))
+                .font(.caption2.weight(.semibold).monospacedDigit())
+                .foregroundStyle(.white.opacity(0.65))
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+            }
+          }
+          .layoutPriority(1)
           Spacer(minLength: 0)
           if entry.statuses.count > 1 {
             Button(intent: NextPlanIntent()) {
-              Image(systemName: "chevron.forward.circle.fill")
-                .font(.title3)
-                .foregroundStyle(.white.opacity(0.8))
+              Image(systemName: "chevron.forward")
+                .font(.caption.weight(.heavy))
+                .foregroundStyle(.white)
+                .frame(width: 24, height: 24)
+                .background(.white.opacity(0.16), in: .circle)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Next plan")
           }
         }
-        Spacer(minLength: 0)
+        Spacer(minLength: 4)
         Text(distanceText(status.distance))
-          .font(.system(size: 30, weight: .bold, design: .rounded))
+          .font(.system(size: 34, weight: .heavy, design: .rounded).monospacedDigit())
           .foregroundStyle(status.distance == 0 ? color : .white)
           .minimumScaleFactor(0.6)
           .lineLimit(1)
           .contentTransition(.numericText())
-        Text(compactSummary(status))
+        Text(status.distance == 0 ? "In your zone now" : "to your \(status.target.rule.kind.side == .sell ? "sell" : "buy") zone")
           .font(.caption.weight(.semibold))
           .foregroundStyle(color)
           .lineLimit(1)
-          .minimumScaleFactor(0.6)
+          .minimumScaleFactor(0.7)
+        Spacer(minLength: 6)
         WidgetTrack(progress: status.progress, color: color)
-          .padding(.vertical, 2)
-        HStack(alignment: .bottom) {
-          if let quote = status.quote {
-            Text(compactPrice(quote.price, currency: quote.currency))
-              .font(.caption2.weight(.semibold).monospacedDigit())
-              .foregroundStyle(.white.opacity(0.7))
-              .lineLimit(1)
-              .minimumScaleFactor(0.6)
+        HStack(alignment: .center, spacing: 4) {
+          Text(compactSummary(status))
+            .font(.caption2.weight(.medium))
+            .foregroundStyle(.white.opacity(0.6))
+            .lineLimit(1)
+            .minimumScaleFactor(0.6)
+          Spacer(minLength: 2)
+          if entry.statuses.count > 1 {
+            WidgetPageDots(count: entry.statuses.count, index: entry.index)
           }
-          Spacer(minLength: 0)
-          WidgetOwl(size: 20)
         }
+        .padding(.top, 6)
       }
+      .id(status.id)
+      .transition(.push(from: .trailing))
     } else {
       empty
     }
