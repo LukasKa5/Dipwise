@@ -1,7 +1,7 @@
 import SwiftUI
 import WidgetKit
 
-// Three chapters of the intro — Home Screen, wrist, and alerts — built on one template:
+// The Home Screen and Apple Watch chapters of the intro, built on one template:
 // a single hero on the app's navy surface, one headline, one thing to try, and the same rise-in motion.
 
 /// The shared layout of every showcase chapter.
@@ -164,15 +164,33 @@ private struct ShowcasePressStyle: ButtonStyle {
 
 // MARK: - Wrist
 
-/// The real Apple Watch Today screen, scrolling gently as if the Digital Crown were turning.
+/// The real Apple Watch Today screen on a watch drawn to scale, scrolling gently as if the Digital Crown were turning.
 struct WatchShowcaseStep: View {
   var model: OnboardingModel
 
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @State private var scroll: CGFloat = 0
+  @State private var isScrolling = false
+  @State private var crownTurn: CGFloat = 0
   @State private var hops = 0
 
-  private static let screen = CGSize(width: 198, height: 242)
+  /// Apple Watch proportions: display, the black border around it, and the case.
+  private enum Size {
+    static let display = CGSize(width: 198, height: 236)
+    static let displayRadius: CGFloat = 42
+    static let border: CGFloat = 7
+    static let caseInset: CGFloat = 9
+    static var bezel: CGSize { CGSize(width: display.width + border * 2, height: display.height + border * 2) }
+    static var watchCase: CGSize { CGSize(width: bezel.width + caseInset * 2, height: bezel.height + caseInset * 2) }
+    /// The title bar sits inside the rounded corners, like every watchOS app.
+    static let titleInset: CGFloat = 24
+    static let titleTop: CGFloat = 14
+    /// Content begins below the title, and fades out fully before reaching it.
+    static let contentTop: CGFloat = 50
+    static let fadeStart: CGFloat = 36
+    static let fadeEnd: CGFloat = 66
+    static let scrollDistance: CGFloat = 170
+  }
 
   private var movers: [Quote] { MoversProvider.sorted(model.previewSymbols.compactMap { model.quotes[$0] }) }
 
@@ -189,232 +207,151 @@ struct WatchShowcaseStep: View {
     .task {
       // Scrolls down through the screen and back, like turning the Crown.
       guard !reduceMotion else { return }
-      try? await Task.sleep(for: .seconds(1.6))
+      // Let people meet Dippy at the top before the tour starts.
+      try? await Task.sleep(for: .seconds(3))
       while !Task.isCancelled {
-        withAnimation(.smooth(duration: 2.2)) { scroll = -150 }
-        try? await Task.sleep(for: .seconds(3.4))
-        withAnimation(.smooth(duration: 1.8)) { scroll = 0 }
-        try? await Task.sleep(for: .seconds(3.2))
+        await scrollTo(-Size.scrollDistance, duration: 2.4)
+        try? await Task.sleep(for: .seconds(2.2))
+        await scrollTo(0, duration: 2.0)
+        try? await Task.sleep(for: .seconds(2.8))
       }
     }
   }
 
+  private func scrollTo(_ offset: CGFloat, duration: Double) async {
+    withAnimation(.easeOut(duration: 0.2)) { isScrolling = true }
+    withAnimation(.smooth(duration: duration)) {
+      crownTurn += (scroll - offset) / 40
+      scroll = offset
+    }
+    try? await Task.sleep(for: .seconds(duration))
+    withAnimation(.easeIn(duration: 0.4)) { isScrolling = false }
+  }
+
+  // MARK: Hardware
+
   private var watch: some View {
+    ZStack {
+      RoundedRectangle(cornerRadius: Size.displayRadius + Size.border + Size.caseInset, style: .continuous)
+        .fill(LinearGradient(colors: [Color(white: 0.24), Color(white: 0.1)], startPoint: .top, endPoint: .bottom))
+        .overlay {
+          RoundedRectangle(cornerRadius: Size.displayRadius + Size.border + Size.caseInset, style: .continuous)
+            .strokeBorder(LinearGradient(colors: [.white.opacity(0.4), .white.opacity(0.06)], startPoint: .top, endPoint: .bottom), lineWidth: 1.2)
+        }
+        .frame(width: Size.watchCase.width, height: Size.watchCase.height)
+        .shadow(color: .black.opacity(0.5), radius: 24, y: 14)
+      RoundedRectangle(cornerRadius: Size.displayRadius + Size.border, style: .continuous)
+        .fill(.black)
+        .frame(width: Size.bezel.width, height: Size.bezel.height)
+      display
+        .frame(width: Size.display.width, height: Size.display.height)
+        .clipShape(.rect(cornerRadius: Size.displayRadius, style: .continuous))
+    }
+    .overlay(alignment: .topTrailing) { crown }
+    .overlay(alignment: .trailing) { sideButton }
+    .accessibilityElement(children: .contain)
+  }
+
+  /// The Digital Crown, whose ridges roll as the screen scrolls.
+  private var crown: some View {
+    ZStack {
+      RoundedRectangle(cornerRadius: 4, style: .continuous)
+        .fill(LinearGradient(colors: [Color(white: 0.5), Color(white: 0.22)], startPoint: .top, endPoint: .bottom))
+      VStack(spacing: 3.5) {
+        ForEach(0..<9, id: \.self) { _ in
+          Rectangle().fill(.black.opacity(0.35)).frame(height: 1)
+        }
+      }
+      .offset(y: (crownTurn.truncatingRemainder(dividingBy: 1)) * 4.5)
+      .padding(.vertical, -4)
+    }
+    .frame(width: 9, height: 40)
+    .clipShape(.rect(cornerRadius: 4, style: .continuous))
+    .offset(x: 6, y: Size.watchCase.height * 0.2)
+    .accessibilityHidden(true)
+  }
+
+  private var sideButton: some View {
+    Capsule()
+      .fill(LinearGradient(colors: [Color(white: 0.34), Color(white: 0.16)], startPoint: .top, endPoint: .bottom))
+      .frame(width: 5, height: 50)
+      .offset(x: 4, y: Size.watchCase.height * 0.16)
+      .accessibilityHidden(true)
+  }
+
+  // MARK: Display
+
+  private var display: some View {
+    ZStack(alignment: .top) {
+      Brand.nightMiddle
+      content
+        .padding(.horizontal, 8)
+        .padding(.top, Size.contentTop)
+        .offset(y: scroll)
+        .frame(width: Size.display.width, height: Size.display.height, alignment: .top)
+        // Content fades out beneath the title instead of hitting a hard edge, as on watchOS.
+        .mask {
+          LinearGradient(stops: [
+            .init(color: .clear, location: 0),
+            .init(color: .clear, location: Size.fadeStart / Size.display.height),
+            .init(color: .black, location: Size.fadeEnd / Size.display.height),
+            .init(color: .black, location: 1),
+          ], startPoint: .top, endPoint: .bottom)
+        }
+      titleBar
+      scrollIndicator
+    }
+    .foregroundStyle(.white)
+  }
+
+  private var titleBar: some View {
+    HStack(alignment: .firstTextBaseline) {
+      Text("Dipwise")
+        .foregroundStyle(Brand.buy)
+      Spacer()
+      Text(Date.now, format: .dateTime.hour().minute())
+        .monospacedDigit()
+    }
+    .font(.system(size: 15, weight: .semibold, design: .rounded))
+    .lineLimit(1)
+    .padding(.horizontal, Size.titleInset)
+    .padding(.top, Size.titleTop)
+    .accessibilityHidden(true)
+  }
+
+  /// watchOS shows a small indicator beside the Crown while scrolling.
+  private var scrollIndicator: some View {
+    let progress = min(1, max(0, -scroll / Size.scrollDistance))
+    return Capsule()
+      .fill(.white.opacity(0.75))
+      .frame(width: 3, height: 22)
+      .offset(y: Size.display.height * 0.22 + progress * 26)
+      .frame(maxWidth: .infinity, alignment: .trailing)
+      .padding(.trailing, 5)
+      .opacity(isScrolling ? 1 : 0)
+      .accessibilityHidden(true)
+  }
+
+  private var content: some View {
     VStack(alignment: .leading, spacing: 8) {
       WatchDippyHeader(greeting: WatchGreeting.text(), message: "All quiet. I'm watching your zones.", isAsleep: false, hops: hops)
+        .padding(.horizontal, 4)
         .contentShape(.rect)
         .onTapGesture {
           hops += 1
           model.complete("watch")
         }
+        .accessibilityAddTraits(.isButton)
+        .accessibilityHint("Tap Dippy")
       ForEach(model.sampleStatuses.prefix(2)) { status in
         WatchPlanCard(status: status)
       }
       WatchSectionTitle(title: "Today's movers")
+        .padding(.horizontal, 4)
       ForEach(movers.prefix(2), id: \.symbol) { quote in
         WatchMoverRow(quote: quote)
       }
     }
-    .padding(.horizontal, 10)
-    .padding(.top, 34)
-    .offset(y: scroll)
-    .frame(width: Self.screen.width, height: Self.screen.height, alignment: .top)
-    .overlay(alignment: .top) {
-      // The watch's title bar stays put while the content scrolls beneath it.
-      HStack {
-        Text("Dipwise")
-          .foregroundStyle(Brand.buy)
-        Spacer()
-        Text(Date.now, format: .dateTime.hour().minute())
-      }
-      .font(.system(size: 14, weight: .semibold, design: .rounded))
-      .padding(.horizontal, 18)
-      .padding(.top, 10)
-      .padding(.bottom, 6)
-      .background(Brand.nightMiddle)
-    }
-    .foregroundStyle(.white)
-    .clipShape(.rect(cornerRadius: 48, style: .continuous))
-    .showcaseSurface(cornerRadius: 48)
-    .overlay(alignment: .trailing) {
-      // The Digital Crown and side button, in the same quiet style as the screen's edge.
-      VStack(spacing: 16) {
-        Capsule().fill(.white.opacity(0.3)).frame(width: 6, height: 34)
-        Capsule().fill(.white.opacity(0.16)).frame(width: 5, height: 44)
-      }
-      .offset(x: 9, y: -14)
-    }
     .sensoryFeedback(.impact(weight: .light), trigger: hops)
-    .accessibilityElement(children: .contain)
-  }
-}
-
-// MARK: - Alerts
-
-/// The wow moment: drag your own stock into your buy zone and the alert arrives, just as it will for real.
-struct AlertShowcaseStep: View {
-  var model: OnboardingModel
-
-  @Environment(\.accessibilityReduceMotion) private var reduceMotion
-  @State private var price: Double?
-  @State private var hasEntered = false
-  @State private var celebrations = 0
-  @State private var hintOffset: CGFloat = 0
-
-  private var symbol: String { model.focusSymbol ?? "NVDA" }
-  private var quote: Quote? { model.focusQuote }
-  private var lower: Double { model.zoneLower }
-  private var upper: Double { model.zoneUpper }
-
-  private var range: ClosedRange<Double> {
-    guard let quote, lower > 0 else { return 0...1 }
-    return (lower * 0.97)...max(quote.price * 1.03, upper * 1.05)
-  }
-
-  private var currentPrice: Double { price ?? quote?.price ?? 0 }
-  private var isInZone: Bool { upper > 0 && currentPrice <= upper && currentPrice >= lower * 0.9 }
-
-  var body: some View {
-    ShowcaseLayout(
-      eyebrow: "Alerts",
-      title: "Never miss your moment",
-      message: "Drag \(symbol) into your buy zone. Dippy taps you the second it gets there, with your plan right in the alert.",
-      mission: hasEntered ? "Dippy caught the dip" : "Drag into the green zone",
-      isMissionDone: hasEntered
-    ) {
-      VStack(spacing: 14) {
-        LivelyOwl(mood: hasEntered ? .celebrating : .calm)
-          .frame(width: 76, height: 88)
-          .owlFlight(trigger: celebrations, height: 40, isEnabled: !reduceMotion)
-        banner
-          .frame(height: 76)
-        priceControl
-      }
-      .padding(.horizontal, 24)
-    }
-    .overlay { Confetti(trigger: celebrations).allowsHitTesting(false) }
-    .sensoryFeedback(.success, trigger: hasEntered) { _, new in new }
-    .onChange(of: isInZone) { _, inZone in
-      guard inZone, !hasEntered else { return }
-      withAnimation(.bouncy(duration: 0.6)) { hasEntered = true }
-      celebrations += 1
-      model.complete("alert")
-    }
-    .task {
-      // A gentle nudge on the slider until the user tries it.
-      guard !reduceMotion else { return }
-      try? await Task.sleep(for: .seconds(1.4))
-      while !Task.isCancelled && price == nil {
-        withAnimation(.smooth(duration: 0.5)) { hintOffset = -14 }
-        try? await Task.sleep(for: .seconds(0.5))
-        withAnimation(.bouncy(duration: 0.6)) { hintOffset = 0 }
-        try? await Task.sleep(for: .seconds(2.4))
-      }
-    }
-  }
-
-  @ViewBuilder
-  private var banner: some View {
-    if hasEntered, let quote {
-      HStack(alignment: .top, spacing: 10) {
-        Image(.appIconPreview)
-          .resizable()
-          .frame(width: 38, height: 38)
-          .clipShape(.rect(cornerRadius: 9, style: .continuous))
-        VStack(alignment: .leading, spacing: 2) {
-          HStack(spacing: 5) {
-            Text("\(symbol) entered your buy zone")
-              .font(.subheadline.weight(.semibold))
-              .lineLimit(1)
-              .minimumScaleFactor(0.75)
-            Spacer(minLength: 4)
-            Text("now")
-              .font(.caption2)
-              .foregroundStyle(.white.opacity(0.55))
-          }
-          Text("Now \(quote.formatted(currentPrice)). Your buy zone: \(quote.formatted(lower))–\(quote.formatted(upper)). Time to buy a little.")
-            .font(.caption)
-            .foregroundStyle(.white.opacity(0.8))
-            .lineLimit(2)
-        }
-      }
-      .padding(12)
-      .frame(maxWidth: .infinity, alignment: .leading)
-      .showcaseSurface(cornerRadius: 20)
-      .transition(.move(edge: .top).combined(with: .opacity).combined(with: .scale(scale: 0.9, anchor: .top)))
-      .accessibilityElement(children: .combine)
-    } else {
-      HStack(spacing: 10) {
-        Image(systemName: "bell.badge")
-          .font(.title3)
-          .foregroundStyle(.white.opacity(0.5))
-        Text("Dippy is waiting for \(symbol) to reach your zone…")
-          .font(.subheadline.weight(.semibold))
-          .foregroundStyle(.white.opacity(0.75))
-        Spacer(minLength: 0)
-      }
-      .padding(12)
-      .frame(maxWidth: .infinity, maxHeight: .infinity)
-      .background {
-        RoundedRectangle(cornerRadius: 20, style: .continuous)
-          .strokeBorder(.white.opacity(0.16), style: StrokeStyle(lineWidth: 1.5, dash: [5, 5]))
-      }
-      .transition(.opacity)
-    }
-  }
-
-  private var priceControl: some View {
-    VStack(alignment: .leading, spacing: 10) {
-      HStack(alignment: .firstTextBaseline) {
-        Text(symbol)
-          .font(.headline)
-        Spacer()
-        Text(quote?.formatted(currentPrice) ?? "")
-          .font(.system(.title2, design: .rounded).weight(.bold))
-          .monospacedDigit()
-          .foregroundStyle(isInZone ? Brand.buy : .white)
-          .contentTransition(.numericText())
-          .lineLimit(1)
-          .minimumScaleFactor(0.6)
-      }
-      ZStack {
-        GeometryReader { geometry in
-          let span = max(range.upperBound - range.lowerBound, 0.0001)
-          let start = CGFloat((lower - range.lowerBound) / span) * geometry.size.width
-          let end = CGFloat((upper - range.lowerBound) / span) * geometry.size.width
-          Capsule()
-            .fill(Brand.buy.opacity(0.3))
-            .frame(width: max(8, end - start), height: 28)
-            .offset(x: start)
-            .frame(maxHeight: .infinity)
-        }
-        .allowsHitTesting(false)
-        Slider(value: Binding(get: { currentPrice }, set: { price = $0 }), in: range) {
-          Text("\(symbol) price")
-        }
-        .tint(Brand.buy)
-        .offset(x: price == nil ? hintOffset : 0)
-      }
-      .frame(height: 32)
-      HStack {
-        Label("Buy zone \(quote?.formatted(lower) ?? "")–\(quote?.formatted(upper) ?? "")", systemImage: "arrow.down.to.line.compact")
-          .foregroundStyle(Brand.buy)
-        Spacer()
-        if price != nil {
-          Button("Reset") {
-            withAnimation(.smooth) {
-              price = nil
-              hasEntered = false
-            }
-          }
-          .foregroundStyle(.white.opacity(0.7))
-        }
-      }
-      .font(.caption.weight(.semibold))
-      .lineLimit(1)
-      .minimumScaleFactor(0.7)
-    }
-    .padding(16)
-    .showcaseSurface(cornerRadius: 22)
   }
 }

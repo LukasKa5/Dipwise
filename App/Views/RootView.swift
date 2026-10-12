@@ -26,9 +26,9 @@ struct RootView: View {
       // Shown once per launch, over the app so it can load underneath.
       if showsSplash {
         SplashView {
-          withAnimation(.smooth(duration: 0.45)) { showsSplash = false }
+          withAnimation(.easeInOut(duration: 0.5)) { showsSplash = false }
         }
-        .transition(.opacity.combined(with: .scale(scale: 1.06)))
+        .transition(.opacity)
       }
     }
     .tint(Palette.green)

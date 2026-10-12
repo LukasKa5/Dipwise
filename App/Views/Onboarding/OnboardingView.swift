@@ -56,7 +56,7 @@ struct OnboardingView: View {
           case 5: FlockStep(model: model)
           case 6: WidgetShowcaseStep(model: model).fitsScreen()
           case 7: WatchShowcaseStep(model: model).fitsScreen()
-          case 8: AlertShowcaseStep(model: model).fitsScreen()
+          case 8: NotifyStep().fitsScreen()
           case 9: AccountStep().fitsScreen()
           default: RevealStep(model: model, streak: max(1, progress.streak)).fitsScreen()
           }
