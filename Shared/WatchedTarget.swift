@@ -12,7 +12,12 @@ struct WatchedTarget: Codable, Hashable, Identifiable {
 struct WatchedStock: Codable, Hashable, Identifiable {
   var symbol: String
   var name: String
+  /// Shares owned, for the watch's portfolio. Nil or zero when only watched.
+  var shares: Double?
+  var averageCost: Double?
   var id: String { symbol }
+
+  var isOwned: Bool { (shares ?? 0) > 0 }
 }
 
 /// Reads and writes the alert snapshot and cached quotes in the shared App Group.
@@ -20,6 +25,26 @@ enum TargetSnapshotStore {
   private static let targetsKey = "watchedTargets.v3"
   private static let quotesKey = "cachedQuotes.v3"
   private static let stocksKey = "watchedStocks.v1"
+  private static let baseCurrencyKey = "baseCurrency.v1"
+  private static let ratesKey = "exchangeRates.v1"
+
+  /// The currency portfolio totals are shown in, chosen on iPhone.
+  static func loadBaseCurrency() -> String {
+    AppGroup.defaults.string(forKey: baseCurrencyKey) ?? "USD"
+  }
+
+  static func save(baseCurrency: String) {
+    AppGroup.defaults.set(baseCurrency, forKey: baseCurrencyKey)
+  }
+
+  /// Multipliers from each currency into the base currency.
+  static func loadRates() -> [String: Double] {
+    (AppGroup.defaults.dictionary(forKey: ratesKey) as? [String: Double]) ?? [:]
+  }
+
+  static func save(rates: [String: Double]) {
+    AppGroup.defaults.set(rates, forKey: ratesKey)
+  }
 
   static func loadStocks() -> [WatchedStock] {
     guard let data = AppGroup.defaults.data(forKey: stocksKey) else { return [] }

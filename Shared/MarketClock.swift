@@ -2,9 +2,29 @@ import Foundation
 
 /// When the US stock market is open, so Dippy can sleep while it's closed.
 enum MarketClock {
-  static func isOpen(at date: Date = .now) -> Bool {
+  private static var calendar: Calendar {
     var calendar = Calendar(identifier: .gregorian)
     calendar.timeZone = TimeZone(identifier: "America/New_York") ?? .current
+    return calendar
+  }
+
+  /// When the market next opens, or closes if it's open now.
+  static func nextChange(after date: Date = .now) -> Date {
+    let calendar = Self.calendar
+    if isOpen(at: date) {
+      return calendar.date(bySettingHour: 16, minute: 0, second: 0, of: date) ?? date
+    }
+    for day in 0..<8 {
+      guard let candidateDay = calendar.date(byAdding: .day, value: day, to: date),
+            let open = calendar.date(bySettingHour: 9, minute: 30, second: 0, of: candidateDay) else { continue }
+      let weekday = calendar.component(.weekday, from: open)
+      if (2...6).contains(weekday) && open > date { return open }
+    }
+    return date.addingTimeInterval(86_400)
+  }
+
+  static func isOpen(at date: Date = .now) -> Bool {
+    let calendar = Self.calendar
     let weekday = calendar.component(.weekday, from: date)
     guard (2...6).contains(weekday) else { return false }
     let minutes = calendar.component(.hour, from: date) * 60 + calendar.component(.minute, from: date)
