@@ -1,3 +1,4 @@
+import AuthenticationServices
 import SwiftData
 import SwiftUI
 
@@ -11,18 +12,20 @@ struct OnboardingView: View {
   @Environment(FlockService.self) private var flock
   @Environment(ProgressStore.self) private var progress
   @Environment(SubscriptionManager.self) private var subscription
+  @Environment(AccountStore.self) private var account
   @State private var model = OnboardingModel()
   @State private var page = 0
   @State private var showsPaywall = false
   @State private var celebration = 0
+  @State private var xpToast: Int?
 
-  private let pageCount = 10
+  private let pageCount = 12
 
   private var canContinue: Bool {
     switch page {
     case 1: !model.styles.isEmpty
     case 2: !model.selected.isEmpty
-    case 5: model.vote != nil
+    case 6: model.vote != nil
     default: true
     }
   }
@@ -30,9 +33,11 @@ struct OnboardingView: View {
   private var buttonTitle: String {
     switch page {
     case 2: model.selected.isEmpty ? "Pick at least one" : "Watch \(model.selected.count) \(model.selected.count == 1 ? "stock" : "stocks")"
-    case 5: model.vote == nil ? "Cast your vote" : "Continue"
-    case 8: "Allow Notifications"
-    case 9: "Start Watching"
+    case 5: model.smartKinds.isEmpty ? "Maybe later" : "Add \(model.smartKinds.count) smart \(model.smartKinds.count == 1 ? "alert" : "alerts")"
+    case 6: model.vote == nil ? "Cast your vote" : "Continue"
+    case 9: "Allow Notifications"
+    case 10: account.isSignedIn ? "Continue" : "Continue without an account"
+    case 11: "Start Watching"
     default: "Continue"
     }
   }
@@ -44,15 +49,17 @@ struct OnboardingView: View {
         topBar
         Group {
           switch page {
-          case 0: WelcomeStep()
+          case 0: WelcomeStep(model: model)
           case 1: StyleStep(model: model)
           case 2: PickStep(model: model)
           case 3: ScrubStep(model: model)
           case 4: ZoneStep(model: model)
-          case 5: FlockStep(model: model)
-          case 6: WidgetStep(model: model)
-          case 7: WatchStep(model: model)
-          case 8: NotifyStep()
+          case 5: SmartStep(model: model)
+          case 6: FlockStep(model: model)
+          case 7: WidgetStep(model: model)
+          case 8: WatchStep(model: model)
+          case 9: NotifyStep()
+          case 10: AccountStep()
           default: RevealStep(model: model, streak: max(1, progress.streak))
           }
         }
@@ -75,11 +82,30 @@ struct OnboardingView: View {
         .sensoryFeedback(.impact(weight: .light), trigger: page)
       }
       Confetti(trigger: celebration)
+      if let toast = xpToast {
+        XPToast(points: toast)
+          .transition(.scale(scale: 0.4).combined(with: .opacity).combined(with: .move(edge: .top)))
+          .frame(maxHeight: .infinity, alignment: .top)
+          .padding(.top, 60)
+      }
     }
+    .onChange(of: model.missionCelebration) {
+      celebration += 1
+      withAnimation(.bouncy) { xpToast = OnboardingModel.missionPoints }
+      Task {
+        try? await Task.sleep(for: .seconds(1.4))
+        withAnimation(.smooth) { xpToast = nil }
+      }
+    }
+    .sensoryFeedback(.success, trigger: model.missionCelebration)
     .foregroundStyle(.white)
     .environment(\.colorScheme, .dark)
     .task { await model.loadQuotes() }
-    .sheet(isPresented: $showsPaywall, onDismiss: onFinish) {
+    .sheet(isPresented: $showsPaywall, onDismiss: {
+      if subscription.isPro { model.commitSmartAlerts(context: modelContext) }
+      SnapshotPublisher.publish(context: modelContext)
+      onFinish()
+    }) {
       PaywallView()
     }
   }
@@ -105,6 +131,12 @@ struct OnboardingView: View {
       .animation(.snappy, value: page)
       .accessibilityElement()
       .accessibilityLabel("Step \(page + 1) of \(pageCount)")
+      Label("\(model.earnedXP)", systemImage: "bolt.fill")
+        .font(.subheadline.weight(.heavy).monospacedDigit())
+        .foregroundStyle(Brand.amber)
+        .contentTransition(.numericText())
+        .animation(.bouncy, value: model.earnedXP)
+        .accessibilityLabel("\(model.earnedXP) XP earned")
       Button("Skip") { showsPaywall = true }
         .font(.subheadline.weight(.semibold))
         .foregroundStyle(.white.opacity(0.7))
@@ -119,19 +151,22 @@ struct OnboardingView: View {
   private func advance() {
     switch page {
     case 3: model.prepareZone()
-    case 8:
+    case 10:
+      if !account.isSignedIn { account.continueAsGuest() }
+    case 9:
       Task {
         await NotificationManager.requestAuthorization()
         withAnimation(.smooth) { page += 1 }
         celebration += 1
       }
       return
-    case 9:
+    case 11:
       let created = model.commit(context: modelContext, quoteStore: quoteStore, isPro: subscription.isPro)
       for alert in created {
         Task { await flock.share(alert) }
       }
       progress.record(.onboarding)
+      progress.addBonus(model.earnedXP)
       SnapshotPublisher.publish(context: modelContext)
       showsPaywall = true
       return
@@ -165,10 +200,11 @@ private struct StepTitle: View {
 }
 
 private struct WelcomeStep: View {
+  var model: OnboardingModel
   @State private var taps = 0
   @State private var arrived = false
   private let lines = [
-    "Hoo! Tap me.",
+    "Hoo! Tap me three times.",
     "I'm Dippy, your stock-watching owl.",
     "I watch your stocks day and night…",
     "…and tell you when it's time to act.",
@@ -178,11 +214,15 @@ private struct WelcomeStep: View {
   var body: some View {
     VStack(spacing: 24) {
       Spacer()
+      MissionChip(text: "Tap Dippy 3 times", isDone: model.completedMissions.contains("welcome"))
       SpeechBubble(text: lines[min(taps, lines.count - 1)])
         .animation(.snappy, value: taps)
       LivelyOwl(mood: .calm)
         .frame(width: 180, height: 206)
-        .simultaneousGesture(TapGesture().onEnded { taps += 1 })
+        .simultaneousGesture(TapGesture().onEnded {
+          taps += 1
+          if taps >= 3 { model.complete("welcome") }
+        })
         .offset(x: arrived ? 0 : 260, y: arrived ? 0 : -520)
         .rotationEffect(.degrees(arrived ? 0 : 30))
         .owlFlight(trigger: arrived ? 1 : 0, height: 30)
@@ -313,6 +353,7 @@ private struct ScrubStep: View {
     let series: (values: [Double], dates: [Date]) = quote?.recent(64) ?? ([], [])
     VStack(spacing: 22) {
       Spacer()
+      MissionChip(text: "Slide along the chart until Dippy flies", isDone: model.completedMissions.contains("scrub"))
       VStack(alignment: .leading, spacing: 6) {
         if let selectedIndex, series.values.indices.contains(selectedIndex) {
           Text(series.dates.indices.contains(selectedIndex) ? series.dates[selectedIndex].formatted(date: .abbreviated, time: .omitted) : "")
@@ -335,7 +376,10 @@ private struct ScrubStep: View {
         InteractiveChart(values: series.values, dates: series.dates, gridColor: .white.opacity(0.08), owlSize: 56, owlMood: .calm, selectedIndex: $selectedIndex)
           .frame(height: 240)
           .padding(.horizontal, 20)
-          .onChange(of: selectedIndex) { _, index in if index != nil { scrubs += 1 } }
+          .onChange(of: selectedIndex) { _, index in
+            if index != nil { scrubs += 1 }
+            if scrubs > 15 { model.complete("scrub") }
+          }
       } else {
         ProgressView().tint(.white).frame(height: 240)
       }
@@ -357,6 +401,7 @@ private struct ZoneStep: View {
     let quote = model.focusQuote
     VStack(spacing: 22) {
       Spacer()
+      MissionChip(text: "Drag a green handle", isDone: model.completedMissions.contains("zone"))
       StepTitle(title: "Draw your buy zone", message: "Drag the green handles to the range where you'd happily buy \(model.focusSymbol ?? "more").")
       if let quote {
         ZoneEditorChart(values: quote.recent(64).values, side: .buy, lower: $model.zoneLower, upper: $model.zoneUpper,
@@ -370,6 +415,15 @@ private struct ZoneStep: View {
           .font(.headline)
           .foregroundStyle(Brand.buy)
           .contentTransition(.numericText())
+          .onChange(of: model.zoneLower) { model.complete("zone") }
+          .onChange(of: model.zoneUpper) { model.complete("zone") }
+        if let odds = AlertOdds(rule: AlertRule(kind: .buyZone, lower: model.zoneLower, upper: model.zoneUpper), quote: quote) {
+          Label("\(odds.monthChance.formatted(.percent.precision(.fractionLength(0)))) chance it's reached within 30 days", systemImage: "dice.fill")
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(Brand.amber)
+            .contentTransition(.numericText())
+            .animation(.snappy, value: odds.monthChance)
+        }
         HStack(spacing: 16) {
           Label("Green = buy", systemImage: "circle.fill").foregroundStyle(Brand.buy)
           Label("Red = sell", systemImage: "circle.fill").foregroundStyle(Brand.sell)
@@ -397,9 +451,11 @@ private struct FlockStep: View {
         .owlFlight(trigger: flights, height: 40)
       StepTitle(title: "Invest with the flock", message: model.vote == nil ? "Thousands of investors share their plans anonymously. What's your call?" : "You're part of the flock now. See where everyone buys and sells, on every stock.")
         .animation(.smooth, value: model.vote)
+      MissionChip(text: "Vote with the flock", isDone: model.completedMissions.contains("flock"))
       VoteCard(symbol: model.focusSymbol ?? "NVDA", votes: votes, userVote: model.vote) { bullish in
         model.vote = bullish
         flights += 1
+        model.complete("flock")
       }
       .padding(.horizontal, 20)
       Spacer()
@@ -427,6 +483,7 @@ private struct WidgetStep: View {
         HStack(alignment: .top, spacing: 14) {
           Button {
             withAnimation(.bouncy) { index = (index + 1) % symbols.count }
+            model.complete("widget")
           } label: {
             smallWidget
           }
@@ -456,6 +513,7 @@ private struct WidgetStep: View {
       .padding(18)
       .background(Brand.nightTop, in: .rect(cornerRadius: 36))
       .overlay { RoundedRectangle(cornerRadius: 36).strokeBorder(.white.opacity(0.15), lineWidth: 2) }
+      MissionChip(text: "Tap a widget", isDone: model.completedMissions.contains("widget"))
       StepTitle(title: "Dippy on your Home Screen", message: "Tap the widgets. They flip through your plans, show zones, and update themselves.")
       Spacer(minLength: 8)
     }
@@ -584,10 +642,14 @@ private struct WatchStep: View {
           .transition(.move(edge: .bottom).combined(with: .opacity))
         }
       }
-      .onTapGesture { withAnimation(.smooth) { page = (page + 1) % 2 } }
+      .onTapGesture {
+        withAnimation(.smooth) { page = (page + 1) % 2 }
+        model.complete("watch")
+      }
       .accessibilityElement(children: .combine)
       .accessibilityLabel("Apple Watch preview. Tap to switch screens.")
       .accessibilityAddTraits(.isButton)
+      MissionChip(text: "Tap the watch", isDone: model.completedMissions.contains("watch"))
       StepTitle(title: "On your wrist", message: "A gentle tap when a stock reaches your zone, your nearest plan on the watch face, and every plan a glance away. Tap the watch.")
       Spacer(minLength: 8)
     }
@@ -659,6 +721,117 @@ private struct WatchStep: View {
     .foregroundStyle(.white)
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .background(Color.black)
+  }
+}
+
+/// A small task that teaches a feature; it turns green with a check when done.
+private struct MissionChip: View {
+  var text: String
+  var isDone: Bool
+
+  var body: some View {
+    Label(isDone ? "\(text) · +\(OnboardingModel.missionPoints) XP" : text, systemImage: isDone ? "checkmark.circle.fill" : "target")
+      .font(.subheadline.weight(.bold))
+      .foregroundStyle(isDone ? Brand.owlInk : Brand.amber)
+      .padding(.horizontal, 14)
+      .padding(.vertical, 8)
+      .background(isDone ? AnyShapeStyle(Brand.buy) : AnyShapeStyle(Brand.amber.opacity(0.15)), in: .capsule)
+      .animation(.bouncy, value: isDone)
+      .accessibilityLabel(isDone ? "Mission complete: \(text)" : "Mission: \(text)")
+  }
+}
+
+private struct SmartStep: View {
+  @Bindable var model: OnboardingModel
+
+  var body: some View {
+    ScrollView {
+      VStack(spacing: 20) {
+        MissionChip(text: "Pick a smart alert", isDone: model.completedMissions.contains("smart"))
+          .padding(.top, 12)
+        HStack(alignment: .top, spacing: 12) {
+          LivelyOwl(hopsOnTap: false, mood: .calm)
+            .frame(width: 64, height: 74)
+          SpeechBubble(text: model.smartKinds.isEmpty ? "I can watch more than prices. Pick as many as you like!" : "Great picks. I'll watch \(model.focusSymbol ?? "it") for those too.")
+            .animation(.snappy, value: model.smartKinds.isEmpty)
+        }
+        VStack(spacing: 10) {
+          ForEach(OnboardingModel.suggestedSmart) { kind in
+            let isOn = model.smartKinds.contains(kind)
+            Button {
+              withAnimation(.snappy) {
+                if isOn { model.smartKinds.remove(kind) } else { model.smartKinds.insert(kind) }
+              }
+              model.complete("smart")
+            } label: {
+              HStack(spacing: 12) {
+                Image(systemName: kind.systemImage)
+                  .font(.headline)
+                  .foregroundStyle(isOn ? Brand.owlInk : kind.side.brandColor)
+                  .frame(width: 34, height: 34)
+                  .background(isOn ? AnyShapeStyle(.white.opacity(0.5)) : AnyShapeStyle(kind.side.brandColor.opacity(0.2)), in: .circle)
+                VStack(alignment: .leading, spacing: 2) {
+                  Text(kind.title).font(.headline)
+                  Text(kind.explanation)
+                    .font(.caption)
+                    .opacity(0.75)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+                }
+                Spacer()
+                Image(systemName: isOn ? "checkmark.square.fill" : "square")
+                  .font(.title3)
+              }
+              .padding(14)
+              .foregroundStyle(isOn ? Brand.owlInk : .white)
+              .background(isOn ? AnyShapeStyle(Brand.buy) : AnyShapeStyle(.white.opacity(0.08)), in: .rect(cornerRadius: 18))
+            }
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(isOn ? .isSelected : [])
+          }
+        }
+        .padding(.horizontal, 20)
+        .sensoryFeedback(.selection, trigger: model.smartKinds)
+        Text("Smart alerts are part of Dipwise Pro. Try it free for 7 days.")
+          .font(.footnote)
+          .foregroundStyle(.white.opacity(0.6))
+      }
+    }
+  }
+}
+
+private struct AccountStep: View {
+  @Environment(AccountStore.self) private var account
+
+  var body: some View {
+    VStack(spacing: 24) {
+      Spacer(minLength: 8)
+      LivelyOwl(mood: .calm)
+        .frame(width: 120, height: 138)
+      StepTitle(
+        title: account.isSignedIn ? "Welcome, \(account.firstName ?? "friend")!" : "Make Dipwise yours",
+        message: account.isSignedIn ? "You're signed in. Dippy will greet you by name." : "Sign in with Apple for a personal greeting and the same anonymous flock identity on all your devices. It's optional, and Dippy never sees your email unless you share it."
+      )
+      if !account.isSignedIn {
+        SignInWithAppleButton(.continue) { account.configure($0) } onCompletion: { account.handle($0) }
+          .signInWithAppleButtonStyle(.white)
+          .frame(height: 50)
+          .padding(.horizontal, 28)
+        if let error = account.errorMessage {
+          Text(error)
+            .font(.caption)
+            .foregroundStyle(Brand.sell)
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 28)
+        }
+      } else {
+        Image(systemName: "checkmark.seal.fill")
+          .font(.system(size: 54))
+          .foregroundStyle(Brand.buy)
+          .symbolEffect(.bounce, value: account.isSignedIn)
+      }
+      Spacer(minLength: 8)
+    }
   }
 }
 
@@ -791,13 +964,21 @@ private struct RevealStep: View {
             .font(.headline)
             .foregroundStyle(Brand.buy)
         }
+        if !model.smartKinds.isEmpty {
+          Label("\(model.smartKinds.count) smart \(model.smartKinds.count == 1 ? "alert" : "alerts") ready to activate", systemImage: "sparkles")
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(.white.opacity(0.8))
+        }
         HStack(spacing: 18) {
           Label("Day \(streak) streak", systemImage: "flame.fill")
             .foregroundStyle(Brand.amber)
-          Label("+50 XP", systemImage: "sparkles")
+          Label("+\(50 + model.earnedXP) XP", systemImage: "bolt.fill")
             .foregroundStyle(Brand.amber)
         }
         .font(.headline)
+        Text("\(model.completedMissions.count) of 8 missions completed")
+          .font(.caption)
+          .foregroundStyle(.white.opacity(0.6))
       }
       .padding(20)
       .frame(maxWidth: .infinity)

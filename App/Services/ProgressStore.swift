@@ -120,6 +120,13 @@ final class ProgressStore {
     save()
   }
 
+  /// Bonus XP, for example from the onboarding missions.
+  func addBonus(_ points: Int) {
+    stored.xp += points
+    lastGain = Gain(points: points)
+    save()
+  }
+
   // MARK: Counters
 
   var votes: Int { stored.votes }
