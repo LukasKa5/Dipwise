@@ -104,89 +104,116 @@ struct StockPlanWidgetView: View {
 
   private var zones: [AlertRule] { entry.targets.map(\.rule).filter { $0.kind.isZone || $0.kind == .priceBelow || $0.kind == .priceAbove } }
 
+  private var nearest: WatchedTarget? {
+    guard let quote = entry.quote else { return nil }
+    return entry.targets.min { ($0.rule.distance(for: quote) ?? 9) < ($1.rule.distance(for: quote) ?? 9) }
+  }
+
   var body: some View {
     Group {
       if let symbol = entry.symbol, let quote = entry.quote {
-        VStack(alignment: .leading, spacing: 8) {
-          if family == .systemMedium {
-            HStack(spacing: 8) {
-              WidgetBadge(symbol: symbol)
-              VStack(alignment: .leading, spacing: 0) {
-                Text(symbol)
-                  .font(.headline)
-                  .lineLimit(1)
-                  .minimumScaleFactor(0.5)
-                Text(quote.name).font(.caption2).foregroundStyle(.white.opacity(0.6)).lineLimit(1)
-              }
-              Spacer(minLength: 0)
-              VStack(alignment: .trailing, spacing: 0) {
-                Text(compactPrice(quote.price, currency: quote.currency))
-                  .font(.headline.monospacedDigit())
-                  .lineLimit(1)
-                  .minimumScaleFactor(0.6)
-                Text(changeText(quote.change))
-                  .font(.caption.weight(.semibold))
-                  .foregroundStyle(quote.change >= 0 ? Brand.buy : Brand.sell)
-              }
-            }
-          } else {
-            VStack(alignment: .leading, spacing: 2) {
-              HStack(spacing: 6) {
-                WidgetBadge(symbol: symbol, size: 22)
-                Text(symbol)
-                  .font(.subheadline.bold())
-                  .lineLimit(1)
-                  .minimumScaleFactor(0.5)
-                Spacer(minLength: 0)
-                WidgetChangePill(change: quote.change)
-              }
-              Text(compactPrice(quote.price, currency: quote.currency))
-                .font(.title3.bold().monospacedDigit())
-                .lineLimit(1)
-                .minimumScaleFactor(0.5)
-            }
-          }
+        VStack(alignment: .leading, spacing: 6) {
+          header(symbol: symbol, quote: quote)
           if family == .systemMedium && showsZones {
+            Spacer(minLength: 0)
             WidgetZoneScale(price: quote.price, zones: zones, format: quote.formatted)
             Spacer(minLength: 0)
           } else {
             WidgetSparkline(values: Array(quote.closes.suffix(30)), zones: zones)
           }
-          HStack {
-            if let nearest = entry.targets.min(by: { ($0.rule.distance(for: quote) ?? 9) < ($1.rule.distance(for: quote) ?? 9) }) {
-              Text("\(distanceText(nearest.rule.distance(for: quote))) · \(nearest.rule.kind.title.lowercased())")
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(nearest.rule.kind.side.brandColor)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-            } else {
-              Text("No plan yet").font(.caption2).foregroundStyle(.white.opacity(0.6))
-            }
-            Spacer(minLength: 0)
-            if family == .systemMedium {
-              Button(intent: ToggleZonesIntent()) {
-                Label(showsZones ? "Chart" : "Zones", systemImage: showsZones ? "chart.xyaxis.line" : "arrow.left.and.right")
-                  .font(.caption2.weight(.bold))
-                  .padding(.horizontal, 8)
-                  .padding(.vertical, 4)
-                  .background(.white.opacity(0.15), in: .capsule)
-              }
-              .buttonStyle(.plain)
-            }
-          }
+          footer(quote: quote)
         }
       } else {
         VStack(spacing: 8) {
           WidgetOwl(size: 44)
           Text("Choose a stock")
             .font(.caption.weight(.semibold))
-            .foregroundStyle(.white.opacity(0.7))
+            .foregroundStyle(.white.opacity(0.75))
         }
       }
     }
     .foregroundStyle(.white)
-    .dipwiseWidgetBackground(glow: entry.quote.map { $0.change >= 0 ? Brand.buy : Brand.sell })
+    .dipwiseWidgetBackground()
     .widgetURL(entry.symbol.flatMap { URL(string: "dipwise://stock/\($0)") })
+  }
+
+  @ViewBuilder
+  private func header(symbol: String, quote: Quote) -> some View {
+    if family == .systemMedium {
+      HStack(spacing: 8) {
+        WidgetBadge(symbol: symbol)
+        VStack(alignment: .leading, spacing: 0) {
+          Text(symbol)
+            .font(.headline)
+            .lineLimit(1)
+            .minimumScaleFactor(0.5)
+          Text(quote.name)
+            .font(.caption2)
+            .foregroundStyle(.white.opacity(0.6))
+            .lineLimit(1)
+        }
+        Spacer(minLength: 0)
+        VStack(alignment: .trailing, spacing: 1) {
+          Text(compactPrice(quote.price, currency: quote.currency))
+            .font(.system(.headline, design: .rounded).monospacedDigit())
+            .lineLimit(1)
+            .minimumScaleFactor(0.6)
+          WidgetChangePill(change: quote.change)
+        }
+      }
+    } else {
+      VStack(alignment: .leading, spacing: 2) {
+        HStack(spacing: 6) {
+          WidgetBadge(symbol: symbol, size: 22)
+          Text(symbol)
+            .font(.subheadline.bold())
+            .lineLimit(1)
+            .minimumScaleFactor(0.5)
+          Spacer(minLength: 0)
+          WidgetOwl(size: 18)
+        }
+        HStack(alignment: .firstTextBaseline, spacing: 4) {
+          Text(compactPrice(quote.price, currency: quote.currency))
+            .font(.system(.title3, design: .rounded).weight(.bold).monospacedDigit())
+            .lineLimit(1)
+            .minimumScaleFactor(0.5)
+          Spacer(minLength: 0)
+          Text(changeText(quote.change))
+            .font(.caption2.weight(.bold).monospacedDigit())
+            .foregroundStyle(quote.change >= 0 ? Brand.buy : Brand.sell)
+            .lineLimit(1)
+            .fixedSize()
+        }
+      }
+    }
+  }
+
+  private func footer(quote: Quote) -> some View {
+    HStack(spacing: 6) {
+      if family == .systemMedium { WidgetOwl(size: 16) }
+      if let nearest {
+        Text("\(distanceText(nearest.rule.distance(for: quote))) · \(nearest.rule.kind.title.lowercased())")
+          .font(.caption2.weight(.semibold))
+          .foregroundStyle(nearest.rule.kind.side.brandColor)
+          .lineLimit(1)
+          .minimumScaleFactor(0.7)
+      } else {
+        Text("No plan yet")
+          .font(.caption2)
+          .foregroundStyle(.white.opacity(0.6))
+      }
+      Spacer(minLength: 0)
+      if family == .systemMedium {
+        Button(intent: ToggleZonesIntent()) {
+          Label(showsZones ? "Chart" : "Zones", systemImage: showsZones ? "chart.xyaxis.line" : "arrow.left.and.right")
+            .font(.caption2.weight(.bold))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(.white.opacity(0.12), in: .capsule)
+        }
+        .buttonStyle(.plain)
+      }
+    }
   }
 }
 

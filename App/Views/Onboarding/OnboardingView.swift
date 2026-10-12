@@ -19,7 +19,7 @@ struct OnboardingView: View {
   @State private var showsPaywall = false
   @State private var celebration = 0
 
-  private let pageCount = 11
+  private let pageCount = 10
 
   private var canContinue: Bool {
     switch page {
@@ -34,9 +34,9 @@ struct OnboardingView: View {
     switch page {
     case 2: model.selected.isEmpty ? "Pick at least one" : "Watch \(model.selected.count) \(model.selected.count == 1 ? "stock" : "stocks")"
     case 5: model.vote == nil ? "Cast your vote" : "Continue"
-    case 8: "Allow Notifications"
-    case 9: account.isSignedIn ? "Continue" : "Continue without an account"
-    case 10: "Start Watching"
+    case 7: "Allow Notifications"
+    case 8: account.isSignedIn ? "Continue" : "Continue without an account"
+    case 9: "Start Watching"
     default: "Continue"
     }
   }
@@ -54,10 +54,9 @@ struct OnboardingView: View {
           case 3: ScrubStep(model: model).fitsScreen()
           case 4: ZoneStep(model: model).fitsScreen()
           case 5: FlockStep(model: model)
-          case 6: WidgetStep(model: model).fitsScreen()
-          case 7: WatchStep(model: model).fitsScreen()
-          case 8: NotifyStep().fitsScreen()
-          case 9: AccountStep().fitsScreen()
+          case 6: EverywhereStep(model: model).fitsScreen()
+          case 7: NotifyStep(model: model).fitsScreen()
+          case 8: AccountStep().fitsScreen()
           default: RevealStep(model: model, streak: max(1, progress.streak)).fitsScreen()
           }
         }
@@ -128,16 +127,16 @@ struct OnboardingView: View {
   private func advance() {
     switch page {
     case 3: model.prepareZone()
-    case 9:
-      if !account.isSignedIn { account.continueAsGuest() }
     case 8:
+      if !account.isSignedIn { account.continueAsGuest() }
+    case 7:
       Task {
         await NotificationManager.requestAuthorization()
         withAnimation(.smooth) { page += 1 }
         celebration += 1
       }
       return
-    case 10:
+    case 9:
       let created = model.commit(context: modelContext, quoteStore: quoteStore, isPro: subscription.isPro)
       for alert in created {
         Task { await flock.share(alert) }
@@ -183,7 +182,7 @@ private struct FitsScreen: ViewModifier {
   }
 }
 
-private struct StepTitle: View {
+struct StepTitle: View {
   var title: String
   var message: String?
 
@@ -519,69 +518,8 @@ private struct FlockStep: View {
   }
 }
 
-private struct WidgetStep: View {
-  var model: OnboardingModel
-
-  var body: some View {
-    VStack(spacing: 20) {
-      Spacer(minLength: 4)
-      HomeScreenPreview(statuses: model.sampleStatuses, quotes: model.quotes, symbols: model.previewSymbols) {
-        model.complete("widget")
-      }
-      MissionChip(text: "Tap a widget", isDone: model.completedMissions.contains("widget"))
-      StepTitle(title: "Dippy on your Home Screen", message: "Your plans flip by on their own, today's movers update all day, and one tap switches a chart to your zones.")
-      Spacer(minLength: 4)
-    }
-  }
-}
-
-private struct WatchStep: View {
-  var model: OnboardingModel
-  @Environment(\.accessibilityReduceMotion) private var reduceMotion
-  @State private var screen: WatchPreview.Screen = .face
-  @State private var userTapped = false
-
-  var body: some View {
-    VStack(spacing: 18) {
-      Spacer(minLength: 4)
-      WatchPreview(statuses: model.sampleStatuses, quotes: model.quotes, symbol: model.focusSymbol ?? "NVDA", screen: $screen)
-        .onTapGesture {
-          userTapped = true
-          advance()
-          model.complete("watch")
-        }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Apple Watch. \(screen.title).")
-        .accessibilityHint("Tap to see the next screen.")
-        .accessibilityAddTraits(.isButton)
-      Text(screen.title)
-        .font(.subheadline.weight(.semibold))
-        .foregroundStyle(Brand.buy)
-        .contentTransition(.opacity)
-        .id(screen)
-      MissionChip(text: "Tap the watch", isDone: model.completedMissions.contains("watch"))
-      StepTitle(title: "The best stocks app on your wrist", message: "A tap when a stock hits your zone, your plans on the watch face, and charts you scrub with the Digital Crown.")
-      Spacer(minLength: 4)
-    }
-    .sensoryFeedback(.selection, trigger: screen)
-    .task {
-      // Tours the screens by itself until the user takes over.
-      guard !reduceMotion else { return }
-      while !Task.isCancelled && !userTapped {
-        try? await Task.sleep(for: .seconds(4.2))
-        if !userTapped { advance() }
-      }
-    }
-  }
-
-  private func advance() {
-    let next = WatchPreview.Screen(rawValue: (screen.rawValue + 1) % WatchPreview.Screen.allCases.count) ?? .face
-    withAnimation(reduceMotion ? .easeInOut(duration: 0.2) : .smooth(duration: 0.5)) { screen = next }
-  }
-}
-
 /// A gentle hint that teaches a feature by doing it; it turns green with a check when done.
-private struct MissionChip: View {
+struct MissionChip: View {
   var text: String
   var isDone: Bool
 
@@ -628,111 +566,6 @@ private struct AccountStep: View {
           .symbolEffect(.bounce, value: account.isSignedIn)
       }
       Spacer(minLength: 8)
-    }
-  }
-}
-
-private struct NotifyStep: View {
-  private struct Banner: Identifiable, Equatable {
-    var id = UUID()
-    var title: String
-    var message: String
-    var symbol: String
-    var color: Color
-  }
-
-  private static let samples: [Banner] = [
-    Banner(title: "NVDA entered your buy zone", message: "Now $177.40, inside $170–178. Your plan: about 5.6 shares.", symbol: "arrow.down.to.line.compact", color: Brand.buy),
-    Banner(title: "AAPL reached your sell zone", message: "Now $256.10. Time to take some profit?", symbol: "arrow.up.to.line.compact", color: Brand.sell),
-    Banner(title: "Keep your streak going", message: "Your daily brief is ready. One minute with Dippy.", symbol: "flame.fill", color: Brand.amber),
-  ]
-
-  @Environment(\.accessibilityReduceMotion) private var reduceMotion
-  @State private var visible: [Banner] = []
-
-  var body: some View {
-    VStack(spacing: 26) {
-      Spacer(minLength: 8)
-      VStack(spacing: 0) {
-        LivelyOwl(mood: .calm)
-          .frame(width: 84, height: 96)
-          .padding(.bottom, -10)
-          .zIndex(1)
-        lockScreen
-      }
-      StepTitle(title: "Never miss your moment", message: "Dippy taps you on the shoulder the moment a stock enters your zone, with your plan right in the notification.")
-      Spacer(minLength: 8)
-    }
-    .task { await play() }
-  }
-
-  private var lockScreen: some View {
-    VStack(spacing: 4) {
-      Text(Date.now, format: .dateTime.weekday(.wide).day().month(.wide))
-        .font(.subheadline.weight(.semibold))
-        .foregroundStyle(.white.opacity(0.8))
-        .padding(.top, 22)
-      Text("9:41")
-        .font(.system(size: 64, weight: .semibold, design: .rounded))
-      VStack(spacing: 8) {
-        ForEach(visible) { banner in
-          HStack(alignment: .top, spacing: 10) {
-            Image(.appIconPreview)
-              .resizable()
-              .frame(width: 34, height: 34)
-              .clipShape(.rect(cornerRadius: 8))
-            VStack(alignment: .leading, spacing: 2) {
-              HStack(spacing: 5) {
-                Image(systemName: banner.symbol)
-                  .font(.caption.weight(.bold))
-                  .foregroundStyle(banner.color)
-                Text(banner.title)
-                  .font(.subheadline.weight(.semibold))
-                  .lineLimit(1)
-                  .minimumScaleFactor(0.8)
-              }
-              Text(banner.message)
-                .font(.caption)
-                .foregroundStyle(.white.opacity(0.8))
-                .lineLimit(2)
-            }
-            Spacer(minLength: 0)
-            Text("now")
-              .font(.caption2)
-              .foregroundStyle(.white.opacity(0.6))
-          }
-          .padding(12)
-          .background(.ultraThinMaterial, in: .rect(cornerRadius: 18))
-          .transition(.move(edge: .top).combined(with: .opacity).combined(with: .scale(scale: 0.9, anchor: .top)))
-          .accessibilityElement(children: .combine)
-        }
-      }
-      .padding(.horizontal, 12)
-      .padding(.top, 14)
-      Spacer(minLength: 0)
-    }
-    .frame(width: 300, height: 360)
-    .background(Brand.nightTop, in: .rect(cornerRadius: 40))
-    .overlay {
-      RoundedRectangle(cornerRadius: 40).strokeBorder(.white.opacity(0.18), lineWidth: 2)
-    }
-    .clipShape(.rect(cornerRadius: 40))
-    .sensoryFeedback(.impact(weight: .light), trigger: visible.count)
-  }
-
-  private func play() async {
-    if reduceMotion {
-      visible = Self.samples
-      return
-    }
-    while !Task.isCancelled {
-      for banner in Self.samples {
-        try? await Task.sleep(for: .seconds(1.1))
-        withAnimation(.bouncy(duration: 0.5)) { visible.insert(banner, at: 0) }
-      }
-      try? await Task.sleep(for: .seconds(3))
-      withAnimation(.smooth) { visible = [] }
-      try? await Task.sleep(for: .seconds(0.6))
     }
   }
 }

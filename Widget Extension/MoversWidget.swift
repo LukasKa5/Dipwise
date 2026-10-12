@@ -80,7 +80,7 @@ struct MoversWidgetView: View {
       }
     }
     .foregroundStyle(.white)
-    .dipwiseWidgetBackground(glow: entry.quotes.first.map { $0.change >= 0 ? Brand.buy : Brand.sell })
+    .dipwiseWidgetBackground()
     .widgetURL(entry.quotes.first.flatMap { URL(string: "dipwise://stock/\($0.symbol)") })
   }
 
@@ -89,20 +89,23 @@ struct MoversWidgetView: View {
     if let top = entry.quotes.first {
       let color = top.change >= 0 ? Brand.buy : Brand.sell
       VStack(alignment: .leading, spacing: 0) {
-        Label("Top mover", systemImage: "flame.fill")
-          .font(.caption2.weight(.heavy))
-          .foregroundStyle(Brand.amber)
-          .textCase(.uppercase)
         HStack(spacing: 6) {
-          WidgetBadge(symbol: top.symbol, size: 22)
-          Text(top.symbol)
-            .font(.headline)
-            .lineLimit(1)
-            .minimumScaleFactor(0.6)
+          WidgetBadge(symbol: top.symbol, size: 24)
+          VStack(alignment: .leading, spacing: 0) {
+            Text(top.symbol)
+              .font(.subheadline.bold())
+              .lineLimit(1)
+              .minimumScaleFactor(0.6)
+            Text("Top mover")
+              .font(.caption2.weight(.semibold))
+              .foregroundStyle(.white.opacity(0.6))
+          }
+          Spacer(minLength: 0)
+          WidgetOwl(size: 20)
         }
-        .padding(.top, 6)
         Text(changeText(top.change))
-          .font(.system(size: 30, weight: .heavy, design: .rounded).monospacedDigit())
+          .font(.system(size: 30, weight: .bold, design: .rounded).monospacedDigit())
+          .padding(.top, 4)
           .foregroundStyle(color)
           .lineLimit(1)
           .minimumScaleFactor(0.6)
@@ -124,17 +127,15 @@ struct MoversWidgetView: View {
   private var medium: some View {
     VStack(alignment: .leading, spacing: 8) {
       HStack(spacing: 6) {
-        WidgetOwl(size: 20)
-        Text("Today's movers")
-          .font(.subheadline.weight(.bold))
+        WidgetDippyLine(text: "Today's movers")
         Spacer(minLength: 0)
         Text(MarketClock.isOpen() ? "Market open" : "Market closed")
           .font(.caption2.weight(.semibold))
           .foregroundStyle(MarketClock.isOpen() ? Brand.buy : .white.opacity(0.55))
       }
-      HStack(alignment: .top, spacing: 14) {
-        column(title: "Up", quotes: Array(entry.gainers.prefix(3)))
-        column(title: "Down", quotes: Array(entry.losers.prefix(3)))
+      HStack(alignment: .top, spacing: 8) {
+        WidgetTile(padding: 7) { column(title: "Up", quotes: Array(entry.gainers.prefix(3))) }
+        WidgetTile(padding: 7) { column(title: "Down", quotes: Array(entry.losers.prefix(3))) }
       }
       Spacer(minLength: 0)
     }
@@ -158,10 +159,12 @@ struct MoversWidgetView: View {
               .font(.caption.weight(.bold))
               .lineLimit(1)
               .minimumScaleFactor(0.6)
-              .frame(width: 44, alignment: .leading)
-            WidgetSparkline(values: Array(quote.closes.suffix(15)))
-              .frame(height: 16)
-            WidgetChangePill(change: quote.change)
+            Spacer(minLength: 2)
+            Text(changeText(quote.change))
+              .font(.caption2.weight(.bold).monospacedDigit())
+              .foregroundStyle(quote.change >= 0 ? Brand.buy : Brand.sell)
+              .lineLimit(1)
+              .fixedSize()
           }
         }
       }

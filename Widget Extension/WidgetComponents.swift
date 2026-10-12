@@ -3,22 +3,38 @@ import SwiftUI
 import WidgetKit
 
 extension View {
-  /// Widgets use the same navy as the app's main cards and icon, with a soft glow in the color of what matters now.
-  func dipwiseWidgetBackground(glow: Color? = nil) -> some View {
-    containerBackground(for: .widget) { WidgetBackdrop(glow: glow) }
+  /// Widgets use the same solid navy as the app's hero cards and icon.
+  func dipwiseWidgetBackground() -> some View {
+    containerBackground(for: .widget) { Brand.nightMiddle }
   }
 }
 
-/// Deep navy with a gentle top light, and an optional green or red glow.
-struct WidgetBackdrop: View {
-  var glow: Color?
+/// The soft inset tile used on the app's navy cards.
+struct WidgetTile<Content: View>: View {
+  var padding: CGFloat = 8
+  @ViewBuilder var content: Content
 
   var body: some View {
-    ZStack {
-      LinearGradient(colors: [Brand.nightTop, Brand.nightMiddle, Brand.nightBottom], startPoint: .topLeading, endPoint: .bottomTrailing)
-      if let glow {
-        RadialGradient(colors: [glow.opacity(0.32), glow.opacity(0)], center: .topTrailing, startRadius: 4, endRadius: 170)
-      }
+    content
+      .padding(padding)
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .background(.white.opacity(0.08), in: .rect(cornerRadius: 12, style: .continuous))
+  }
+}
+
+/// Dippy with a short line, the way he talks on the app's Home card.
+struct WidgetDippyLine: View {
+  var text: String
+  var owlSize: CGFloat = 22
+
+  var body: some View {
+    HStack(spacing: 6) {
+      WidgetOwl(size: owlSize)
+      Text(text)
+        .font(.caption.weight(.semibold))
+        .foregroundStyle(.white.opacity(0.85))
+        .lineLimit(1)
+        .minimumScaleFactor(0.7)
     }
   }
 }
@@ -56,62 +72,6 @@ struct WidgetChangePill: View {
   }
 }
 
-struct WidgetTrack: View {
-  var progress: Double
-  var color: Color
-
-  var body: some View {
-    GeometryReader { geometry in
-      ZStack(alignment: .leading) {
-        Capsule().fill(.white.opacity(0.15))
-        Capsule()
-          .fill(color)
-          .frame(width: max(6, geometry.size.width * progress))
-      }
-    }
-    .frame(height: 6)
-  }
-}
-
-struct WidgetBadge: View {
-  var symbol: String
-  var size: CGFloat = 26
-
-  private var hue: Double {
-    var hash: UInt64 = 5381
-    for scalar in symbol.unicodeScalars { hash = (hash &* 33) &+ UInt64(scalar.value) }
-    return Double(hash % 360) / 360
-  }
-
-  var body: some View {
-    Text(symbol.prefix(symbol.count > 4 ? 1 : 2))
-      .font(.system(size: size * 0.38, weight: .heavy, design: .rounded))
-      .foregroundStyle(.white)
-      .minimumScaleFactor(0.5)
-      .frame(width: size, height: size)
-      .background(Color(hue: hue, saturation: 0.62, brightness: 0.72), in: .rect(cornerRadius: size * 0.3))
-  }
-}
-
-/// Dippy, asleep while the market is closed.
-struct WidgetOwl: View {
-  var size: CGFloat
-
-  var body: some View {
-    let asleep = !MarketClock.isOpen()
-    OwlMark(blink: asleep ? 1 : 0)
-      .frame(width: size)
-      .overlay(alignment: .topTrailing) {
-        if asleep {
-          Text("z")
-            .font(.system(size: size * 0.35, weight: .heavy, design: .rounded))
-            .foregroundStyle(.white.opacity(0.7))
-            .offset(x: size * 0.25, y: -size * 0.2)
-        }
-      }
-  }
-}
-
 struct WidgetSparkline: View {
   var values: [Double]
   var zones: [AlertRule] = []
@@ -135,34 +95,6 @@ struct WidgetSparkline: View {
     .chartYAxis(.hidden)
     .chartYScale(domain: (bounds.min() ?? 0) * 0.995...max((bounds.max() ?? 1) * 1.005, (bounds.min() ?? 0) + 0.0001))
   }
-}
-
-/// Prices without unneeded decimals, so big numbers like Bitcoin fit.
-func compactPrice(_ value: Double, currency: String) -> String {
-  value.formatted(.currency(code: currency).precision(.fractionLength(value >= 1000 ? 0 : 2)))
-}
-
-/// A short form of an alert for small spaces, like "Buy 58,000–61,000".
-func compactSummary(_ status: TargetStatus) -> String {
-  let rule = status.target.rule
-  let currency = status.quote?.currency ?? "USD"
-  let format: (Double) -> String = { compactPrice($0, currency: currency) }
-  switch rule.kind {
-  case .buyZone: return "Buy \(format(rule.lower))–\(format(rule.upper))"
-  case .sellZone: return "Sell \(format(rule.lower))–\(format(rule.upper))"
-  case .priceBelow: return "Buy below \(format(rule.lower))"
-  case .priceAbove: return "Sell above \(format(rule.lower))"
-  default: return rule.kind.title
-  }
-}
-
-func distanceText(_ distance: Double?) -> String {
-  guard let distance else { return "—" }
-  return distance == 0 ? "Now" : distance.formatted(.percent.precision(.fractionLength(1)))
-}
-
-func changeText(_ change: Double) -> String {
-  change.formatted(.percent.precision(.fractionLength(1)).sign(strategy: .always()))
 }
 
 /// A one-line, Dippy-voiced summary of what matters most right now.

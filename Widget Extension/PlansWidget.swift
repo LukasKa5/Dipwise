@@ -74,14 +74,6 @@ struct PlansWidgetView: View {
     entry.statuses.isEmpty ? nil : entry.statuses[entry.index % entry.statuses.count]
   }
 
-  private var glow: Color? {
-    switch family {
-    case .systemSmall: current.map { $0.target.rule.kind.side.brandColor }
-    case .systemMedium, .systemLarge: entry.statuses.first.map { $0.target.rule.kind.side.brandColor }
-    default: nil
-    }
-  }
-
   var body: some View {
     Group {
       switch family {
@@ -94,16 +86,18 @@ struct PlansWidgetView: View {
       }
     }
     .foregroundStyle(.white)
-    .dipwiseWidgetBackground(glow: glow)
+    .dipwiseWidgetBackground()
     .widgetURL(current.map { URL(string: "dipwise://stock/\($0.target.symbol)")! } ?? URL(string: "dipwise://alerts"))
   }
+
+  // MARK: Small
 
   @ViewBuilder
   private var small: some View {
     if let status = current {
       let color = status.target.rule.kind.side.brandColor
       VStack(alignment: .leading, spacing: 0) {
-        HStack(spacing: 7) {
+        HStack(alignment: .top, spacing: 6) {
           WidgetBadge(symbol: status.target.symbol, size: 26)
           VStack(alignment: .leading, spacing: 0) {
             Text(status.target.symbol)
@@ -111,11 +105,10 @@ struct PlansWidgetView: View {
               .lineLimit(1)
               .minimumScaleFactor(0.6)
             if let quote = status.quote {
-              Text(compactPrice(quote.price, currency: quote.currency))
-                .font(.caption2.weight(.semibold).monospacedDigit())
-                .foregroundStyle(.white.opacity(0.65))
+              Text(changeText(quote.change))
+                .font(.caption2.weight(.bold).monospacedDigit())
+                .foregroundStyle(quote.change >= 0 ? Brand.buy : Brand.sell)
                 .lineLimit(1)
-                .minimumScaleFactor(0.6)
             }
           }
           .layoutPriority(1)
@@ -124,37 +117,41 @@ struct PlansWidgetView: View {
             Button(intent: NextPlanIntent()) {
               Image(systemName: "chevron.forward")
                 .font(.caption.weight(.heavy))
-                .foregroundStyle(.white)
                 .frame(width: 24, height: 24)
-                .background(.white.opacity(0.16), in: .circle)
+                .background(.white.opacity(0.12), in: .circle)
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Next plan")
+          } else {
+            WidgetOwl(size: 22)
           }
         }
-        Spacer(minLength: 4)
+        Spacer(minLength: 2)
         Text(distanceText(status.distance))
-          .font(.system(size: 34, weight: .heavy, design: .rounded).monospacedDigit())
+          .font(.system(size: 32, weight: .bold, design: .rounded).monospacedDigit())
           .foregroundStyle(status.distance == 0 ? color : .white)
-          .minimumScaleFactor(0.6)
           .lineLimit(1)
+          .minimumScaleFactor(0.6)
           .contentTransition(.numericText())
-        Text(status.distance == 0 ? "In your zone now" : "to your \(status.target.rule.kind.side == .sell ? "sell" : "buy") zone")
+        Text(status.distance == 0 ? "In your \(sideWord(status)) zone" : "to your \(sideWord(status)) zone")
           .font(.caption.weight(.semibold))
           .foregroundStyle(color)
           .lineLimit(1)
           .minimumScaleFactor(0.7)
-        Spacer(minLength: 6)
+        Spacer(minLength: 4)
         WidgetTrack(progress: status.progress, color: color)
-        HStack(alignment: .center, spacing: 4) {
-          Text(compactSummary(status))
-            .font(.caption2.weight(.medium))
-            .foregroundStyle(.white.opacity(0.6))
-            .lineLimit(1)
-            .minimumScaleFactor(0.6)
+        HStack(spacing: 4) {
+          if let quote = status.quote {
+            Text(compactPrice(quote.price, currency: quote.currency))
+              .font(.caption2.weight(.semibold).monospacedDigit())
+              .foregroundStyle(.white.opacity(0.7))
+              .lineLimit(1)
+              .minimumScaleFactor(0.6)
+          }
           Spacer(minLength: 2)
           if entry.statuses.count > 1 {
             WidgetPageDots(count: entry.statuses.count, index: entry.index)
+            WidgetOwl(size: 16)
           }
         }
         .padding(.top, 6)
@@ -166,49 +163,57 @@ struct PlansWidgetView: View {
     }
   }
 
+  private func sideWord(_ status: TargetStatus) -> String {
+    status.target.rule.kind.side == .sell ? "sell" : "buy"
+  }
+
+  // MARK: Medium and large
+
   @ViewBuilder
   private func list(count: Int) -> some View {
     if entry.statuses.isEmpty {
       empty
     } else {
-      VStack(alignment: .leading, spacing: family == .systemLarge ? 12 : 8) {
-        HStack(spacing: 8) {
-          WidgetOwl(size: 24)
-          Text(dippSays(entry.statuses))
-            .font(.subheadline.weight(.bold))
-            .lineLimit(1)
-            .minimumScaleFactor(0.8)
+      VStack(alignment: .leading, spacing: family == .systemLarge ? 8 : 6) {
+        HStack(spacing: 6) {
+          WidgetDippyLine(text: dippSays(entry.statuses))
           Spacer(minLength: 0)
           Button(intent: RefreshWidgetsIntent()) {
             Image(systemName: "arrow.clockwise")
-              .font(.caption.weight(.bold))
-              .foregroundStyle(.white.opacity(0.7))
+              .font(.caption2.weight(.bold))
+              .foregroundStyle(.white.opacity(0.75))
+              .frame(width: 22, height: 22)
+              .background(.white.opacity(0.12), in: .circle)
           }
           .buttonStyle(.plain)
+          .accessibilityLabel("Refresh prices")
         }
         ForEach(entry.statuses.prefix(count)) { status in
           let color = status.target.rule.kind.side.brandColor
           Link(destination: URL(string: "dipwise://stock/\(status.target.symbol)")!) {
-            HStack(spacing: 10) {
-              WidgetBadge(symbol: status.target.symbol, size: 26)
-              VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 6) {
-                  Text(status.target.symbol)
-                    .font(.subheadline.bold())
-                    .lineLimit(1)
-                    .fixedSize()
-                  Text(compactSummary(status))
-                    .font(.caption)
-                    .foregroundStyle(color)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+            WidgetTile(padding: 7) {
+              HStack(spacing: 8) {
+                WidgetBadge(symbol: status.target.symbol, size: 24)
+                VStack(alignment: .leading, spacing: 3) {
+                  HStack(spacing: 5) {
+                    Text(status.target.symbol)
+                      .font(.caption.bold())
+                      .lineLimit(1)
+                      .fixedSize()
+                    Text(compactSummary(status))
+                      .font(.caption2.weight(.medium))
+                      .foregroundStyle(color)
+                      .lineLimit(1)
+                      .minimumScaleFactor(0.7)
+                  }
+                  WidgetTrack(progress: status.progress, color: color)
                 }
-                WidgetTrack(progress: status.progress, color: color)
+                Text(distanceText(status.distance))
+                  .font(.caption.weight(.bold).monospacedDigit())
+                  .foregroundStyle((status.distance ?? 1) < 0.035 ? color : .white)
+                  .lineLimit(1)
+                  .frame(width: 46, alignment: .trailing)
               }
-              Text(distanceText(status.distance))
-                .font(.subheadline.weight(.semibold).monospacedDigit())
-                .foregroundStyle((status.distance ?? 1) < 0.035 ? color : .white)
-                .frame(width: 54, alignment: .trailing)
             }
           }
         }
@@ -219,21 +224,26 @@ struct PlansWidgetView: View {
 
   private var empty: some View {
     VStack(spacing: 8) {
-      WidgetOwl(size: 46)
-      Text("Set a buy zone in Dipwise")
+      WidgetOwl(size: 44)
+      Text("Set a buy zone in Dipwise and Dippy will watch it.")
         .font(.caption.weight(.semibold))
         .multilineTextAlignment(.center)
-        .foregroundStyle(.white.opacity(0.7))
+        .foregroundStyle(.white.opacity(0.75))
     }
   }
+
+  // MARK: Accessories
 
   @ViewBuilder
   private var rectangular: some View {
     if let status = entry.statuses.first {
       VStack(alignment: .leading, spacing: 2) {
-        Text("\(status.target.symbol) · \(distanceText(status.distance))")
-          .font(.headline)
-          .widgetAccentable()
+        HStack(spacing: 4) {
+          OwlMark().frame(width: 12)
+          Text("\(status.target.symbol) · \(distanceText(status.distance))")
+            .font(.headline)
+        }
+        .widgetAccentable()
         Text(status.summary)
           .font(.caption)
           .lineLimit(1)

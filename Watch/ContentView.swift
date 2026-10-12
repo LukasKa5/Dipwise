@@ -14,277 +14,105 @@ struct ContentView: View {
       .navigationDestination(for: String.self) { StockDetail(symbol: $0) }
     }
     .tint(Brand.buy)
+    .foregroundStyle(.white)
+  }
+}
+
+extension View {
+  /// Every page sits on the same navy as the iPhone app's hero cards.
+  fileprivate func navyPage() -> some View {
+    containerBackground(Brand.nightMiddle, for: .tabView)
   }
 }
 
 // MARK: - Today
 
-/// The portfolio, the market, and today's biggest movers.
+/// Dippy, the portfolio, the closest plans, and today's movers.
 private struct TodayPage: View {
   @Environment(WatchTargetStore.self) private var store
+  @State private var hops = 0
+
+  private var mood: OwlMood {
+    OwlMood.current(dayChange: store.portfolio?.dayChange, isAwake: false)
+  }
 
   var body: some View {
     ScrollView {
-      VStack(alignment: .leading, spacing: 10) {
-        MarketStatus(market: store.market)
+      VStack(alignment: .leading, spacing: 8) {
+        WatchDippyHeader(greeting: WatchGreeting.text(), message: mood.message(change: nil), isAsleep: mood == .sleeping, hops: hops)
+          .onTapGesture { hops += 1 }
+          .sensoryFeedback(.impact(weight: .light), trigger: hops)
         if let portfolio = store.portfolio {
-          PortfolioCard(portfolio: portfolio)
-        } else {
-          DippHeader(statuses: store.statuses)
+          WatchPortfolioHero(portfolio: portfolio)
+        }
+        if !store.stocks.isEmpty {
+          WatchSectionTitle(title: "Closest plans")
+          ForEach(store.stocks.prefix(2), id: \.symbol) { stock in
+            if let first = stock.statuses.first {
+              NavigationLink(value: stock.symbol) {
+                WatchPlanCard(status: first, extraCount: stock.statuses.count - 1)
+              }
+              .buttonStyle(.plain)
+            }
+          }
         }
         if !store.movers.isEmpty {
-          Text("Today's movers")
-            .font(.footnote.weight(.semibold))
-            .foregroundStyle(.secondary)
-            .padding(.top, 4)
-          ForEach(store.movers.prefix(4), id: \.symbol) { quote in
+          WatchSectionTitle(title: "Today's movers")
+          ForEach(store.movers.prefix(3), id: \.symbol) { quote in
             NavigationLink(value: quote.symbol) {
-              QuoteRow(quote: quote)
+              WatchMoverRow(quote: quote)
             }
             .buttonStyle(.plain)
           }
         }
-        if let updated = store.lastUpdated {
-          Text("Updated \(updated, format: .relative(presentation: .named))")
-            .font(.caption2)
-            .foregroundStyle(.tertiary)
+        WatchMarketStatus(isOpen: MarketClock.isOpen(), nextChange: MarketClock.nextChange(), market: store.market)
+          .padding(.top, 4)
+        if store.allSymbols.isEmpty {
+          Text("Add stocks in Dipwise on your iPhone and Dippy will bring them here.")
+            .font(.footnote)
+            .foregroundStyle(.white.opacity(0.7))
         }
       }
     }
     .navigationTitle("Dipwise")
     .refreshable { await store.refresh() }
-  }
-}
-
-/// Whether the US market is open, and when that changes.
-private struct MarketStatus: View {
-  var market: Quote?
-
-  var body: some View {
-    let isOpen = MarketClock.isOpen()
-    let next = MarketClock.nextChange()
-    HStack(spacing: 6) {
-      Circle()
-        .fill(isOpen ? Brand.buy : Color.secondary)
-        .frame(width: 7, height: 7)
-      Text(isOpen ? "Closes \(next.formatted(date: .omitted, time: .shortened))" : "Opens \(next.formatted(.dateTime.weekday(.abbreviated).hour().minute()))")
-        .font(.caption2.weight(.semibold))
-        .lineLimit(1)
-        .minimumScaleFactor(0.7)
-      Spacer(minLength: 2)
-      if let market {
-        Text("S&P \(changeText(market.change))")
-          .font(.caption2.weight(.bold).monospacedDigit())
-          .foregroundStyle(market.change >= 0 ? Brand.buy : Brand.sell)
-          .lineLimit(1)
-          .fixedSize()
-      }
-    }
-    .accessibilityElement(children: .combine)
-    .accessibilityLabel(isOpen ? "Market open, closes \(next.formatted(date: .omitted, time: .shortened))" : "Market closed, opens \(next.formatted(.dateTime.weekday(.wide).hour().minute()))")
-  }
-}
-
-private struct PortfolioCard: View {
-  var portfolio: WatchPortfolio
-
-  var body: some View {
-    let color = portfolio.dayChangeAmount >= 0 ? Brand.buy : Brand.sell
-    VStack(alignment: .leading, spacing: 4) {
-      Text("Portfolio")
-        .font(.caption2.weight(.semibold))
-        .foregroundStyle(.secondary)
-      Text(portfolio.formatted(portfolio.value))
-        .font(.system(.title2, design: .rounded).weight(.semibold))
-        .monospacedDigit()
-        .lineLimit(1)
-        .minimumScaleFactor(0.5)
-      Text("\(portfolio.dayChangeAmount >= 0 ? "+" : "")\(portfolio.formatted(portfolio.dayChangeAmount)) · \(changeText(portfolio.dayChange))")
-        .font(.footnote.weight(.semibold).monospacedDigit())
-        .foregroundStyle(color)
-        .lineLimit(1)
-        .minimumScaleFactor(0.6)
-      if portfolio.history.count > 1 {
-        Chart(Array(portfolio.history.enumerated()), id: \.offset) { index, value in
-          AreaMark(x: .value("Day", index), y: .value("Value", value))
-            .foregroundStyle(LinearGradient(colors: [color.opacity(0.35), color.opacity(0)], startPoint: .top, endPoint: .bottom))
-            .interpolationMethod(.monotone)
-          LineMark(x: .value("Day", index), y: .value("Value", value))
-            .foregroundStyle(color)
-            .interpolationMethod(.monotone)
-        }
-        .chartXAxis(.hidden)
-        .chartYAxis(.hidden)
-        .chartYScale(domain: .automatic(includesZero: false))
-        .frame(height: 44)
-        .accessibilityHidden(true)
-      }
-    }
-    .padding(10)
-    .frame(maxWidth: .infinity, alignment: .leading)
-    .background(Brand.nightMiddle, in: .rect(cornerRadius: 16))
-    .accessibilityElement(children: .combine)
-  }
-}
-
-/// A stock with its price, a tiny chart, and today's move.
-private struct QuoteRow: View {
-  var quote: Quote
-
-  var body: some View {
-    HStack(spacing: 8) {
-      VStack(alignment: .leading, spacing: 1) {
-        Text(quote.symbol)
-          .font(.headline)
-          .lineLimit(1)
-          .minimumScaleFactor(0.6)
-        Text(quote.formatted(quote.price))
-          .font(.caption2.monospacedDigit())
-          .foregroundStyle(.secondary)
-          .lineLimit(1)
-          .minimumScaleFactor(0.6)
-      }
-      .layoutPriority(1)
-      Spacer(minLength: 2)
-      MiniLine(values: Array(quote.closes.suffix(20)))
-        .frame(width: 36, height: 18)
-      Text(changeText(quote.change))
-        .font(.caption2.weight(.bold).monospacedDigit())
-        .foregroundStyle(quote.change >= 0 ? Brand.buy : Brand.sell)
-        .lineLimit(1)
-        .fixedSize()
-    }
-    .padding(.horizontal, 10)
-    .padding(.vertical, 8)
-    .background(Color(white: 0.14), in: .rect(cornerRadius: 14))
-    .accessibilityElement(children: .combine)
-  }
-}
-
-private struct MiniLine: View {
-  var values: [Double]
-
-  var body: some View {
-    let isUp = (values.last ?? 0) >= (values.first ?? 0)
-    Chart(Array(values.enumerated()), id: \.offset) { index, value in
-      LineMark(x: .value("Day", index), y: .value("Price", value))
-        .foregroundStyle(isUp ? Brand.buy : Brand.sell)
-        .interpolationMethod(.monotone)
-    }
-    .chartXAxis(.hidden)
-    .chartYAxis(.hidden)
-    .chartYScale(domain: .automatic(includesZero: false))
-    .accessibilityHidden(true)
+    .navyPage()
   }
 }
 
 // MARK: - Plans
 
-/// Dippy's greeting and every stock with alerts, closest to triggering first.
+/// Every stock with alerts, closest to triggering first.
 private struct PlansPage: View {
   @Environment(WatchTargetStore.self) private var store
 
   var body: some View {
     ScrollView {
-      VStack(alignment: .leading, spacing: 10) {
-        DippHeader(statuses: store.statuses)
-        if store.targets.isEmpty {
-          Text("Set a buy zone in Dipwise on your iPhone.")
-            .font(.footnote)
-            .foregroundStyle(.secondary)
+      VStack(alignment: .leading, spacing: 8) {
+        if store.stocks.isEmpty {
+          VStack(spacing: 8) {
+            WidgetOwl(size: 44)
+            Text("Set a buy zone in Dipwise on your iPhone. Dippy will watch it here.")
+              .font(.footnote)
+              .multilineTextAlignment(.center)
+              .foregroundStyle(.white.opacity(0.75))
+          }
+          .frame(maxWidth: .infinity)
+          .padding(.top, 10)
         }
         ForEach(store.stocks, id: \.symbol) { stock in
-          NavigationLink(value: stock.symbol) {
-            StockCard(symbol: stock.symbol, quote: store.quotes[stock.symbol], nearest: stock.statuses.first, count: stock.statuses.count)
+          if let first = stock.statuses.first {
+            NavigationLink(value: stock.symbol) {
+              WatchPlanCard(status: first, extraCount: stock.statuses.count - 1)
+            }
+            .buttonStyle(.plain)
           }
-          .buttonStyle(.plain)
         }
       }
     }
     .navigationTitle("Plans")
     .refreshable { await store.refresh() }
-  }
-}
-
-/// Dippy with a one-line take on what matters most.
-private struct DippHeader: View {
-  var statuses: [TargetStatus]
-  @State private var hops = 0
-
-  private var message: String {
-    guard let first = statuses.first else { return "Hoo! Nothing to watch yet." }
-    if first.distance == 0 { return "\(first.target.symbol) is in your plan!" }
-    if !MarketClock.isOpen() { return "Markets closed. Your plans are safe." }
-    return "\(first.target.symbol) is \(distanceText(first.distance)) away"
-  }
-
-  var body: some View {
-    HStack(spacing: 8) {
-      OwlMark(blink: MarketClock.isOpen() ? 0 : 1)
-        .frame(width: 34, height: 40)
-        .phaseAnimator([0.0, -6.0, 0.0], trigger: hops) { view, lift in
-          view.offset(y: lift)
-        }
-        .onTapGesture { hops += 1 }
-      Text(message)
-        .font(.footnote.weight(.semibold))
-        .fixedSize(horizontal: false, vertical: true)
-    }
-    .padding(10)
-    .frame(maxWidth: .infinity, alignment: .leading)
-    .background(Brand.nightMiddle, in: .rect(cornerRadius: 16))
-    .sensoryFeedback(.impact(weight: .light), trigger: hops)
-    .accessibilityElement(children: .combine)
-  }
-}
-
-private struct StockCard: View {
-  var symbol: String
-  var quote: Quote?
-  var nearest: TargetStatus?
-  var count: Int
-
-  var body: some View {
-    VStack(alignment: .leading, spacing: 6) {
-      HStack {
-        Text(symbol).font(.headline)
-        Spacer()
-        if let quote {
-          Text(changeText(quote.change))
-            .font(.footnote.weight(.semibold).monospacedDigit())
-            .foregroundStyle(quote.change >= 0 ? Brand.buy : Brand.sell)
-        }
-      }
-      if let quote {
-        Text(quote.formatted(quote.price))
-          .font(.title3.bold().monospacedDigit())
-          .lineLimit(1)
-          .minimumScaleFactor(0.6)
-      }
-      if let nearest {
-        let color = nearest.target.rule.kind.side.brandColor
-        Gauge(value: nearest.progress) { EmptyView() }
-          .gaugeStyle(.accessoryLinearCapacity)
-          .tint(color)
-        HStack {
-          Text(nearest.target.rule.kind.title)
-            .foregroundStyle(color)
-            .lineLimit(1)
-          Spacer()
-          Text(nearest.distance.map { $0 == 0 ? "Now" : $0.formatted(.percent.precision(.fractionLength(1))) } ?? "—")
-            .monospacedDigit()
-        }
-        .font(.caption2.weight(.semibold))
-        if count > 1 {
-          Text("+\(count - 1) more \(count == 2 ? "alert" : "alerts")")
-            .font(.caption2)
-            .foregroundStyle(.secondary)
-        }
-      }
-    }
-    .padding(10)
-    .background(Brand.nightMiddle, in: .rect(cornerRadius: 16))
-    .accessibilityElement(children: .combine)
+    .navyPage()
   }
 }
 
@@ -295,49 +123,38 @@ private struct WatchlistPage: View {
   @Environment(WatchTargetStore.self) private var store
 
   var body: some View {
-    List {
-      if store.allSymbols.isEmpty {
-        Text("Add stocks in Dipwise on your iPhone.")
-          .font(.footnote)
-          .foregroundStyle(.secondary)
-      }
-      ForEach(store.allSymbols, id: \.self) { symbol in
-        NavigationLink(value: symbol) {
-          if let quote = store.quotes[symbol] {
-            HStack(spacing: 6) {
-              VStack(alignment: .leading, spacing: 1) {
-                Text(symbol)
-                  .font(.headline)
-                  .lineLimit(1)
-                  .minimumScaleFactor(0.6)
-                Text(quote.formatted(quote.price))
-                  .font(.caption2.monospacedDigit())
-                  .foregroundStyle(.secondary)
-                  .lineLimit(1)
-                  .minimumScaleFactor(0.6)
-              }
-              .layoutPriority(1)
-              Spacer(minLength: 2)
-              MiniLine(values: Array(quote.closes.suffix(20)))
-                .frame(width: 34, height: 18)
-              Text(changeText(quote.change))
-                .font(.caption2.weight(.bold).monospacedDigit())
-                .foregroundStyle(quote.change >= 0 ? Brand.buy : Brand.sell)
-                .fixedSize()
+    ScrollView {
+      VStack(spacing: 8) {
+        if store.allSymbols.isEmpty {
+          Text("Add stocks in Dipwise on your iPhone.")
+            .font(.footnote)
+            .foregroundStyle(.white.opacity(0.75))
+        }
+        ForEach(store.allSymbols, id: \.self) { symbol in
+          NavigationLink(value: symbol) {
+            if let quote = store.quotes[symbol] {
+              WatchMoverRow(quote: quote)
+            } else {
+              Text(symbol)
+                .font(.headline)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(10)
+                .watchTile(cornerRadius: 16)
             }
-          } else {
-            Text(symbol).font(.headline)
           }
+          .buttonStyle(.plain)
         }
       }
     }
     .navigationTitle("Watchlist")
+    .refreshable { await store.refresh() }
+    .navyPage()
   }
 }
 
 // MARK: - Stock
 
-/// One stock: a chart to scrub with the Digital Crown, key numbers, the position, and every alert.
+/// One stock: a chart you scrub with the Digital Crown, key numbers, your position, and every alert.
 private struct StockDetail: View {
   enum Range: Int, CaseIterable, Identifiable {
     case week = 5
@@ -367,36 +184,36 @@ private struct StockDetail: View {
     let quote = store.quotes[symbol]
     let statuses = store.statuses.filter { $0.target.symbol == symbol }
     ScrollView {
-      VStack(alignment: .leading, spacing: 10) {
+      VStack(alignment: .leading, spacing: 8) {
         if let quote {
           chartCard(quote)
-          keyNumbers(quote)
+          HStack(spacing: 6) {
+            tile("Today", changeText(quote.change), color: quote.change >= 0 ? Brand.buy : Brand.sell)
+            tile("From high", quote.drawdownFromHigh.formatted(.percent.precision(.fractionLength(0))), color: .white)
+          }
           if let stock = store.stock(symbol), stock.isOwned, let shares = stock.shares {
             position(quote: quote, shares: shares, averageCost: stock.averageCost ?? 0)
           }
         } else {
           ProgressView()
         }
-        ForEach(statuses) { status in
-          let color = status.target.rule.kind.side.brandColor
-          VStack(alignment: .leading, spacing: 4) {
-            Label(status.summary, systemImage: status.target.rule.kind.systemImage)
-              .font(.footnote.weight(.semibold))
-              .foregroundStyle(color)
-            Gauge(value: status.progress) { EmptyView() }
-              .gaugeStyle(.accessoryLinearCapacity)
-              .tint(color)
-            Text(status.distance.map { $0 == 0 ? "Active now" : "\($0.formatted(.percent.precision(.fractionLength(1)))) away" } ?? "")
-              .font(.caption2)
-              .foregroundStyle(.secondary)
+        if !statuses.isEmpty {
+          WatchSectionTitle(title: "Your plan")
+          ForEach(statuses) { status in
+            WatchPlanCard(status: status)
           }
-          .padding(10)
-          .background(color.opacity(0.15), in: .rect(cornerRadius: 14))
-          .accessibilityElement(children: .combine)
+        }
+        if let quote {
+          WatchSectionTitle(title: "52-week range")
+          Text("\(compactPrice(quote.low52, currency: quote.currency)) – \(compactPrice(quote.high52, currency: quote.currency))")
+            .font(.system(size: 13, weight: .semibold).monospacedDigit())
+            .lineLimit(1)
+            .minimumScaleFactor(0.6)
         }
       }
     }
     .navigationTitle(symbol)
+    .containerBackground(Brand.nightMiddle, for: .navigation)
   }
 
   private func chartCard(_ quote: Quote) -> some View {
@@ -404,70 +221,70 @@ private struct StockDetail: View {
     let dates = Array(quote.dates.suffix(range.rawValue))
     let index = values.isEmpty ? 0 : min(values.count - 1, max(0, Int(crown.rounded())))
     let isLatest = index >= values.count - 1
-    let shown = isLatest ? quote.price : (values.isEmpty ? quote.price : values[index])
+    let shown = isLatest || values.isEmpty ? quote.price : values[index]
     let color = (values.last ?? 0) >= (values.first ?? 0) ? Brand.buy : Brand.sell
-    return VStack(alignment: .leading, spacing: 4) {
+    return VStack(alignment: .leading, spacing: 3) {
+      Text(isLatest ? quote.name : (dates.indices.contains(index) ? dates[index].formatted(.dateTime.month(.abbreviated).day()) : ""))
+        .font(.system(size: 12, weight: .semibold))
+        .foregroundStyle(isLatest ? .white.opacity(0.65) : Brand.buy)
+        .lineLimit(1)
       Text(quote.formatted(shown))
-        .font(.system(.title2, design: .rounded).weight(.semibold))
+        .font(.system(size: 26, weight: .bold, design: .rounded))
         .monospacedDigit()
         .lineLimit(1)
         .minimumScaleFactor(0.5)
         .contentTransition(.numericText())
-      Group {
-        if isLatest {
-          Text("\(changeText(quote.change)) today")
-            .foregroundStyle(quote.change >= 0 ? Brand.buy : Brand.sell)
-        } else {
-          Text("\(dates.indices.contains(index) ? dates[index].formatted(.dateTime.month(.abbreviated).day()) : "") · \(changeText(quote.price / max(shown, 0.0001) - 1)) since")
-            .foregroundStyle(.secondary)
-        }
-      }
-      .font(.caption2.weight(.semibold).monospacedDigit())
-      .lineLimit(1)
-      .minimumScaleFactor(0.7)
+      Text(isLatest ? "\(changeText(quote.change)) today" : "\(changeText(quote.price / max(shown, 0.0001) - 1)) since then")
+        .font(.system(size: 12, weight: .semibold).monospacedDigit())
+        .foregroundStyle(isLatest ? (quote.change >= 0 ? Brand.buy : Brand.sell) : .white.opacity(0.7))
+        .lineLimit(1)
       if values.count > 1 {
         Chart {
           ForEach(Array(values.enumerated()), id: \.offset) { offset, value in
+            AreaMark(x: .value("Day", offset), y: .value("Price", value))
+              .foregroundStyle(LinearGradient(colors: [color.opacity(0.25), color.opacity(0)], startPoint: .top, endPoint: .bottom))
+              .interpolationMethod(.monotone)
             LineMark(x: .value("Day", offset), y: .value("Price", value))
               .foregroundStyle(color)
+              .lineStyle(StrokeStyle(lineWidth: 2.5, lineCap: .round))
               .interpolationMethod(.monotone)
           }
           if !isLatest {
             RuleMark(x: .value("Selected", index))
-              .foregroundStyle(.white.opacity(0.6))
+              .foregroundStyle(.white.opacity(0.5))
             PointMark(x: .value("Selected", index), y: .value("Price", values[index]))
               .foregroundStyle(.white)
-              .symbolSize(30)
+              .symbolSize(36)
           }
         }
         .chartXAxis(.hidden)
         .chartYAxis(.hidden)
         .chartYScale(domain: .automatic(includesZero: false))
-        .frame(height: 64)
+        .frame(height: 62)
         .focusable()
         .digitalCrownRotation($crown, from: 0, through: Double(max(values.count - 1, 1)), by: 1,
                               sensitivity: .medium, isContinuous: false, isHapticFeedbackEnabled: true)
         .accessibilityLabel("Price chart. Turn the Digital Crown to read past prices.")
       }
-      HStack(spacing: 4) {
+      HStack(spacing: 2) {
         ForEach(Range.allCases) { option in
           Button(option.title) {
             range = option
             crown = Double(min(option.rawValue, quote.closes.count) - 1)
           }
-          .font(.caption2.weight(.bold))
+          .font(.system(size: 12, weight: .bold))
           .buttonStyle(.plain)
-          .padding(.horizontal, 7)
-          .padding(.vertical, 3)
-          .background(range == option ? AnyShapeStyle(.white.opacity(0.22)) : AnyShapeStyle(.clear), in: .capsule)
-          .foregroundStyle(range == option ? .white : .secondary)
+          .frame(maxWidth: .infinity, minHeight: 24)
+          .background(range == option ? AnyShapeStyle(.white.opacity(0.18)) : AnyShapeStyle(.clear), in: .capsule)
+          .foregroundStyle(range == option ? .white : .white.opacity(0.6))
           .accessibilityAddTraits(range == option ? .isSelected : [])
         }
       }
-      .frame(maxWidth: .infinity)
+      .padding(2)
+      .background(.white.opacity(0.06), in: .capsule)
     }
     .padding(10)
-    .background(Brand.nightMiddle, in: .rect(cornerRadius: 16))
+    .watchTile()
     .onAppear {
       guard !didSetCrown else { return }
       didSetCrown = true
@@ -475,48 +292,33 @@ private struct StockDetail: View {
     }
   }
 
-  private func keyNumbers(_ quote: Quote) -> some View {
-    VStack(spacing: 6) {
-      stat("52-week range", "\(quote.formatted(quote.low52)) – \(quote.formatted(quote.high52))")
-      stat("From high", quote.drawdownFromHigh.formatted(.percent.precision(.fractionLength(1))))
-      if let rsi = quote.rsi() {
-        stat("RSI", "\(Int(rsi))")
-      }
-    }
-    .padding(10)
-    .background(Color(white: 0.14), in: .rect(cornerRadius: 14))
-  }
-
-  private func position(quote: Quote, shares: Double, averageCost: Double) -> some View {
-    let value = quote.price * shares
-    let gain = averageCost > 0 ? quote.price / averageCost - 1 : nil
-    return VStack(alignment: .leading, spacing: 6) {
-      Text("Your position")
-        .font(.caption2.weight(.semibold))
-        .foregroundStyle(.secondary)
-      stat("\(shares.formatted()) shares", quote.formatted(value))
-      if let gain {
-        stat("Total return", changeText(gain), color: gain >= 0 ? Brand.buy : Brand.sell)
-      }
-    }
-    .padding(10)
-    .background(Color(white: 0.14), in: .rect(cornerRadius: 14))
-  }
-
-  private func stat(_ title: String, _ value: String, color: Color = .primary) -> some View {
-    HStack {
-      Text(title)
-        .foregroundStyle(.secondary)
-        .lineLimit(1)
-      Spacer(minLength: 4)
+  private func tile(_ title: String, _ value: String, color: Color) -> some View {
+    VStack(alignment: .leading, spacing: 2) {
       Text(value)
-        .monospacedDigit()
+        .font(.system(size: 16, weight: .bold, design: .rounded).monospacedDigit())
         .foregroundStyle(color)
         .lineLimit(1)
         .minimumScaleFactor(0.6)
+      Text(title)
+        .font(.system(size: 11, weight: .semibold))
+        .foregroundStyle(.white.opacity(0.65))
+        .lineLimit(1)
+        .minimumScaleFactor(0.7)
     }
-    .font(.caption2.weight(.semibold))
+    .padding(8)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .watchTile(cornerRadius: 14)
     .accessibilityElement(children: .combine)
+  }
+
+  private func position(quote: Quote, shares: Double, averageCost: Double) -> some View {
+    let gain = averageCost > 0 ? quote.price / averageCost - 1 : nil
+    return HStack(spacing: 6) {
+      tile("\(shares.formatted()) shares", compactPrice(quote.price * shares, currency: quote.currency), color: .white)
+      if let gain {
+        tile("Return", changeText(gain), color: gain >= 0 ? Brand.buy : Brand.sell)
+      }
+    }
   }
 }
 
@@ -532,35 +334,26 @@ private struct StreakPage: View {
     VStack(spacing: 8) {
       PhaseAnimator([0.0, 1.0, 0.3, 1.0, 0.0], trigger: flaps) { spread in
         OwlMark(wingSpread: spread)
-          .frame(height: 70)
+          .frame(height: 64)
       } animation: { _ in .easeInOut(duration: 0.12) }
         .onTapGesture { flaps += 1 }
         .sensoryFeedback(.impact, trigger: flaps)
       HStack(spacing: 4) {
         Image(systemName: "flame.fill")
-          .foregroundStyle(progress.streak > 0 ? Brand.amber : .secondary)
+          .foregroundStyle(progress.streak > 0 ? Brand.amber : .white.opacity(0.4))
         Text("\(progress.streak)")
-          .font(.title.bold())
+          .font(.system(size: 32, weight: .bold, design: .rounded))
       }
-      Text(progress.briefDoneToday ? "Brief done today" : "Brief ready on iPhone")
-        .font(.footnote)
+      Text(progress.briefDoneToday ? "Brief done today" : "Your brief is ready on iPhone")
+        .font(.footnote.weight(.semibold))
         .foregroundStyle(progress.briefDoneToday ? Brand.buy : Brand.amber)
+        .multilineTextAlignment(.center)
       Text("Level \(progress.level) · \(progress.levelTitle)")
         .font(.caption2)
-        .foregroundStyle(.secondary)
+        .foregroundStyle(.white.opacity(0.65))
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity)
-    .background(Brand.nightMiddle.opacity(0.6))
     .accessibilityElement(children: .combine)
+    .navyPage()
   }
-}
-
-/// "+1.2%" style text for a change.
-private func changeText(_ change: Double) -> String {
-  change.formatted(.percent.precision(.fractionLength(1)).sign(strategy: .always()))
-}
-
-private func distanceText(_ distance: Double?) -> String {
-  guard let distance else { return "—" }
-  return distance == 0 ? "Now" : distance.formatted(.percent.precision(.fractionLength(1)))
 }
