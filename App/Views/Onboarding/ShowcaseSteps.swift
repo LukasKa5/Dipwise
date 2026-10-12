@@ -40,24 +40,133 @@ struct ShowcaseLayout<Hero: View>: View {
   }
 }
 
-/// The app's navy card, lifted off the page with a hairline edge.
-private struct ShowcaseSurface: ViewModifier {
-  var cornerRadius: CGFloat
+// MARK: - Devices
 
-  func body(content: Content) -> some View {
-    content
-      .background(Brand.nightMiddle, in: .rect(cornerRadius: cornerRadius, style: .continuous))
-      .overlay {
-        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-          .strokeBorder(.white.opacity(0.16), lineWidth: 1)
-      }
-      .shadow(color: .black.opacity(0.4), radius: 22, y: 12)
+/// The same metal, glass, and button finish on every device in the intro, so the iPhone and Apple Watch match.
+enum DeviceFinish {
+  static let metal = LinearGradient(colors: [Color(white: 0.24), Color(white: 0.1)], startPoint: .top, endPoint: .bottom)
+  static let edge = LinearGradient(colors: [.white.opacity(0.4), .white.opacity(0.06)], startPoint: .top, endPoint: .bottom)
+  static let button = LinearGradient(colors: [Color(white: 0.34), Color(white: 0.16)], startPoint: .top, endPoint: .bottom)
+  static let shadow = Color.black.opacity(0.5)
+
+  /// The navy wallpaper on the intro's iPhone, in the app's own colors.
+  static var wallpaper: some View {
+    ZStack {
+      LinearGradient(colors: [Brand.nightTop, Brand.nightMiddle, Brand.nightBottom], startPoint: .top, endPoint: .bottom)
+      RadialGradient(colors: [Brand.buy.opacity(0.22), .clear], center: UnitPoint(x: 0.1, y: 0.95), startRadius: 10, endRadius: 420)
+      RadialGradient(colors: [Brand.amber.opacity(0.12), .clear], center: UnitPoint(x: 0.95, y: 0.1), startRadius: 10, endRadius: 360)
+    }
   }
 }
 
-extension View {
-  fileprivate func showcaseSurface(cornerRadius: CGFloat) -> some View {
-    modifier(ShowcaseSurface(cornerRadius: cornerRadius))
+/// iPhone proportions, in points: the screen, the black border around it, and the case.
+enum PhoneSize {
+  static let screen = CGSize(width: 402, height: 874)
+  static let radius: CGFloat = 56
+  static let border: CGFloat = 11
+  static let caseInset: CGFloat = 5
+  static let buttonOverhang: CGFloat = 4
+  static var caseWidth: CGFloat { screen.width + (border + caseInset) * 2 }
+  static var totalWidth: CGFloat { caseWidth + buttonOverhang * 2 }
+}
+
+/// An iPhone drawn to scale: titanium case, black border, Dynamic Island, and side buttons.
+/// Only the top of the phone shows; the rest fades into the page, so the screen stays large enough to read.
+struct PhoneMockup<Screen: View>: View {
+  /// How much of the screen shows, in points.
+  var visibleHeight: CGFloat
+  var scale: CGFloat
+  @ViewBuilder var screen: Screen
+
+  private typealias Size = PhoneSize
+
+  private var height: CGFloat { visibleHeight + Size.border + Size.caseInset }
+
+  var body: some View {
+    ZStack(alignment: .top) {
+      RoundedRectangle(cornerRadius: Size.radius + Size.border + Size.caseInset, style: .continuous)
+        .fill(DeviceFinish.metal)
+        .overlay {
+          RoundedRectangle(cornerRadius: Size.radius + Size.border + Size.caseInset, style: .continuous)
+            .strokeBorder(DeviceFinish.edge, lineWidth: 1.5)
+        }
+        .frame(width: Size.caseWidth, height: Size.screen.height + (Size.border + Size.caseInset) * 2)
+      RoundedRectangle(cornerRadius: Size.radius + Size.border, style: .continuous)
+        .fill(.black)
+        .frame(width: Size.screen.width + Size.border * 2, height: Size.screen.height + Size.border * 2)
+        .padding(.top, Size.caseInset)
+      screen
+        .frame(width: Size.screen.width, height: Size.screen.height, alignment: .top)
+        .clipShape(.rect(cornerRadius: Size.radius, style: .continuous))
+        .padding(.top, Size.caseInset + Size.border)
+      Capsule()
+        .fill(.black)
+        .frame(width: 124, height: 36)
+        .padding(.top, Size.caseInset + Size.border + 11)
+      buttons
+    }
+    .frame(width: Size.totalWidth, height: height, alignment: .top)
+    // Only the top of the phone shows; it fades softly into the page.
+    .mask {
+      LinearGradient(stops: [
+        .init(color: .black, location: 0),
+        .init(color: .black, location: 0.8),
+        .init(color: .clear, location: 1),
+      ], startPoint: .top, endPoint: .bottom)
+    }
+    .shadow(color: DeviceFinish.shadow, radius: 24, y: 14)
+    .scaleEffect(scale, anchor: .top)
+    .frame(width: Size.totalWidth * scale, height: height * scale, alignment: .top)
+  }
+
+  /// Action button and volume buttons on the left, side button on the right.
+  private var buttons: some View {
+    HStack(alignment: .top) {
+      VStack(spacing: 24) {
+        button(height: 34)
+        button(height: 64)
+        button(height: 64)
+      }
+      .padding(.top, 170)
+      Spacer()
+      button(height: 104)
+        .padding(.top, 236)
+    }
+    .frame(width: Size.totalWidth)
+    .accessibilityHidden(true)
+  }
+
+  private func button(height: CGFloat) -> some View {
+    RoundedRectangle(cornerRadius: 2, style: .continuous)
+      .fill(DeviceFinish.button)
+      .frame(width: Size.buttonOverhang + 2, height: height)
+  }
+}
+
+/// The iPhone status bar, drawn at real size.
+private struct PhoneStatusBar: View {
+  var showsTime = true
+
+  var body: some View {
+    HStack {
+      if showsTime {
+        Text("9:41")
+          .font(.system(size: 17, weight: .semibold))
+          .padding(.leading, 40)
+      }
+      Spacer()
+      HStack(spacing: 6) {
+        Image(systemName: "cellularbars")
+        Image(systemName: "wifi")
+        Image(systemName: "battery.100percent")
+      }
+      .font(.system(size: 15, weight: .semibold))
+      .padding(.trailing, 34)
+    }
+    .foregroundStyle(.white)
+    .frame(height: 54)
+    .padding(.top, 4)
+    .accessibilityHidden(true)
   }
 }
 
@@ -66,9 +175,15 @@ private struct LivingClock {
   static func tick(_ step: Int) -> Date { Date.now.addingTimeInterval(Double(step) * 300) }
 }
 
+/// Scales a phone to the width available, never past a size that keeps the chapter on one screen.
+private func phoneScale(for width: CGFloat) -> CGFloat {
+  guard width > 0 else { return 0.7 }
+  return min(0.74, (width - 56) / PhoneSize.totalWidth)
+}
+
 // MARK: - Home Screen
 
-/// The real widgets, alive: plans page by themselves, Dippy changes pose, and taps get a reaction.
+/// The real widgets on a Home Screen, alive: plans page by themselves, Dippy changes pose, and taps get a reaction.
 struct WidgetShowcaseStep: View {
   var model: OnboardingModel
 
@@ -78,14 +193,8 @@ struct WidgetShowcaseStep: View {
 
   private enum Metrics {
     static let small: CGFloat = 158
-    static let gap: CGFloat = 18
+    static let gap: CGFloat = 22
     static let medium = small * 2 + gap
-    static let height = small * 2 + gap
-  }
-
-  private var scale: CGFloat {
-    guard width > 0 else { return 0.85 }
-    return min(1, (width - 48) / Metrics.medium)
   }
 
   private var focus: String? { model.focusSymbol ?? model.previewSymbols.first }
@@ -98,9 +207,9 @@ struct WidgetShowcaseStep: View {
       mission: "Tap a widget",
       isMissionDone: model.completedMissions.contains("widget")
     ) {
-      grid
-        .scaleEffect(scale)
-        .frame(width: Metrics.medium * scale, height: Metrics.height * scale)
+      PhoneMockup(visibleHeight: 470, scale: phoneScale(for: width)) {
+        homeScreen
+      }
     }
     .frame(maxWidth: .infinity)
     .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
@@ -114,24 +223,48 @@ struct WidgetShowcaseStep: View {
     }
   }
 
-  private var grid: some View {
-    VStack(spacing: Metrics.gap) {
-      widget(width: Metrics.medium) {
-        PlansWidgetView(entry: PlansEntry(date: LivingClock.tick(step), statuses: model.sampleStatuses, index: step), previewFamily: .systemMedium)
-      }
-      HStack(spacing: Metrics.gap) {
-        widget(width: Metrics.small) {
-          StockPlanWidgetView(
-            entry: StockPlanEntry(date: LivingClock.tick(step), symbol: focus, quote: focus.flatMap { model.quotes[$0] },
-                                  targets: model.sampleStatuses.map(\.target).filter { $0.symbol == focus }),
-            previewFamily: .systemSmall
-          )
+  private var homeScreen: some View {
+    ZStack(alignment: .top) {
+      DeviceFinish.wallpaper
+      VStack(spacing: 0) {
+        PhoneStatusBar()
+        VStack(spacing: 14) {
+          labeled {
+            widget(width: Metrics.medium) {
+              PlansWidgetView(entry: PlansEntry(date: LivingClock.tick(step), statuses: model.sampleStatuses, index: step), previewFamily: .systemMedium)
+            }
+          }
+          HStack(alignment: .top, spacing: Metrics.gap) {
+            labeled {
+              widget(width: Metrics.small) {
+                StockPlanWidgetView(
+                  entry: StockPlanEntry(date: LivingClock.tick(step), symbol: focus, quote: focus.flatMap { model.quotes[$0] },
+                                        targets: model.sampleStatuses.map(\.target).filter { $0.symbol == focus }),
+                  previewFamily: .systemSmall
+                )
+              }
+            }
+            labeled {
+              widget(width: Metrics.small) {
+                StreakWidgetView(entry: StreakEntry(date: LivingClock.tick(step), progress: ProgressSnapshot(
+                  streak: 1, lastBrief: Calendar.current.date(byAdding: .day, value: -1, to: .now), level: 1, levelTitle: "Owlet")), isPreview: true)
+              }
+            }
+          }
         }
-        widget(width: Metrics.small) {
-          StreakWidgetView(entry: StreakEntry(date: LivingClock.tick(step), progress: ProgressSnapshot(
-            streak: 1, lastBrief: Calendar.current.date(byAdding: .day, value: -1, to: .now), level: 1, levelTitle: "Owlet")), isPreview: true)
-        }
+        .padding(.top, 18)
       }
+    }
+  }
+
+  /// Widgets on the Home Screen carry the app's name beneath them.
+  private func labeled<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+    VStack(spacing: 6) {
+      content()
+      Text("Dipwise")
+        .font(.system(size: 12, weight: .medium))
+        .foregroundStyle(.white)
+        .accessibilityHidden(true)
     }
   }
 
@@ -143,10 +276,14 @@ struct WidgetShowcaseStep: View {
       content()
         .padding(16)
         .frame(width: width, height: Metrics.small)
-        .clipShape(.rect(cornerRadius: 22, style: .continuous))
+        .background(Brand.nightMiddle)
+        .clipShape(.rect(cornerRadius: 24, style: .continuous))
         .allowsHitTesting(false)
-        .showcaseSurface(cornerRadius: 22)
-        .contentShape(.rect(cornerRadius: 22))
+        .overlay {
+          RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(.white.opacity(0.1), lineWidth: 1)
+        }
+        .shadow(color: .black.opacity(0.3), radius: 10, y: 5)
+        .contentShape(.rect(cornerRadius: 24))
     }
     .buttonStyle(ShowcasePressStyle())
     .accessibilityLabel("Dipwise widget. Tap to see it update.")
@@ -233,13 +370,13 @@ struct WatchShowcaseStep: View {
   private var watch: some View {
     ZStack {
       RoundedRectangle(cornerRadius: Size.displayRadius + Size.border + Size.caseInset, style: .continuous)
-        .fill(LinearGradient(colors: [Color(white: 0.24), Color(white: 0.1)], startPoint: .top, endPoint: .bottom))
+        .fill(DeviceFinish.metal)
         .overlay {
           RoundedRectangle(cornerRadius: Size.displayRadius + Size.border + Size.caseInset, style: .continuous)
-            .strokeBorder(LinearGradient(colors: [.white.opacity(0.4), .white.opacity(0.06)], startPoint: .top, endPoint: .bottom), lineWidth: 1.2)
+            .strokeBorder(DeviceFinish.edge, lineWidth: 1.5)
         }
         .frame(width: Size.watchCase.width, height: Size.watchCase.height)
-        .shadow(color: .black.opacity(0.5), radius: 24, y: 14)
+        .shadow(color: DeviceFinish.shadow, radius: 24, y: 14)
       RoundedRectangle(cornerRadius: Size.displayRadius + Size.border, style: .continuous)
         .fill(.black)
         .frame(width: Size.bezel.width, height: Size.bezel.height)
@@ -273,7 +410,7 @@ struct WatchShowcaseStep: View {
 
   private var sideButton: some View {
     Capsule()
-      .fill(LinearGradient(colors: [Color(white: 0.34), Color(white: 0.16)], startPoint: .top, endPoint: .bottom))
+      .fill(DeviceFinish.button)
       .frame(width: 5, height: 50)
       .offset(x: 4, y: Size.watchCase.height * 0.16)
       .accessibilityHidden(true)
@@ -353,5 +490,182 @@ struct WatchShowcaseStep: View {
       }
     }
     .sensoryFeedback(.impact(weight: .light), trigger: hops)
+  }
+}
+
+// MARK: - Notifications
+
+/// A lock screen on the same iPhone, where the user's own alerts arrive one by one. Tap one to expand it.
+struct NotifyStep: View {
+  var model: OnboardingModel
+
+  private struct Alert: Identifiable, Equatable {
+    var id: String
+    var title: String
+    var message: String
+    var symbol: String
+    var values: [Double]
+    var color: Color
+  }
+
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @State private var visible: [Alert] = []
+  @State private var expanded: String?
+  @State private var width: CGFloat = 0
+
+  /// Alerts built from the stocks and zone the user chose a moment ago.
+  private var alerts: [Alert] {
+    let statuses = model.sampleStatuses
+    var list: [Alert] = []
+    if let symbol = model.focusSymbol, let quote = model.focusQuote, model.zoneUpper > 0 {
+      let price = (model.zoneLower + model.zoneUpper) / 2
+      list.append(Alert(id: "buy", title: "\(symbol) entered your buy zone",
+                        message: "Now \(quote.formatted(price)), inside \(quote.formatted(model.zoneLower))–\(quote.formatted(model.zoneUpper)). Your plan: buy a little.",
+                        symbol: "arrow.down.to.line.compact", values: Array(quote.closes.suffix(30)) + [price], color: Brand.buy))
+    }
+    if let sell = statuses.first(where: { $0.target.rule.kind.side == .sell }), let quote = sell.quote {
+      list.append(Alert(id: "sell", title: "\(sell.target.symbol) is close to your sell zone",
+                        message: "Now \(quote.formatted(quote.price)), just \(distanceText(sell.distance)) away. Ready to take some profit?",
+                        symbol: "arrow.up.to.line.compact", values: Array(quote.closes.suffix(30)), color: Brand.sell))
+    }
+    list.append(Alert(id: "brief", title: "Your daily brief is ready",
+                      message: "One minute with Dippy keeps your streak alive.", symbol: "flame.fill", values: [], color: Brand.amber))
+    return list
+  }
+
+  var body: some View {
+    ShowcaseLayout(
+      eyebrow: "Notifications",
+      title: "Never miss your moment",
+      message: "Dippy taps you the second a stock reaches your zone, with your plan right in the alert.",
+      mission: "Tap an alert",
+      isMissionDone: model.completedMissions.contains("alert")
+    ) {
+      PhoneMockup(visibleHeight: 470, scale: phoneScale(for: width)) {
+        lockScreen
+      }
+    }
+    .frame(maxWidth: .infinity)
+    .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
+    .sensoryFeedback(.impact(weight: .light), trigger: visible.count)
+    .task { await play() }
+  }
+
+  private var lockScreen: some View {
+    ZStack(alignment: .top) {
+      DeviceFinish.wallpaper
+      VStack(spacing: 0) {
+        PhoneStatusBar(showsTime: false)
+        Image(systemName: "lock.fill")
+          .font(.system(size: 15, weight: .semibold))
+          .foregroundStyle(.white.opacity(0.85))
+        Text(Date.now, format: .dateTime.weekday(.wide).day().month(.wide))
+          .font(.system(size: 20, weight: .semibold))
+          .foregroundStyle(.white.opacity(0.85))
+          .padding(.top, 10)
+        Text("9:41")
+          .font(.system(size: 92, weight: .bold, design: .rounded))
+          .foregroundStyle(.white)
+          .padding(.top, -4)
+        VStack(spacing: 10) {
+          ForEach(visible) { alert in
+            notification(alert)
+              .transition(.move(edge: .bottom).combined(with: .opacity).combined(with: .scale(scale: 0.92, anchor: .bottom)))
+          }
+        }
+        .padding(.horizontal, 14)
+        .padding(.top, 18)
+      }
+    }
+  }
+
+  private func notification(_ alert: Alert) -> some View {
+    let isExpanded = expanded == alert.id
+    return Button {
+      withAnimation(.spring(duration: 0.45, bounce: 0.2)) { expanded = isExpanded ? nil : alert.id }
+      model.complete("alert")
+    } label: {
+      VStack(alignment: .leading, spacing: 10) {
+        HStack(alignment: .top, spacing: 12) {
+          Image(.appIconPreview)
+            .resizable()
+            .frame(width: 40, height: 40)
+            .clipShape(.rect(cornerRadius: 10, style: .continuous))
+          VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 5) {
+              Image(systemName: alert.symbol)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(alert.color)
+              Text(alert.title)
+                .font(.system(size: 15, weight: .semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+              Spacer(minLength: 4)
+              Text("now")
+                .font(.system(size: 13))
+                .foregroundStyle(.white.opacity(0.6))
+            }
+            Text(alert.message)
+              .font(.system(size: 15))
+              .foregroundStyle(.white.opacity(0.85))
+              .lineLimit(isExpanded ? 4 : 2)
+              .multilineTextAlignment(.leading)
+              .fixedSize(horizontal: false, vertical: true)
+          }
+        }
+        if isExpanded {
+          if alert.values.count > 1 {
+            WidgetSparkline(values: alert.values)
+              .frame(height: 64)
+              .padding(10)
+              .background(.white.opacity(0.06), in: .rect(cornerRadius: 14, style: .continuous))
+          }
+          HStack(spacing: 8) {
+            actionLabel(alert.id == "brief" ? "Start Brief" : "Open Plan")
+            actionLabel(alert.id == "brief" ? "Later" : "Snooze 1 Hour")
+          }
+        }
+      }
+      .foregroundStyle(.white)
+      .padding(14)
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .background(.white.opacity(0.13), in: .rect(cornerRadius: 26, style: .continuous))
+      .overlay {
+        RoundedRectangle(cornerRadius: 26, style: .continuous).strokeBorder(.white.opacity(0.08), lineWidth: 1)
+      }
+    }
+    .buttonStyle(ShowcasePressStyle())
+    .accessibilityElement(children: .combine)
+    .accessibilityHint(isExpanded ? "Collapses the alert" : "Expands the alert")
+  }
+
+  private func actionLabel(_ title: String) -> some View {
+    Text(title)
+      .font(.system(size: 15, weight: .semibold))
+      .frame(maxWidth: .infinity)
+      .padding(.vertical, 10)
+      .background(.white.opacity(0.1), in: .rect(cornerRadius: 14, style: .continuous))
+  }
+
+  /// Alerts arrive one by one, newest on top, then the screen clears and it starts again.
+  private func play() async {
+    let alerts = alerts
+    if reduceMotion {
+      visible = alerts
+      return
+    }
+    while !Task.isCancelled {
+      for alert in alerts.reversed() where !visible.contains(alert) {
+        try? await Task.sleep(for: .seconds(1.2))
+        withAnimation(.spring(duration: 0.55, bounce: 0.25)) { visible.insert(alert, at: 0) }
+      }
+      // Stays put while someone is reading an expanded alert.
+      try? await Task.sleep(for: .seconds(4))
+      while expanded != nil && !Task.isCancelled {
+        try? await Task.sleep(for: .seconds(1))
+      }
+      withAnimation(.smooth(duration: 0.5)) { visible = [] }
+      try? await Task.sleep(for: .seconds(0.8))
+    }
   }
 }
