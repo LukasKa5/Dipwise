@@ -54,7 +54,6 @@ struct HeroCard: View {
 
       Label(mood.message(change: change), systemImage: moodSymbol)
         .font(.footnote.weight(.semibold))
-        .foregroundStyle(.secondary)
         .contentTransition(.opacity)
 
       PeriodPicker(period: $period, presets: [.day, .week, .month, .threeMonths, .year], earliest: earliest)
@@ -93,7 +92,6 @@ struct HeroCard: View {
           } else {
             Text(title)
               .font(.subheadline.weight(.semibold))
-              .foregroundStyle(.secondary)
             Text(value)
               .font(.system(size: 40, weight: .bold, design: .rounded))
               .monospacedDigit()
@@ -145,8 +143,7 @@ private struct HeroStatTile: View {
         .minimumScaleFactor(0.6)
         .contentTransition(.numericText())
       Text(stat.label)
-        .font(.caption.weight(.medium))
-        .foregroundStyle(.secondary)
+        .font(.caption.weight(.semibold))
         .lineLimit(1)
         .minimumScaleFactor(0.8)
     }

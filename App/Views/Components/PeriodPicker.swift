@@ -19,7 +19,7 @@ struct PeriodPicker: View {
         .font(.subheadline.weight(.semibold))
         .frame(maxWidth: .infinity, minHeight: 32)
         .background(isSelected ? AnyShapeStyle(.white.opacity(0.18)) : AnyShapeStyle(.clear), in: .capsule)
-        .foregroundStyle(isSelected ? .primary : .secondary)
+        .foregroundStyle(.primary)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
       }
       Button {
@@ -33,7 +33,7 @@ struct PeriodPicker: View {
           .frame(maxWidth: period.isCustom ? 140 : .infinity, minHeight: 32)
           .padding(.horizontal, period.isCustom ? 8 : 0)
           .background(period.isCustom ? AnyShapeStyle(.white.opacity(0.18)) : AnyShapeStyle(.clear), in: .capsule)
-          .foregroundStyle(period.isCustom ? .primary : .secondary)
+          .foregroundStyle(.primary)
       }
       .accessibilityLabel(period.isCustom ? "Custom range, \(period.title)" : "Custom range")
     }
@@ -44,6 +44,7 @@ struct PeriodPicker: View {
     .sheet(isPresented: $showsCustom) {
       CustomPeriodSheet(period: $period, earliest: earliest)
         .presentationDetents([.medium, .large])
+        .presentationBackground(Brand.nightMiddle)
     }
   }
 }
@@ -85,9 +86,10 @@ private struct CustomPeriodSheet: View {
             quickPick("Last 5 years", start: Calendar.current.date(byAdding: .year, value: -5, to: .now) ?? .now)
           }
         }
-        .dipwiseRows()
+        .listRowBackground(Color.white.opacity(0.08))
       }
-      .dipwiseListStyle()
+      .scrollContentBackground(.hidden)
+      .background(Brand.nightMiddle)
       .navigationTitle("Custom Range")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
@@ -99,6 +101,9 @@ private struct CustomPeriodSheet: View {
           }
         }
       }
+      .toolbarBackground(Brand.nightMiddle, for: .navigationBar)
+      .environment(\.colorScheme, .dark)
+      .tint(Brand.buy)
       .onAppear {
         if case .custom(let span) = period {
           start = span.lowerBound

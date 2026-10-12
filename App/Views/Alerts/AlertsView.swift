@@ -315,19 +315,7 @@ private struct MiniPlanChart: View {
     }
     .chartXAxis(.hidden)
     .chartYAxis(.hidden)
-    .chartYScale(domain: (bounds.min() ?? 0) * 0.99...(bounds.max() ?? 1) * 1.04)
-    .chartOverlay { proxy in
-      GeometryReader { geometry in
-        if let plotFrame = proxy.plotFrame,
-           let dip = values.indices.dropLast().min(by: { values[$0] < values[$1] }),
-           let position = proxy.position(for: (x: dip, y: values[dip])) {
-          let origin = geometry[plotFrame].origin
-          LivelyOwl(hopsOnTap: false)
-            .frame(width: 24, height: 28)
-            .position(x: origin.x + position.x, y: origin.y + position.y - 14)
-        }
-      }
-    }
+    .chartYScale(domain: (bounds.min() ?? 0) * 0.99...(bounds.max() ?? 1) * 1.01)
     .accessibilityHidden(true)
   }
 }
