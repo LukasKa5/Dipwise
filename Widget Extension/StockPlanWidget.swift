@@ -82,7 +82,7 @@ struct StockPlanProvider: AppIntentTimelineProvider {
       return Timeline(entries: [StockPlanEntry(date: .now, symbol: nil, quote: nil, targets: [])], policy: .after(.now.addingTimeInterval(WidgetData.refresh)))
     }
     let quotes = await WidgetData.quotes(for: symbols)
-    let steps = symbols.count > 1 ? 10 : 1
+    let steps = 6
     let entries = (0..<steps).map { step in
       let symbol = symbols[step % symbols.count]
       return StockPlanEntry(date: .now.addingTimeInterval(Double(step) * WidgetData.rotation), symbol: symbol,
@@ -170,7 +170,7 @@ struct StockPlanWidgetView: View {
             .lineLimit(1)
             .minimumScaleFactor(0.5)
           Spacer(minLength: 0)
-          WidgetOwl(size: 18)
+          LivingDippy(size: 18, date: entry.date, seed: 1, showsBubble: false, isPreview: previewFamily != nil)
         }
         HStack(alignment: .firstTextBaseline, spacing: 4) {
           Text(compactPrice(quote.price, currency: quote.currency))
@@ -190,7 +190,9 @@ struct StockPlanWidgetView: View {
 
   private func footer(quote: Quote) -> some View {
     HStack(spacing: 6) {
-      if family == .systemMedium { WidgetOwl(size: 16) }
+      if family == .systemMedium {
+        LivingDippy(size: 18, date: entry.date, seed: 1, showsBubble: false, isPreview: previewFamily != nil)
+      }
       if let nearest {
         Text("\(distanceText(nearest.rule.distance(for: quote))) · \(nearest.rule.kind.title.lowercased())")
           .font(.caption2.weight(.semibold))

@@ -19,7 +19,7 @@ struct OnboardingView: View {
   @State private var showsPaywall = false
   @State private var celebration = 0
 
-  private let pageCount = 10
+  private let pageCount = 11
 
   private var canContinue: Bool {
     switch page {
@@ -34,9 +34,9 @@ struct OnboardingView: View {
     switch page {
     case 2: model.selected.isEmpty ? "Pick at least one" : "Watch \(model.selected.count) \(model.selected.count == 1 ? "stock" : "stocks")"
     case 5: model.vote == nil ? "Cast your vote" : "Continue"
-    case 7: "Allow Notifications"
-    case 8: account.isSignedIn ? "Continue" : "Continue without an account"
-    case 9: "Start Watching"
+    case 8: "Allow Notifications"
+    case 9: account.isSignedIn ? "Continue" : "Continue without an account"
+    case 10: "Start Watching"
     default: "Continue"
     }
   }
@@ -54,9 +54,10 @@ struct OnboardingView: View {
           case 3: ScrubStep(model: model).fitsScreen()
           case 4: ZoneStep(model: model).fitsScreen()
           case 5: FlockStep(model: model)
-          case 6: EverywhereStep(model: model).fitsScreen()
-          case 7: NotifyStep(model: model).fitsScreen()
-          case 8: AccountStep().fitsScreen()
+          case 6: WidgetShowcaseStep(model: model).fitsScreen()
+          case 7: WatchShowcaseStep(model: model).fitsScreen()
+          case 8: AlertShowcaseStep(model: model).fitsScreen()
+          case 9: AccountStep().fitsScreen()
           default: RevealStep(model: model, streak: max(1, progress.streak)).fitsScreen()
           }
         }
@@ -127,16 +128,16 @@ struct OnboardingView: View {
   private func advance() {
     switch page {
     case 3: model.prepareZone()
-    case 8:
+    case 9:
       if !account.isSignedIn { account.continueAsGuest() }
-    case 7:
+    case 8:
       Task {
         await NotificationManager.requestAuthorization()
         withAnimation(.smooth) { page += 1 }
         celebration += 1
       }
       return
-    case 9:
+    case 10:
       let created = model.commit(context: modelContext, quoteStore: quoteStore, isPro: subscription.isPro)
       for alert in created {
         Task { await flock.share(alert) }

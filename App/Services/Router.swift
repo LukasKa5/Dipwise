@@ -30,6 +30,8 @@ final class Router {
       open(symbol: symbol)
     } else if url.host() == "alerts" {
       selectedTab = .alerts
+    } else if url.host() == "flock" {
+      selectedTab = .flock
     } else if url.host() == "brief" {
       selectedTab = .home
       showsBrief = true

@@ -38,8 +38,9 @@ struct MoversProvider: TimelineProvider {
     Task {
       let symbols = TargetSnapshotStore.loadStocks().map(\.symbol)
       let quotes = await WidgetData.quotes(for: symbols)
-      let entry = MoversEntry(date: .now, quotes: Self.sorted(symbols.compactMap { quotes[$0] }))
-      completion(Timeline(entries: [entry], policy: .after(.now.addingTimeInterval(WidgetData.refresh))))
+      let sorted = Self.sorted(symbols.compactMap { quotes[$0] })
+      let entries = WidgetData.livingDates().map { MoversEntry(date: $0, quotes: sorted) }
+      completion(Timeline(entries: entries, policy: .after(.now.addingTimeInterval(WidgetData.refresh))))
     }
   }
 
@@ -101,7 +102,7 @@ struct MoversWidgetView: View {
               .foregroundStyle(.white.opacity(0.6))
           }
           Spacer(minLength: 0)
-          WidgetOwl(size: 20)
+          LivingDippy(size: 20, date: entry.date, seed: 3, isPreview: previewFamily != nil)
         }
         Text(changeText(top.change))
           .font(.system(size: 30, weight: .bold, design: .rounded).monospacedDigit())
@@ -127,7 +128,7 @@ struct MoversWidgetView: View {
   private var medium: some View {
     VStack(alignment: .leading, spacing: 8) {
       HStack(spacing: 6) {
-        WidgetDippyLine(text: "Today's movers")
+        WidgetDippyLine(text: "Today's movers", date: entry.date, isPreview: previewFamily != nil)
         Spacer(minLength: 0)
         Text(MarketClock.isOpen() ? "Market open" : "Market closed")
           .font(.caption2.weight(.semibold))

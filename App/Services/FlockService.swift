@@ -1,4 +1,5 @@
 import Foundation
+import WidgetKit
 import Observation
 
 /// Loads anonymous flock reports and shares the user's own alerts and votes when they opt in.
@@ -83,6 +84,23 @@ final class FlockService {
                              buyZone: zone, conviction: report.conviction, watchers: report.watcherCount))
     }
     radar = items.sorted { $0.conviction > $1.conviction }
+    publishSnapshot()
+  }
+
+  /// Shares the crowd's picks with the Flock widget.
+  private func publishSnapshot() {
+    FlockSnapshot(
+      picks: radar.prefix(8).map {
+        FlockSnapshot.Pick(symbol: $0.symbol, name: $0.name, price: $0.price, currency: $0.currency,
+                           zoneLower: $0.buyZone.lowerBound, zoneUpper: $0.buyZone.upperBound, conviction: $0.conviction, watchers: $0.watchers)
+      },
+      trending: overview.trending.prefix(6).map { FlockSnapshot.Trend(symbol: $0.symbol, alertsThisWeek: $0.alertsThisWeek, buyShare: $0.buyShare) },
+      bullShare: overview.mood.bullShare,
+      investors: overview.investors,
+      alertsThisWeek: overview.alertsThisWeek,
+      updatedAt: .now
+    ).save()
+    WidgetCenter.shared.reloadTimelines(ofKind: "FlockWidget")
   }
 
   // MARK: Votes

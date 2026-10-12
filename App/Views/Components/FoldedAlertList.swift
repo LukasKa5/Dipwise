@@ -22,12 +22,8 @@ struct FoldedAlertList<Row: View>: View {
     }
   }
 
-  /// Buy and sell plans plus the group holding the closest alert start open.
-  private var defaultExpanded: Set<AlertCategory> {
-    var open: Set<AlertCategory> = [.zones]
-    if let first = alerts.first { open.insert(first.kind.category) }
-    return open
-  }
+  /// Every group starts folded, so a long plan reads as a short summary first.
+  private var defaultExpanded: Set<AlertCategory> { [] }
 
   var body: some View {
     if alerts.count <= Self.unfoldedLimit {

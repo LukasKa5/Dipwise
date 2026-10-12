@@ -39,24 +39,71 @@ struct WidgetBadge: View {
   }
 }
 
-/// Dippy, asleep while the market is closed.
+/// One of Dippy's poses. Widgets can't animate continuously, so each update shows a new pose,
+/// which makes Dippy feel alive across the day: looking around, blinking, stretching, and cheering.
+enum DippyPose: Int, CaseIterable {
+  case idle
+  case lookLeft
+  case lookRight
+  case lookUp
+  case stretch
+  case cheer
+  case wink
+
+  /// A pose that changes every few minutes on its own.
+  static func at(_ date: Date, seed: Int = 0) -> DippyPose {
+    let step = Int(date.timeIntervalSinceReferenceDate / 300) + seed
+    // Cheering stays special, so it's left out of the idle rotation.
+    let idle: [DippyPose] = [.idle, .lookLeft, .idle, .lookRight, .wink, .lookUp, .idle, .stretch]
+    return idle[((step % idle.count) + idle.count) % idle.count]
+  }
+
+  var look: CGSize {
+    switch self {
+    case .lookLeft: CGSize(width: -1, height: 0)
+    case .lookRight: CGSize(width: 1, height: 0)
+    case .lookUp: CGSize(width: 0.2, height: -0.8)
+    case .cheer: CGSize(width: 0, height: -0.5)
+    default: .zero
+    }
+  }
+
+  var wings: Double {
+    switch self {
+    case .stretch: 0.55
+    case .cheer: 0.9
+    default: 0
+    }
+  }
+}
+
+/// Dippy for widgets and the watch, asleep while the market is closed.
 struct WidgetOwl: View {
   var size: CGFloat
   /// Nil follows the market clock.
   var isAsleep: Bool?
+  var pose: DippyPose = .idle
 
   var body: some View {
     let asleep = isAsleep ?? !MarketClock.isOpen()
-    OwlMark(blink: asleep ? 1 : 0)
-      .frame(width: size)
-      .overlay(alignment: .topTrailing) {
-        if asleep {
-          Text("z")
-            .font(.system(size: size * 0.35, weight: .heavy, design: .rounded))
-            .foregroundStyle(.white.opacity(0.7))
-            .offset(x: size * 0.25, y: -size * 0.2)
-        }
+    let winks = !asleep && pose == .wink
+    OwlMark(
+      wingSpread: asleep ? 0 : pose.wings,
+      blink: asleep || winks ? 1 : 0,
+      lookOffset: asleep ? .zero : pose.look,
+      // A wink closes the left eye and keeps the right one open.
+      rightEyeOpen: winks ? 1 : 0
+    )
+    .frame(width: size)
+    .overlay(alignment: .topTrailing) {
+      if asleep {
+        Text("z")
+          .font(.system(size: size * 0.35, weight: .heavy, design: .rounded))
+          .foregroundStyle(.white.opacity(0.7))
+          .offset(x: size * 0.25, y: -size * 0.2)
       }
+    }
+    .accessibilityHidden(true)
   }
 }
 

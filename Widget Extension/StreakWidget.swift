@@ -30,14 +30,18 @@ struct StreakProvider: TimelineProvider {
   }
 
   func getTimeline(in context: Context, completion: @escaping (Timeline<StreakEntry>) -> Void) {
-    // Refresh after midnight so "done today" resets.
+    // A new pose for Dippy every few minutes, and a refresh after midnight so "done today" resets.
+    let progress = ProgressSnapshot.load()
     let tomorrow = Calendar.current.startOfDay(for: .now.addingTimeInterval(86_400)).addingTimeInterval(60)
-    completion(Timeline(entries: [StreakEntry(date: .now, progress: ProgressSnapshot.load())], policy: .after(tomorrow)))
+    let dates = WidgetData.livingDates(count: 24).filter { $0 < tomorrow }
+    let entries = dates.map { StreakEntry(date: $0, progress: progress) }
+    completion(Timeline(entries: entries, policy: .after(min(tomorrow, dates.last.map { $0.addingTimeInterval(WidgetData.rotation) } ?? tomorrow))))
   }
 }
 
 struct StreakWidgetView: View {
   var entry: StreakEntry
+  var isPreview = false
   @Environment(\.widgetFamily) private var family
 
   private var progress: ProgressSnapshot { entry.progress }
@@ -60,29 +64,82 @@ struct StreakWidgetView: View {
       case .accessoryInline:
         Text("\(liveStreak)-day streak \(progress.briefDoneToday ? "· done" : "· brief ready")")
       default:
-        VStack(alignment: .leading, spacing: 6) {
-          HStack(alignment: .top) {
-            WidgetOwl(size: 46)
-            Spacer()
-            VStack(alignment: .trailing, spacing: 0) {
-              Image(systemName: "flame.fill")
-                .font(.title2)
-                .foregroundStyle(liveStreak > 0 ? Brand.amber : .white.opacity(0.4))
-              Text("\(liveStreak)")
-                .font(.system(size: 30, weight: .heavy, design: .rounded))
-            }
-          }
-          Spacer(minLength: 0)
-          Text(progress.briefDoneToday ? "Brief done" : "Brief ready")
-            .font(.headline)
-          Text(progress.briefDoneToday ? "See you tomorrow" : "1 minute with Dippy")
-            .font(.caption)
-            .foregroundStyle(progress.briefDoneToday ? .white.opacity(0.6) : Brand.amber)
-        }
-        .foregroundStyle(.white)
+        small
       }
     }
+    .foregroundStyle(.white)
     .dipwiseWidgetBackground()
     .widgetURL(URL(string: "dipwise://brief"))
+  }
+
+  /// Dippy sleeps at night like a real owl.
+  private var isNight: Bool {
+    let hour = Calendar.current.component(.hour, from: entry.date)
+    return hour >= 22 || hour < 6
+  }
+
+  private var small: some View {
+    let done = progress.briefDoneToday
+    let reaction = isPreview ? nil : WidgetState.recentReaction
+    return VStack(spacing: 0) {
+      HStack(alignment: .firstTextBaseline, spacing: 3) {
+        Image(systemName: "flame.fill")
+          .font(.subheadline)
+          .foregroundStyle(liveStreak > 0 ? Brand.amber : .white.opacity(0.4))
+        Text("\(liveStreak)")
+          .font(.system(size: 22, weight: .bold, design: .rounded))
+          .contentTransition(.numericText())
+        Text(liveStreak == 1 ? "day" : "days")
+          .font(.caption.weight(.semibold))
+          .foregroundStyle(.white.opacity(0.7))
+        Spacer(minLength: 0)
+      }
+      Spacer(minLength: 0)
+      Group {
+        if isPreview {
+          WidgetOwl(size: 58, isAsleep: false, pose: done ? .cheer : DippyPose.at(entry.date))
+        } else {
+          Button(intent: PetDippyIntent()) {
+            WidgetOwl(size: 58, isAsleep: isNight && reaction == nil, pose: reaction != nil || done ? .cheer : DippyPose.at(entry.date))
+          }
+          .buttonStyle(.plain)
+          .accessibilityLabel("Say hi to Dippy")
+        }
+      }
+      .overlay(alignment: .topTrailing) {
+        if let reaction {
+          Text(reaction)
+            .font(.system(size: 9, weight: .heavy, design: .rounded))
+            .foregroundStyle(Brand.owlInk)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
+            .background(.white, in: .capsule)
+            .fixedSize()
+            .offset(x: 18, y: -10)
+        }
+      }
+      Spacer(minLength: 4)
+      weekDots
+        .padding(.bottom, 5)
+      Text(done ? "Brief done · see you tomorrow" : "Your brief is ready · 1 min")
+        .font(.caption2.weight(.semibold))
+        .foregroundStyle(done ? Brand.buy : Brand.amber)
+        .lineLimit(1)
+        .minimumScaleFactor(0.7)
+    }
+  }
+
+  /// The last seven days, filled for each day of the current streak.
+  private var weekDots: some View {
+    let filled = min(liveStreak, 7)
+    return HStack(spacing: 5) {
+      ForEach(0..<7, id: \.self) { day in
+        Circle()
+          .fill(day >= 7 - filled ? Brand.amber : .white.opacity(0.18))
+          .frame(width: 7, height: 7)
+      }
+    }
+    .accessibilityElement()
+    .accessibilityLabel("\(liveStreak)-day streak")
   }
 }

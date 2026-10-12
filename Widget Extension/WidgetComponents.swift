@@ -22,14 +22,54 @@ struct WidgetTile<Content: View>: View {
   }
 }
 
+/// Dippy on a widget: his pose changes with every update, and tapping him gets a reaction.
+struct LivingDippy: View {
+  var size: CGFloat
+  var date: Date
+  /// Offsets the pose so several widgets don't all look the same way at once.
+  var seed = 0
+  var showsBubble = true
+  /// Lets the app's previews skip the intent and its stored reaction.
+  var isPreview = false
+
+  var body: some View {
+    let reaction = isPreview ? nil : WidgetState.recentReaction
+    // In the app's previews Dippy is always awake, so new users meet him at his best.
+    let owl = WidgetOwl(size: size, isAsleep: isPreview ? false : nil, pose: reaction == nil ? DippyPose.at(date, seed: seed) : .cheer)
+    Group {
+      if isPreview {
+        owl
+      } else {
+        Button(intent: PetDippyIntent()) { owl }
+          .buttonStyle(.plain)
+          .accessibilityLabel("Say hi to Dippy")
+      }
+    }
+    .overlay(alignment: .topTrailing) {
+      if showsBubble, let reaction {
+        Text(reaction)
+          .font(.system(size: 9, weight: .heavy, design: .rounded))
+          .foregroundStyle(Brand.owlInk)
+          .padding(.horizontal, 6)
+          .padding(.vertical, 3)
+          .background(.white, in: .capsule)
+          .fixedSize()
+          .offset(x: -size * 0.5, y: -size * 0.45)
+      }
+    }
+  }
+}
+
 /// Dippy with a short line, the way he talks on the app's Home card.
 struct WidgetDippyLine: View {
   var text: String
   var owlSize: CGFloat = 22
+  var date: Date = .now
+  var isPreview = false
 
   var body: some View {
     HStack(spacing: 6) {
-      WidgetOwl(size: owlSize)
+      LivingDippy(size: owlSize, date: date, showsBubble: false, isPreview: isPreview)
       Text(text)
         .font(.caption.weight(.semibold))
         .foregroundStyle(.white.opacity(0.85))
@@ -119,6 +159,11 @@ enum WidgetData {
   }
 
   static let refresh: TimeInterval = 30 * 60
+
+  /// Dates every few minutes for the next half hour, so Dippy changes pose between data refreshes.
+  static func livingDates(count: Int = 6, from start: Date = .now) -> [Date] {
+    (0..<count).map { start.addingTimeInterval(Double($0) * rotation) }
+  }
   /// How often rotating widgets move on to the next stock.
   static let rotation: TimeInterval = 5 * 60
 }

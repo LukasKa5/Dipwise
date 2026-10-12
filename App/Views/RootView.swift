@@ -9,6 +9,7 @@ struct RootView: View {
   @Environment(QuoteStore.self) private var quotes
   @Environment(Router.self) private var router
   @Environment(FlockService.self) private var flock
+  @State private var showsSplash = true
 
   var body: some View {
     Group {
@@ -21,6 +22,15 @@ struct RootView: View {
       }
     }
     .overlay { ToastOverlay(center: ToastCenter.shared) }
+    .overlay {
+      // Shown once per launch, over the app so it can load underneath.
+      if showsSplash {
+        SplashView {
+          withAnimation(.smooth(duration: 0.45)) { showsSplash = false }
+        }
+        .transition(.opacity.combined(with: .scale(scale: 1.06)))
+      }
+    }
     .tint(Palette.green)
     .fontDesign(.rounded)
     .preferredColorScheme(appearance.colorScheme)

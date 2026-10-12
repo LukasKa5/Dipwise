@@ -14,7 +14,6 @@ struct ChangeBadge: View {
         .monospacedDigit()
       if let caption {
         Text(caption)
-          .foregroundStyle(.secondary)
       }
     }
     .font(.subheadline.weight(.semibold))
