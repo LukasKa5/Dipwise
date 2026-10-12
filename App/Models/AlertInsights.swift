@@ -47,7 +47,7 @@ struct AlertInsights {
       var score = 0.0
       if kinds.contains(.buyZone) || kinds.contains(.priceBelow) { score += 40 }
       if kinds.contains(.sellZone) || kinds.contains(.priceAbove) { score += 35 }
-      if kinds.contains(.trailingStop) || kinds.contains(.belowAverage) || kinds.contains(.dropFromHigh) { score += 25 }
+      if !kinds.isDisjoint(with: [.trailingStop, .stopLoss, .belowAverage, .deathCross, .profitTarget]) { score += 25 }
       return score
     }
     return Int((scores.reduce(0, +) / Double(scores.count)).rounded())
@@ -111,7 +111,7 @@ struct AlertInsights {
       var gaps: [Gap] = []
       if !kinds.contains(.buyZone) && !kinds.contains(.priceBelow) { gaps.append(Gap(holding: holding, missing: "buy zone")) }
       if holding.isOwned && !kinds.contains(.sellZone) && !kinds.contains(.priceAbove) { gaps.append(Gap(holding: holding, missing: "sell zone")) }
-      if holding.isOwned && !kinds.contains(.trailingStop) && !kinds.contains(.belowAverage) { gaps.append(Gap(holding: holding, missing: "protection")) }
+      if holding.isOwned && kinds.isDisjoint(with: [.trailingStop, .stopLoss, .belowAverage, .deathCross]) { gaps.append(Gap(holding: holding, missing: "protection (stop loss or trailing stop)")) }
       return gaps
     }
   }

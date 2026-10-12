@@ -8,6 +8,8 @@ struct AlertInsightsView: View {
   @Environment(QuoteStore.self) private var quotes
   @Environment(SubscriptionManager.self) private var subscription
   @State private var planHolding: Holding?
+  @State private var signalRequest: AlertEditorRequest?
+  @State private var signalRule: AlertRule?
 
   private var insights: AlertInsights { AlertInsights(holdings: holdings, quotes: quotes.quotes) }
   private var isPro: Bool { subscription.isPro }
@@ -17,6 +19,8 @@ struct AlertInsightsView: View {
     ScrollView {
       VStack(alignment: .leading, spacing: 24) {
         health(insights)
+        signals
+        coverage(insights)
         summary(insights)
         likely(insights)
         trackRecord(insights)
@@ -35,6 +39,9 @@ struct AlertInsightsView: View {
     .navigationTitle("Insights")
     .navigationBarTitleDisplayMode(.inline)
     .sheet(item: $planHolding) { PlanBuilderView(holding: $0) }
+    .sheet(item: $signalRequest) { request in
+      AlertEditorView(holding: request.holding, alert: nil, initialRule: signalRule)
+    }
   }
 
   // MARK: Sections
@@ -70,6 +77,90 @@ struct AlertInsightsView: View {
     .padding(20)
     .heroCardStyle()
     .accessibilityElement(children: .combine)
+  }
+
+  private var signals: some View {
+    let found = SignalScanner.signals(for: holdings, quotes: quotes.quotes)
+    return VStack(alignment: .leading, spacing: 14) {
+      SectionHeader(title: "Signals right now", subtitle: "What the indicators say about your stocks today") {
+        InfoButton(topic: .signals)
+      }
+      if found.isEmpty {
+        EmptyHint(systemImage: "dot.radiowaves.left.and.right", text: "No strong signals on your stocks today. Dippy keeps scanning.")
+      } else {
+        VStack(spacing: 0) {
+          ForEach(Array(found.enumerated()), id: \.element.id) { index, signal in
+            signalRow(signal)
+              .proLocked(!isPro && index >= 2, message: "See every live signal")
+            if index < found.count - 1 {
+              Divider().padding(.leading, 60)
+            }
+          }
+        }
+        .cardStyle()
+      }
+    }
+  }
+
+  private func signalRow(_ signal: MarketSignal) -> some View {
+    let holding = holdings.first { $0.symbol == signal.symbol }
+    let hasAlert = holding?.activeAlerts.contains { $0.kind == signal.kind } ?? false
+    return HStack(spacing: 12) {
+      Image(systemName: signal.kind.systemImage)
+        .font(.subheadline.weight(.bold))
+        .foregroundStyle(signal.kind.side.color)
+        .frame(width: 36, height: 36)
+        .background(signal.kind.side.color.opacity(0.14), in: .circle)
+      VStack(alignment: .leading, spacing: 2) {
+        Text("\(signal.symbol) · \(signal.headline)")
+          .font(.subheadline.weight(.semibold))
+        Text(signal.detail)
+          .font(.caption)
+          .foregroundStyle(.secondary)
+      }
+      Spacer()
+      if hasAlert {
+        Image(systemName: "bell.fill")
+          .foregroundStyle(.secondary)
+          .accessibilityLabel("Alert already set")
+      } else if let holding, let quote = quotes[signal.symbol] {
+        Button("Alert me") {
+          signalRule = AlertRule.defaults(for: signal.kind, price: quote.price, cost: holding.averageCost)
+          signalRequest = AlertEditorRequest(holding: holding, alert: nil)
+        }
+        .font(.caption.weight(.semibold))
+        .buttonStyle(.bordered)
+        .controlSize(.small)
+      }
+    }
+    .padding(14)
+    .accessibilityElement(children: .combine)
+  }
+
+  private func coverage(_ insights: AlertInsights) -> some View {
+    let counts = Dictionary(grouping: insights.active, by: \.kind.category).mapValues(\.count)
+    return VStack(alignment: .leading, spacing: 14) {
+      SectionHeader(title: "Your alert toolkit", subtitle: "Active alerts by type")
+      LazyVGrid(columns: [GridItem(.adaptive(minimum: 100), spacing: 10)], spacing: 10) {
+        ForEach(AlertCategory.allCases) { category in
+          let count = counts[category] ?? 0
+          VStack(alignment: .leading, spacing: 6) {
+            Text("\(count)")
+              .font(.title2.bold().monospacedDigit())
+              .foregroundStyle(count > 0 ? AnyShapeStyle(.primary) : AnyShapeStyle(.tertiary))
+            Text(category.title)
+              .font(.caption.weight(.semibold))
+              .foregroundStyle(.secondary)
+              .lineLimit(1)
+              .minimumScaleFactor(0.8)
+          }
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .padding(12)
+          .cardStyle(cornerRadius: 16)
+          .accessibilityElement(children: .combine)
+        }
+      }
+    }
   }
 
   private func summary(_ insights: AlertInsights) -> some View {
