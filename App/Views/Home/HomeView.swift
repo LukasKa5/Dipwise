@@ -8,6 +8,7 @@ struct HomeView: View {
   @Environment(Router.self) private var router
   @Environment(\.modelContext) private var modelContext
   @Environment(ProgressStore.self) private var progress
+  @Environment(AccountStore.self) private var account
   @State private var showsProgress = false
   @AppStorage(AlertSettings.showsBriefKey) private var showsBrief = true
   @AppStorage(AlertSettings.briefHiddenDayKey) private var briefHiddenDay = ""
@@ -89,6 +90,11 @@ struct HomeView: View {
     }
   }
 
+  private var greeting: String {
+    let base = DayPeriod(date: .now).greeting
+    return account.firstName.map { "\(base), \($0)" } ?? base
+  }
+
   private static var today: String { Date.now.formatted(.iso8601.year().month().day()) }
 
   // MARK: Sections
@@ -99,7 +105,7 @@ struct HomeView: View {
       let history = summary.history(period: period)
       let format: (Double) -> String = { quotes.formatBase($0) }
       return HeroCard(
-        title: DayPeriod(date: .now).greeting,
+        title: greeting,
         value: format(summary.totalValue),
         change: summary.dayChange,
         changeCaption: "today",
@@ -123,7 +129,7 @@ struct HomeView: View {
       ? focus.flatMap { quotes.intraday[$0.symbol] }.map { ($0.values, $0.dates) }
       : quote.map { period.slice(values: $0.closes, dates: $0.dates) }
     return HeroCard(
-      title: "\(DayPeriod(date: .now).greeting) · Watching \(focus?.symbol ?? "")",
+      title: "\(greeting) · Watching \(focus?.symbol ?? "")",
       value: quote.map { $0.formatted($0.price) } ?? "—",
       change: quote?.change,
       changeCaption: "today",

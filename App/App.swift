@@ -10,6 +10,7 @@ struct DipwiseApp: App {
   @State private var subscription = SubscriptionManager()
   @State private var flock = FlockService()
   @State private var progress = ProgressStore()
+  @State private var account = AccountStore()
 
   static let container: ModelContainer = {
     do {
@@ -26,6 +27,8 @@ struct DipwiseApp: App {
         .environment(subscription)
         .environment(flock)
         .environment(progress)
+        .environment(account)
+        .task { await account.refreshCredentialState() }
         .environment(Router.shared)
         .task { subscription.start() }
     }
