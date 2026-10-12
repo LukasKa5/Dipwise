@@ -283,6 +283,9 @@ struct AlertShowcaseStep: View {
       isMissionDone: hasEntered
     ) {
       VStack(spacing: 14) {
+        LivelyOwl(mood: hasEntered ? .celebrating : .calm)
+          .frame(width: 76, height: 88)
+          .owlFlight(trigger: celebrations, height: 40, isEnabled: !reduceMotion)
         banner
           .frame(height: 76)
         priceControl
@@ -329,7 +332,7 @@ struct AlertShowcaseStep: View {
               .font(.caption2)
               .foregroundStyle(.white.opacity(0.55))
           }
-          Text("Now \(quote.formatted(currentPrice)), inside \(quote.formatted(lower))–\(quote.formatted(upper)). Your plan: buy a little.")
+          Text("Now \(quote.formatted(currentPrice)). Your buy zone: \(quote.formatted(lower))–\(quote.formatted(upper)). Time to buy a little.")
             .font(.caption)
             .foregroundStyle(.white.opacity(0.8))
             .lineLimit(2)
@@ -342,7 +345,9 @@ struct AlertShowcaseStep: View {
       .accessibilityElement(children: .combine)
     } else {
       HStack(spacing: 10) {
-        WidgetOwl(size: 34, isAsleep: false, pose: .lookLeft)
+        Image(systemName: "bell.badge")
+          .font(.title3)
+          .foregroundStyle(.white.opacity(0.5))
         Text("Dippy is waiting for \(symbol) to reach your zone…")
           .font(.subheadline.weight(.semibold))
           .foregroundStyle(.white.opacity(0.75))

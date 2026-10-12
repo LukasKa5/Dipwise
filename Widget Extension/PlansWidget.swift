@@ -206,14 +206,16 @@ struct PlansWidgetView: View {
             }
             .frame(maxHeight: .infinity)
           }
-          // Empty slots keep rows the same height on the last page.
-          ForEach(0..<(perPage - rows.count), id: \.self) { _ in
+          // With several pages, empty slots keep rows the same height on the last one.
+          ForEach(0..<(pages > 1 ? perPage - rows.count : 0), id: \.self) { _ in
             Color.clear.frame(maxHeight: .infinity)
           }
         }
+        .frame(maxHeight: .infinity)
         .id(page)
         .transition(.push(from: .bottom))
       }
+      .frame(maxHeight: .infinity, alignment: .top)
     }
   }
 
