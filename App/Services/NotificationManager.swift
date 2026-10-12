@@ -104,6 +104,16 @@ enum NotificationManager {
     }
   }
 
+  /// Reminds the user two days before their free trial turns into a paid subscription.
+  static func scheduleTrialReminder(daysUntilEnd: Int) async {
+    guard daysUntilEnd > 2 else { return }
+    let content = UNMutableNotificationContent()
+    content.title = "Your Dipwise Pro trial ends in 2 days"
+    content.body = "Keep it and Dippy keeps watching everything. Cancel any time in Settings."
+    let trigger = UNTimeIntervalNotificationTrigger(timeInterval: TimeInterval((daysUntilEnd - 2) * 86_400), repeats: false)
+    try? await UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "trial-reminder", content: content, trigger: trigger))
+  }
+
   static func sendTest() async {
     let content = UNMutableNotificationContent()
     content.title = "NVDA entered your buy zone"

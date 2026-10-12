@@ -1,4 +1,5 @@
 import StoreKit
+import SwiftData
 import SwiftUI
 
 /// Dipwise Pro offer with yearly, monthly, and lifetime plans.
@@ -10,55 +11,26 @@ struct PaywallView: View {
   @State private var isLoading = true
   @State private var isPurchasing = false
   @State private var errorMessage: String?
+  @State private var flaps = 0
+  @State private var pulse = false
+  @State private var didPurchase = false
+  @State private var celebrationCount = 0
+  @Query private var holdings: [Holding]
+  @Environment(QuoteStore.self) private var quotes
 
-  private let features: [(String, String, String)] = [
-    ("scope", "Unlimited buy & sell zones", "Plan every stock you care about, not just three."),
-    ("dice.fill", "Odds for every alert", "See the chance each alert fires in 30 and 90 days, and how your past alerts worked out."),
-    ("sparkles", "20 smart alerts", "RSI, MACD, golden crosses, 52-week highs and lows, volume spikes, stop losses, profit targets, and more."),
-    ("person.3.fill", "The full crowd report", "Where investors buy and sell, momentum, live activity, and track records."),
-    ("dot.radiowaves.left.and.right", "Dip Radar", "Every popular stock trading inside the crowd's buy zone right now."),
-    ("leaf.fill", "Dividend calendar", "Your monthly income and upcoming payments."),
-    ("waveform.path.ecg", "Heads-up alerts", "A quiet nudge before a stock reaches your zone."),
-  ]
 
   private var selected: Product? { products.first { $0.id == selectedID } }
 
   var body: some View {
     ScrollView {
       VStack(spacing: 26) {
-        VStack(spacing: 14) {
-          LivelyOwl(mood: .calm)
-            .frame(width: 96, height: 110)
-          Text("Dipwise Pro")
-            .font(.largeTitle.bold())
-          Text("Invest calmly. Let the owl and the flock do the watching.")
-            .font(.headline)
-            .foregroundStyle(.white.opacity(0.7))
-            .multilineTextAlignment(.center)
-        }
-        .padding(.top, 40)
-
-        VStack(alignment: .leading, spacing: 16) {
-          ForEach(features, id: \.1) { feature in
-            HStack(alignment: .top, spacing: 14) {
-              Image(systemName: feature.0)
-                .font(.headline)
-                .foregroundStyle(Brand.mint)
-                .frame(width: 30)
-              VStack(alignment: .leading, spacing: 2) {
-                Text(feature.1).font(.headline)
-                Text(feature.2)
-                  .font(.subheadline)
-                  .foregroundStyle(.white.opacity(0.65))
-              }
-            }
-            .accessibilityElement(children: .combine)
-          }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-
+        header
+        personalPreview
+        comparison
         plans
-
+        if let offer = selected?.subscription?.introductoryOffer, offer.paymentMode == .freeTrial {
+          trialTimeline(offer)
+        }
         VStack(spacing: 12) {
           Button(action: purchase) {
             Group {
@@ -70,12 +42,14 @@ struct PaywallView: View {
             }
             .font(.headline)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 8)
+            .padding(.vertical, 10)
           }
           .buttonStyle(.borderedProminent)
-          .tint(Brand.mint)
+          .tint(Brand.buy)
           .foregroundStyle(Brand.owlInk)
           .disabled(selected == nil || isPurchasing)
+          .scaleEffect(pulse ? 1.02 : 1)
+          .animation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true), value: pulse)
 
           if let errorMessage {
             Text(errorMessage)
@@ -103,7 +77,7 @@ struct PaywallView: View {
           .foregroundStyle(.white.opacity(0.75))
         }
       }
-      .padding(.horizontal, 24)
+      .padding(.horizontal, 22)
       .padding(.bottom, 32)
       .frame(maxWidth: 560)
       .frame(maxWidth: .infinity)
@@ -120,7 +94,162 @@ struct PaywallView: View {
         .background(.white.opacity(0.12), in: .circle)
         .padding()
     }
+    .overlay {
+      if didPurchase { celebration }
+    }
     .task { await loadProducts() }
+    .task { await flapForever() }
+    .onAppear { pulse = true }
+  }
+
+  // MARK: Sections
+
+  private var header: some View {
+    VStack(spacing: 12) {
+      LivelyOwl(hopsOnTap: true, mood: .celebrating)
+        .frame(width: 104, height: 120)
+        .owlFlight(trigger: flaps, height: 30)
+        .padding(.top, 40)
+      Text("Let Dippy watch everything")
+        .font(.largeTitle.bold())
+        .multilineTextAlignment(.center)
+      Text("Unlimited alerts, 23 smart signals, odds for every plan, and the whole flock.")
+        .font(.headline)
+        .foregroundStyle(.white.opacity(0.7))
+        .multilineTextAlignment(.center)
+    }
+  }
+
+  /// A taste of Pro using the user's own data.
+  @ViewBuilder
+  private var personalPreview: some View {
+    if let alert = holdings.flatMap(\.activeAlerts).first, let quote = quotes[alert.symbol],
+       let odds = AlertOdds(rule: alert.rule, quote: quote) {
+      HStack(spacing: 14) {
+        Image(systemName: "dice.fill")
+          .font(.title2)
+          .foregroundStyle(Brand.amber)
+        VStack(alignment: .leading, spacing: 4) {
+          Text("Your \(alert.symbol) alert has a \(odds.monthChance.formatted(.percent.precision(.fractionLength(0)))) chance to fire within 30 days.")
+            .font(.subheadline.weight(.semibold))
+          Text("Pro shows odds, signals, and track records for every alert you set.")
+            .font(.caption)
+            .foregroundStyle(.white.opacity(0.65))
+        }
+      }
+      .padding(16)
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .background(.white.opacity(0.08), in: .rect(cornerRadius: 18))
+    }
+  }
+
+  private var comparison: some View {
+    let rows: [(String, String, String)] = [
+      ("Price alerts", "3", "Unlimited"),
+      ("Smart alerts (RSI, MACD, crosses…)", "–", "23 types"),
+      ("Odds for each alert", "1", "All"),
+      ("Live signals on your stocks", "2", "All"),
+      ("Full crowd report & Dip Radar", "Preview", "✓"),
+      ("Dividend calendar", "–", "✓"),
+      ("Heads-up before a zone", "–", "✓"),
+    ]
+    return VStack(spacing: 0) {
+      HStack {
+        Text("")
+          .frame(maxWidth: .infinity, alignment: .leading)
+        Text("Free")
+          .font(.caption.weight(.bold))
+          .foregroundStyle(.white.opacity(0.6))
+          .frame(width: 64)
+        Text("Pro")
+          .font(.caption.weight(.heavy))
+          .foregroundStyle(Brand.owlInk)
+          .padding(.horizontal, 10)
+          .padding(.vertical, 3)
+          .background(Brand.amber, in: .capsule)
+          .frame(width: 84)
+      }
+      .padding(.bottom, 8)
+      ForEach(rows, id: \.0) { row in
+        HStack {
+          Text(row.0)
+            .font(.subheadline)
+            .frame(maxWidth: .infinity, alignment: .leading)
+          Text(row.1)
+            .font(.subheadline)
+            .foregroundStyle(.white.opacity(0.5))
+            .frame(width: 64)
+          Text(row.2)
+            .font(.subheadline.weight(.bold))
+            .foregroundStyle(Brand.buy)
+            .frame(width: 84)
+        }
+        .padding(.vertical, 9)
+        .accessibilityElement(children: .combine)
+        if row.0 != rows.last?.0 {
+          Divider().overlay(.white.opacity(0.1))
+        }
+      }
+    }
+    .padding(16)
+    .background(.white.opacity(0.06), in: .rect(cornerRadius: 20))
+  }
+
+  private func trialTimeline(_ offer: Product.SubscriptionOffer) -> some View {
+    let days = offer.period.unit == .week ? offer.period.value * 7 : offer.period.value
+    let steps: [(String, String, String)] = [
+      ("lock.open.fill", "Today", "Everything unlocks. Dippy gets to work."),
+      ("bell.fill", "Day \(max(days - 2, 1))", "We'll remind you before the trial ends."),
+      ("star.fill", "Day \(days)", "Your subscription starts. Cancel any time before."),
+    ]
+    return VStack(alignment: .leading, spacing: 0) {
+      ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
+        HStack(alignment: .top, spacing: 14) {
+          VStack(spacing: 0) {
+            Image(systemName: step.0)
+              .font(.subheadline.weight(.bold))
+              .foregroundStyle(Brand.owlInk)
+              .frame(width: 32, height: 32)
+              .background(index == 0 ? Brand.buy : Brand.amber, in: .circle)
+            if index < steps.count - 1 {
+              Rectangle().fill(.white.opacity(0.2)).frame(width: 2, height: 28)
+            }
+          }
+          VStack(alignment: .leading, spacing: 2) {
+            Text(step.1).font(.headline)
+            Text(step.2).font(.subheadline).foregroundStyle(.white.opacity(0.65))
+          }
+          Spacer(minLength: 0)
+        }
+        .accessibilityElement(children: .combine)
+      }
+    }
+    .padding(16)
+    .background(.white.opacity(0.06), in: .rect(cornerRadius: 20))
+  }
+
+  private var celebration: some View {
+    ZStack {
+      Brand.nightMiddle.opacity(0.92).ignoresSafeArea()
+      VStack(spacing: 16) {
+        LivelyOwl(mood: .celebrating)
+          .frame(width: 140, height: 160)
+          .owlFlight(trigger: flaps, height: 50)
+        Text("Welcome to Pro!")
+          .font(.largeTitle.bold())
+        Text("Dippy is watching everything now.")
+          .foregroundStyle(.white.opacity(0.7))
+      }
+      Confetti(trigger: celebrationCount)
+    }
+    .transition(.opacity)
+  }
+
+  private func flapForever() async {
+    while !Task.isCancelled {
+      try? await Task.sleep(for: .seconds(3.5))
+      flaps += 1
+    }
   }
 
   // MARK: Plans
@@ -219,6 +348,13 @@ struct PaywallView: View {
             await transaction.finish()
           }
           await subscription.refreshEntitlements()
+          if let offer = selected.subscription?.introductoryOffer, offer.paymentMode == .freeTrial {
+            await NotificationManager.scheduleTrialReminder(daysUntilEnd: offer.period.unit == .week ? offer.period.value * 7 : offer.period.value)
+          }
+          withAnimation(.smooth) { didPurchase = true }
+          celebrationCount += 1
+          flaps += 1
+          try? await Task.sleep(for: .seconds(2.2))
           dismiss()
         case .pending:
           errorMessage = "Your purchase is pending approval."
