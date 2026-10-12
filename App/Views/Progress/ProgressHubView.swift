@@ -55,6 +55,7 @@ struct ProgressHubView: View {
             .foregroundStyle(.secondary)
         }
         Spacer()
+        InfoButton(topic: .streak)
       }
       WeekStrip(progress: progress)
       if !progress.isBriefDoneToday {
@@ -145,7 +146,7 @@ struct ProgressHubView: View {
     let buys = journal.filter { $0.journalAction == .bought && $0.journalPrice > 0 }
     let returns = buys.compactMap { alert in quotes[alert.symbol].map { $0.price / alert.journalPrice - 1 } }
     return VStack(alignment: .leading, spacing: 14) {
-      SectionHeader(title: "Dip Journal", subtitle: "What you did when your alerts fired")
+      SectionHeader(title: "Dip Journal", subtitle: "What you did when your alerts fired") { InfoButton(topic: .dipJournal) }
       if journal.isEmpty {
         EmptyHint(systemImage: "book.closed", text: "When an alert fires, log whether you bought, sold, held, or skipped. Your own track record appears here.")
       } else {

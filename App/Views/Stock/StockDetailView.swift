@@ -171,8 +171,11 @@ struct StockDetailView: View {
     let fired = (holding.alerts ?? []).filter { !$0.isActive }.sorted { ($0.triggeredAt ?? $0.createdAt) > ($1.triggeredAt ?? $1.createdAt) }
     return VStack(alignment: .leading, spacing: 14) {
       SectionHeader(title: "Your Plan", subtitle: "Everything Dippy watches on \(symbol)") {
-        Button("Build", systemImage: "wand.and.stars") { showsPlanBuilder = true }
-          .font(.subheadline.weight(.semibold))
+        HStack(spacing: 4) {
+          InfoButton(topic: .zones)
+          Button("Add alerts", systemImage: "plus") { showsPlanBuilder = true }
+            .font(.subheadline.weight(.semibold))
+        }
       }
       VStack(alignment: .leading, spacing: 0) {
         if let quote, ![holding.buyZone, holding.sellZone].compactMap { $0 }.isEmpty {
@@ -198,14 +201,14 @@ struct StockDetailView: View {
             LivelyOwl().frame(width: 56, height: 64)
             Text("No plan for \(symbol) yet")
               .font(.headline)
-            Text("Tell Dippy where you'd buy more and where you'd take profit.")
+            Text("Pick a buy zone, a sell zone, and as many smart alerts as you like.")
               .font(.subheadline)
               .foregroundStyle(.secondary)
               .multilineTextAlignment(.center)
             Button {
               showsPlanBuilder = true
             } label: {
-              Label("Build my plan", systemImage: "wand.and.stars")
+              Label("Add alerts", systemImage: "plus")
                 .font(.headline)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 4)

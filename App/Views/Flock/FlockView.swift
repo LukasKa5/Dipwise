@@ -122,9 +122,13 @@ struct FlockView: View {
 
   @ViewBuilder
   private var radar: some View {
-    Text("Stocks trading inside the range where most investors plan to buy.")
-      .font(.subheadline)
-      .foregroundStyle(.secondary)
+    HStack {
+      Text("Stocks trading inside the range where most investors plan to buy.")
+        .font(.subheadline)
+        .foregroundStyle(.secondary)
+      Spacer()
+      InfoButton(topic: .radar)
+    }
     if flock.radar.isEmpty {
       EmptyHint(systemImage: "scope", text: flock.isLoadingOverview ? "Scanning the flock…" : "No popular stocks are in the crowd's buy zone right now.")
     } else {

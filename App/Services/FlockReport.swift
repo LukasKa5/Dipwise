@@ -40,6 +40,8 @@ struct FlockReport {
 
   var medianBuy: Double? { Self.quantile(buyLevels, 0.5) }
   var medianSell: Double? { Self.quantile(sellLevels, 0.5) }
+  var averageBuy: Double? { buyLevels.isEmpty ? nil : buyLevels.reduce(0, +) / Double(buyLevels.count) }
+  var averageSell: Double? { sellLevels.isEmpty ? nil : sellLevels.reduce(0, +) / Double(sellLevels.count) }
 
   /// The middle half of buy targets: where the crowd plans to buy.
   var buyZone: ClosedRange<Double>? {

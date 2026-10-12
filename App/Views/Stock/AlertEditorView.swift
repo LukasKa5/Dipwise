@@ -235,7 +235,11 @@ struct AlertEditorView: View {
             .accessibilityAddTraits(smartKind == option ? .isSelected : [])
           }
         } header: {
-          Text("Choose a smart alert")
+          HStack {
+            Text("Choose a smart alert")
+            Spacer()
+            InfoButton(topic: .category(smartCategory))
+          }
         }
 
         Section {
@@ -693,9 +697,13 @@ struct RuleSummary: View {
   var body: some View {
     let odds = AlertOdds(rule: rule, quote: quote)
     VStack(alignment: .leading, spacing: 10) {
-      Text("Alert me when \(symbol) is ready:")
-        .font(.subheadline)
-        .foregroundStyle(.secondary)
+      HStack {
+        Text("Alert me when \(symbol) is ready:")
+          .font(.subheadline)
+          .foregroundStyle(.secondary)
+        Spacer()
+        InfoButton(topic: rule.kind.category == .zones ? .zones : .alert(rule.kind))
+      }
       Text(rule.summary(format: quote.formatted))
         .font(.title3.bold())
         .foregroundStyle(rule.kind.side.color)
@@ -705,9 +713,13 @@ struct RuleSummary: View {
           OddsPill(title: "30 days", value: odds.monthChance)
           OddsPill(title: "90 days", value: odds.quarterChance)
         }
-        Label(odds.lastTriggeredText, systemImage: "clock.arrow.circlepath")
-          .font(.caption)
-          .foregroundStyle(.secondary)
+        HStack {
+          Label(odds.lastTriggeredText, systemImage: "clock.arrow.circlepath")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+          Spacer()
+          InfoButton(topic: .odds)
+        }
       }
       if isLocked {
         Label("Smart alerts are part of Dipwise Pro", systemImage: "lock.fill")
@@ -766,7 +778,7 @@ struct FlockComparisonRow: View {
         LabeledContent("Crowd \(side == .buy ? "buy" : "sell") zone") {
           Text("\(format(zone.lowerBound))–\(format(zone.upperBound))")
             .monospacedDigit()
-            .foregroundStyle(side.color)
+            .foregroundStyle(Palette.crowd)
         }
       }
       if isPro {

@@ -128,6 +128,7 @@ struct FlockDetailView: View {
         Label("From real alerts", systemImage: "person.3.fill")
           .font(.caption.weight(.semibold))
           .foregroundStyle(.secondary)
+        InfoButton(topic: .conviction)
       }
       HStack(spacing: 18) {
         ConvictionGauge(score: report.conviction)
@@ -160,6 +161,7 @@ struct FlockDetailView: View {
         Label("Anonymous", systemImage: "eye.slash.fill")
           .font(.caption.weight(.semibold))
           .foregroundStyle(.secondary)
+        InfoButton(topic: .crowdZone)
       }
       VStack(alignment: .leading, spacing: 14) {
         Text(report.buyShare >= 0.5 ? "The crowd is hunting a dip" : "The crowd is taking profit")
@@ -180,9 +182,15 @@ struct FlockDetailView: View {
         VStack(spacing: 8) {
           if let zone = report.buyZone {
             zoneRow(title: "Buy zone", zone: zone, count: report.buyLevels.count, color: Palette.buy)
+            if let median = report.medianBuy, let average = report.averageBuy {
+              statLine(median: median, average: average)
+            }
           }
           if let zone = report.sellZone {
             zoneRow(title: "Sell zone", zone: zone, count: report.sellLevels.count, color: Palette.sell)
+            if let median = report.medianSell, let average = report.averageSell {
+              statLine(median: median, average: average)
+            }
           }
         }
         if let zone = report.buyZone {
@@ -202,6 +210,17 @@ struct FlockDetailView: View {
     }
     .padding(18)
     .cardStyle()
+  }
+
+  private func statLine(median: Double, average: Double) -> some View {
+    HStack {
+      Text("Median \(format(median)) · Average \(format(average))")
+        .font(.caption.monospacedDigit())
+        .foregroundStyle(.secondary)
+      Spacer()
+      InfoButton(topic: .medianAverage)
+    }
+    .padding(.leading, 16)
   }
 
   private func zoneRow(title: String, zone: ClosedRange<Double>, count: Int, color: Color) -> some View {

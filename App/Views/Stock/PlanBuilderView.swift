@@ -1,7 +1,7 @@
 import SwiftData
 import SwiftUI
 
-/// Set up a stock's whole plan at once: one buy zone, one sell zone, and any smart alerts.
+/// Add several alerts to a stock at once: one buy zone, one sell zone, and any smart alerts.
 struct PlanBuilderView: View {
   var holding: Holding
 
@@ -12,7 +12,6 @@ struct PlanBuilderView: View {
   @Environment(SubscriptionManager.self) private var subscription
   @Environment(ProgressStore.self) private var progress
   @State private var draft = PlanDraft()
-  @State private var template: PlanTemplate?
   @State private var budget: Double?
   @State private var showsPaywall = false
 
@@ -51,12 +50,6 @@ struct PlanBuilderView: View {
     NavigationStack {
       Form {
         Group {
-          Section {
-            templates
-          } header: {
-            Text("Start from a template")
-          }
-
           if let quote {
             Section {
               ZoneTrack(
@@ -101,7 +94,11 @@ struct PlanBuilderView: View {
               .pickerStyle(.segmented)
             }
           } header: {
-            Text("Buy & sell")
+            HStack {
+              Text("Buy & sell")
+              Spacer()
+              InfoButton(topic: .zones)
+            }
           } footer: {
             Text(holding.buyZone != nil || holding.sellZone != nil ? "This replaces \(holding.symbol)'s current buy and sell zones." : "One buy zone and one sell zone keep the plan simple.")
           }
@@ -111,65 +108,33 @@ struct PlanBuilderView: View {
               SmartChips(kinds: AlertKind.smart.filter { $0.category == category && (holding.isOwned || !$0.needsCost) }, selection: $draft.smart, isPro: subscription.isPro)
                 .listRowInsets(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12))
             } header: {
-              Text(category.title)
+              HStack {
+                Text(category.title)
+                Spacer()
+                InfoButton(topic: .category(category))
+              }
             }
           }
         }
         .dipwiseRows()
       }
       .dipwiseListStyle()
-      .navigationTitle("Plan \(holding.symbol)")
+      .navigationTitle("Alerts for \(holding.symbol)")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
         ToolbarItem(placement: .confirmationAction) {
-          Button(needsPro ? "Unlock" : "Save Plan") {
+          Button(needsPro ? "Unlock" : "Save") {
             if needsPro { showsPaywall = true } else { save() }
           }
           .disabled(rules.isEmpty || quote == nil)
         }
       }
-      .onChange(of: draft) { if template.map(PlanDraft.init(template:)) != draft { template = nil } }
       .sheet(isPresented: $showsPaywall) { PaywallView() }
       .onAppear {
         draft.smart = Set(holding.smartAlerts.map(\.kind))
       }
     }
-  }
-
-  private var templates: some View {
-    ScrollView(.horizontal) {
-      HStack(spacing: 10) {
-        ForEach(PlanTemplate.allCases) { item in
-          Button {
-            withAnimation(.snappy) {
-              template = item
-              draft = PlanDraft(template: item)
-            }
-          } label: {
-            VStack(alignment: .leading, spacing: 6) {
-              Image(systemName: item.systemImage)
-                .font(.title3)
-              Text(item.title)
-                .font(.subheadline.weight(.bold))
-              Text(item.subtitle)
-                .font(.caption)
-                .foregroundStyle(template == item ? .white.opacity(0.85) : .secondary)
-                .lineLimit(2)
-                .multilineTextAlignment(.leading)
-            }
-            .foregroundStyle(template == item ? .white : .primary)
-            .frame(width: 140, height: 104, alignment: .topLeading)
-            .padding(12)
-            .background(template == item ? AnyShapeStyle(Brand.nightMiddle) : AnyShapeStyle(Palette.canvas), in: .rect(cornerRadius: 16))
-          }
-          .buttonStyle(.plain)
-          .accessibilityAddTraits(template == item ? .isSelected : [])
-        }
-      }
-      .padding(.horizontal, 4)
-    }
-    .scrollIndicators(.hidden)
   }
 
   private func save() {

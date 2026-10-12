@@ -247,7 +247,7 @@ private struct StockAlertsCard: View {
       Divider().padding(.horizontal, 16)
 
       if alerts.isEmpty {
-        Text("No alerts yet. Give \(holding.symbol) a plan.")
+        Text("No alerts yet for \(holding.symbol).")
           .font(.subheadline)
           .foregroundStyle(.secondary)
           .padding(.horizontal, 18)
@@ -273,17 +273,11 @@ private struct StockAlertsCard: View {
         }
       }
 
-      HStack(spacing: 10) {
-        Button(action: add) {
-          Label("Add alert", systemImage: "plus")
-            .frame(maxWidth: .infinity)
-        }
-        Button(action: plan) {
-          Label("Plan", systemImage: "wand.and.stars")
-            .frame(maxWidth: .infinity)
-        }
+      Button(action: plan) {
+        Label("Add alerts", systemImage: "plus")
+          .font(.subheadline.weight(.semibold))
+          .frame(maxWidth: .infinity)
       }
-      .font(.subheadline.weight(.semibold))
       .buttonStyle(.bordered)
       .padding(12)
     }

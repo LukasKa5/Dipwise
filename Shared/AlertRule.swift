@@ -32,9 +32,9 @@ enum AlertCategory: String, CaseIterable, Identifiable {
 
 enum AlertKind: String, Codable, CaseIterable, Identifiable {
   case buyZone, sellZone, priceBelow, priceAbove
-  case dropFromHigh, weeklyDrop, dailyMove, gapMove, newLow, newHigh
+  case dropFromHigh, weeklyDrop, dailyMove, gapMove, newLow, newHigh, reboundFromLow
   case belowAverage, aboveAverage, goldenCross, deathCross
-  case rsiOversold, rsiOverbought, macdBullish, macdBearish, volumeSpike
+  case rsiOversold, rsiOverbought, macdBullish, macdBearish, bollingerLow, bollingerHigh, volumeSpike
   case trailingStop, stopLoss, profitTarget, breakEven
   case dividendSoon
 
@@ -43,9 +43,9 @@ enum AlertKind: String, Codable, CaseIterable, Identifiable {
   var category: AlertCategory {
     switch self {
     case .buyZone, .sellZone, .priceBelow, .priceAbove: .zones
-    case .dropFromHigh, .weeklyDrop, .dailyMove, .gapMove, .newLow, .newHigh: .moves
+    case .dropFromHigh, .weeklyDrop, .dailyMove, .gapMove, .newLow, .newHigh, .reboundFromLow: .moves
     case .belowAverage, .aboveAverage, .goldenCross, .deathCross: .trend
-    case .rsiOversold, .rsiOverbought, .macdBullish, .macdBearish, .volumeSpike: .momentum
+    case .rsiOversold, .rsiOverbought, .macdBullish, .macdBearish, .bollingerLow, .bollingerHigh, .volumeSpike: .momentum
     case .trailingStop, .stopLoss, .profitTarget, .breakEven: .position
     case .dividendSoon: .income
     }
@@ -63,6 +63,9 @@ enum AlertKind: String, Codable, CaseIterable, Identifiable {
     case .gapMove: "Opening gap"
     case .newLow: "New 52-week low"
     case .newHigh: "New 52-week high"
+    case .reboundFromLow: "Rebound from low"
+    case .bollingerLow: "Lower band touch"
+    case .bollingerHigh: "Upper band touch"
     case .belowAverage: "Falls below average"
     case .aboveAverage: "Rises above average"
     case .goldenCross: "Golden cross"
@@ -92,6 +95,9 @@ enum AlertKind: String, Codable, CaseIterable, Identifiable {
     case .gapMove: "The stock opens far above or below yesterday's close."
     case .newLow: "The price hits its lowest level in a year."
     case .newHigh: "The price hits its highest level in a year."
+    case .reboundFromLow: "The stock bounces a set amount off its 52-week low. A sign the bottom may be in."
+    case .bollingerLow: "The price drops to the bottom of its normal range (Bollinger Band). Often a short-term dip."
+    case .bollingerHigh: "The price stretches to the top of its normal range (Bollinger Band). Often a short-term peak."
     case .belowAverage: "The price drops under its long-term average, a common warning sign."
     case .aboveAverage: "The price climbs back over its long-term average."
     case .goldenCross: "The 50-day average crosses above the 200-day, a classic bullish signal."
@@ -121,6 +127,9 @@ enum AlertKind: String, Codable, CaseIterable, Identifiable {
     case .gapMove: "arrow.up.and.down.circle"
     case .newLow: "arrow.down.to.line.circle"
     case .newHigh: "crown.fill"
+    case .reboundFromLow: "arrow.uturn.up"
+    case .bollingerLow: "arrow.down.to.line.compact"
+    case .bollingerHigh: "arrow.up.to.line.compact"
     case .belowAverage: "waveform.path.ecg"
     case .aboveAverage: "waveform.path.ecg.rectangle"
     case .goldenCross: "sparkles"
@@ -140,14 +149,14 @@ enum AlertKind: String, Codable, CaseIterable, Identifiable {
 
   var side: TradeSide {
     switch self {
-    case .buyZone, .priceBelow, .dropFromHigh, .weeklyDrop, .newLow, .goldenCross, .rsiOversold, .macdBullish: .buy
-    case .sellZone, .priceAbove, .newHigh, .deathCross, .rsiOverbought, .macdBearish, .trailingStop, .stopLoss, .profitTarget, .breakEven: .sell
+    case .buyZone, .priceBelow, .dropFromHigh, .weeklyDrop, .newLow, .goldenCross, .rsiOversold, .macdBullish, .bollingerLow, .reboundFromLow: .buy
+    case .sellZone, .priceAbove, .newHigh, .deathCross, .rsiOverbought, .macdBearish, .bollingerHigh, .trailingStop, .stopLoss, .profitTarget, .breakEven: .sell
     case .dailyMove, .gapMove, .belowAverage, .aboveAverage, .volumeSpike, .dividendSoon: .watch
     }
   }
 
   var isZone: Bool { self == .buyZone || self == .sellZone }
-  var usesPercent: Bool { [.dropFromHigh, .weeklyDrop, .dailyMove, .gapMove, .trailingStop, .stopLoss, .profitTarget].contains(self) }
+  var usesPercent: Bool { [.dropFromHigh, .weeklyDrop, .dailyMove, .gapMove, .trailingStop, .stopLoss, .profitTarget, .reboundFromLow].contains(self) }
   var usesAverage: Bool { self == .belowAverage || self == .aboveAverage }
   var usesLevel: Bool { [.rsiOversold, .rsiOverbought, .volumeSpike].contains(self) }
   /// Alerts measured from what the user paid.
@@ -192,6 +201,9 @@ struct AlertRule: Codable, Hashable {
     case .profitTarget: lower * (1 + percent)
     case .newLow: quote.previousLow
     case .newHigh: quote.previousHigh
+    case .reboundFromLow: quote.low52 * (1 + percent)
+    case .bollingerLow: quote.bollinger?.lower
+    case .bollingerHigh: quote.bollinger?.upper
     default: nil
     }
   }
@@ -199,7 +211,7 @@ struct AlertRule: Codable, Hashable {
   /// Level-based rules fire when the price falls to (true) or rises to (false) the level.
   private var triggersBelow: Bool {
     switch kind {
-    case .buyZone, .priceBelow, .dropFromHigh, .trailingStop, .belowAverage, .stopLoss, .newLow: true
+    case .buyZone, .priceBelow, .dropFromHigh, .trailingStop, .belowAverage, .stopLoss, .newLow, .bollingerLow: true
     default: false
     }
   }
@@ -292,6 +304,9 @@ struct AlertRule: Codable, Hashable {
     case .gapMove: return "Opens \(p) higher or lower"
     case .newLow: return "Hits a new 52-week low"
     case .newHigh: return "Hits a new 52-week high"
+    case .reboundFromLow: return "Bounces \(p) off its 52-week low"
+    case .bollingerLow: return "Touches its lower Bollinger Band"
+    case .bollingerHigh: return "Touches its upper Bollinger Band"
     case .belowAverage: return "Falls below its \(averageDays)-day average"
     case .aboveAverage: return "Rises above its \(averageDays)-day average"
     case .goldenCross: return "50-day crosses above 200-day"
@@ -329,6 +344,7 @@ struct AlertRule: Codable, Hashable {
     case .rsiOversold: rule.level = 30
     case .rsiOverbought: rule.level = 70
     case .volumeSpike: rule.level = 2
+    case .reboundFromLow: rule.percent = 0.15
     default: break
     }
     return rule

@@ -120,7 +120,7 @@ struct PortfolioView: View {
     }
     let palette: [Color] = [Palette.buy, Palette.amber, .teal, .indigo, .pink, .orange, .cyan, .purple, .yellow, .gray]
     return VStack(alignment: .leading, spacing: 14) {
-      SectionHeader(title: "Allocation")
+      SectionHeader(title: "Allocation") { InfoButton(topic: .allocation) }
       VStack(spacing: 18) {
         Picker("Group by", selection: $allocation) {
           ForEach(AllocationMode.allCases) { Text($0.rawValue).tag($0) }
@@ -176,7 +176,10 @@ struct PortfolioView: View {
   private func dividends(_ summary: PortfolioSummary) -> some View {
     VStack(alignment: .leading, spacing: 14) {
       SectionHeader(title: "Dividends", subtitle: "Projected from the last twelve months") {
-        if !subscription.isPro { ProBadge() }
+        HStack(spacing: 4) {
+          if !subscription.isPro { ProBadge() }
+          InfoButton(topic: .dividends)
+        }
       }
       VStack(alignment: .leading, spacing: 18) {
         HStack(spacing: 12) {
@@ -301,8 +304,11 @@ struct PortfolioView: View {
   private func buyingPower(_ summary: PortfolioSummary) -> some View {
     VStack(alignment: .leading, spacing: 14) {
       SectionHeader(title: "Buying Power", subtitle: "Cash ready for your buy zones") {
-        Button("Edit") { showsCashEditor = true }
-          .font(.subheadline.weight(.semibold))
+        HStack(spacing: 4) {
+          InfoButton(topic: .buyingPower)
+          Button("Edit") { showsCashEditor = true }
+            .font(.subheadline.weight(.semibold))
+        }
       }
       VStack(alignment: .leading, spacing: 12) {
         HStack {

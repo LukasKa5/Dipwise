@@ -1,43 +1,6 @@
 import Foundation
 
-/// A ready-made plan the builder can apply in one tap.
-enum PlanTemplate: String, CaseIterable, Identifiable {
-  case dipHunter
-  case balanced
-  case protectGains
-  case dividendBuilder
-
-  var id: Self { self }
-
-  var title: String {
-    switch self {
-    case .dipHunter: "Dip hunter"
-    case .balanced: "Balanced"
-    case .protectGains: "Protect gains"
-    case .dividendBuilder: "Income builder"
-    }
-  }
-
-  var subtitle: String {
-    switch self {
-    case .dipHunter: "Buy zone, oversold and fast-drop alerts"
-    case .balanced: "Buy and sell zones with a trailing stop"
-    case .protectGains: "Sell zone, stop loss, trend warnings"
-    case .dividendBuilder: "Patient buys plus dividend reminders"
-    }
-  }
-
-  var systemImage: String {
-    switch self {
-    case .dipHunter: "scope"
-    case .balanced: "scalemass.fill"
-    case .protectGains: "shield.lefthalf.filled"
-    case .dividendBuilder: "leaf.fill"
-    }
-  }
-}
-
-/// The choices in the plan builder, turned into alert rules.
+/// The choices in the multi-alert builder, turned into alert rules.
 struct PlanDraft: Equatable {
   enum Depth: String, CaseIterable, Identifiable {
     case shallow, standard, deep
@@ -79,19 +42,6 @@ struct PlanDraft: Equatable {
   var smart: Set<AlertKind> = []
 
   init() {}
-
-  init(template: PlanTemplate) {
-    switch template {
-    case .dipHunter:
-      buyZone = true; depth = .standard; sellZone = false; smart = [.rsiOversold, .weeklyDrop]
-    case .balanced:
-      buyZone = true; sellZone = true; smart = [.trailingStop]
-    case .protectGains:
-      buyZone = false; sellZone = true; sellTarget = .near; smart = [.stopLoss, .belowAverage, .deathCross]
-    case .dividendBuilder:
-      buyZone = true; depth = .deep; sellZone = false; smart = [.dropFromHigh, .dividendSoon]
-    }
-  }
 
   func rules(price: Double, cost: Double, round: (Double) -> Double) -> [(rule: AlertRule, budget: Double)] {
     var rules: [(AlertRule, Double)] = []

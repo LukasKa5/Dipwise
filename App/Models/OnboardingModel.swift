@@ -41,15 +41,6 @@ enum InvestorStyle: String, CaseIterable, Identifiable {
     case .other: "Tell me more! I'm all ears. Well, tufts."
     }
   }
-
-  var template: PlanTemplate {
-    switch self {
-    case .dips: .dipHunter
-    case .income: .dividendBuilder
-    case .protect: .protectGains
-    case .calm, .other: .balanced
-    }
-  }
 }
 
 /// State for the onboarding flow, which ends by creating the user's first watchlist and plan.

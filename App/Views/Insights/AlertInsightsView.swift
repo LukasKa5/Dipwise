@@ -52,9 +52,12 @@ struct AlertInsightsView: View {
       }
       .frame(width: 92, height: 92)
       VStack(alignment: .leading, spacing: 4) {
-        Text("Plan health")
-          .font(.subheadline)
-          .foregroundStyle(.secondary)
+        HStack(spacing: 2) {
+          Text("Plan health")
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+          InfoButton(topic: .planHealth)
+        }
         Text(insights.healthLabel)
           .font(.title2.bold())
         Text("Every stock needs a buy zone, a sell zone, and protection.")

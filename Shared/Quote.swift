@@ -120,6 +120,15 @@ struct Quote: Codable, Hashable {
     return (lastLine, lastSignal)
   }
 
+  /// Bollinger Bands (20-day average ± 2 standard deviations).
+  var bollinger: (lower: Double, middle: Double, upper: Double)? {
+    guard closes.count >= 20 else { return nil }
+    let window = closes.suffix(20)
+    let mean = window.reduce(0, +) / 20
+    let deviation = sqrt(window.reduce(0) { $0 + ($1 - mean) * ($1 - mean) } / 20)
+    return (mean - 2 * deviation, mean, mean + 2 * deviation)
+  }
+
   /// Days until the next expected dividend.
   var daysToNextDividend: Int? {
     projectedDividends.first.map { Calendar.current.dateComponents([.day], from: .now, to: $0.date).day ?? 0 }
