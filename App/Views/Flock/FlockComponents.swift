@@ -55,6 +55,8 @@ struct RadarCard: View {
         VStack(alignment: .leading, spacing: 1) {
           Text(item.symbol).font(.headline)
           Text(format(item.price))
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
             .font(.subheadline.monospacedDigit())
             .foregroundStyle(.secondary)
         }

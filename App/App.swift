@@ -34,8 +34,14 @@ struct DipwiseApp: App {
     }
     .modelContainer(Self.container)
     .onChange(of: scenePhase) { _, phase in
-      if phase == .background {
+      switch phase {
+      case .background:
         BackgroundRefresh.schedule()
+        OwlWake.shared.appDidEnterBackground()
+      case .active:
+        OwlWake.shared.appDidBecomeActive()
+      default:
+        break
       }
     }
     .backgroundTask(.appRefresh(BackgroundRefresh.identifier)) {

@@ -1,5 +1,4 @@
 import StoreKit
-import SwiftData
 import SwiftUI
 
 /// Dipwise Pro offer with yearly, monthly, and lifetime plans.
@@ -15,9 +14,6 @@ struct PaywallView: View {
   @State private var pulse = false
   @State private var didPurchase = false
   @State private var celebrationCount = 0
-  @Query private var holdings: [Holding]
-  @Environment(QuoteStore.self) private var quotes
-
 
   private var selected: Product? { products.first { $0.id == selectedID } }
 
@@ -25,63 +21,31 @@ struct PaywallView: View {
     ScrollView {
       VStack(spacing: 26) {
         header
-        personalPreview
         comparison
         plans
         if let offer = selected?.subscription?.introductoryOffer, offer.paymentMode == .freeTrial {
           trialTimeline(offer)
         }
-        VStack(spacing: 12) {
-          Button(action: purchase) {
-            Group {
-              if isPurchasing {
-                ProgressView().tint(Brand.owlInk)
-              } else {
-                Text(ctaTitle)
-              }
+        HStack(spacing: 18) {
+          Button("Restore Purchases") {
+            Task {
+              await subscription.restore()
+              if subscription.isPro { dismiss() }
             }
-            .font(.headline)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 10)
           }
-          .buttonStyle(.borderedProminent)
-          .tint(Brand.buy)
-          .foregroundStyle(Brand.owlInk)
-          .disabled(selected == nil || isPurchasing)
-          .scaleEffect(pulse ? 1.02 : 1)
-          .animation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true), value: pulse)
-
-          if let errorMessage {
-            Text(errorMessage)
-              .font(.footnote)
-              .foregroundStyle(Brand.loss)
-              .multilineTextAlignment(.center)
-          }
-
-          Text(finePrint)
-            .font(.caption)
-            .foregroundStyle(.white.opacity(0.55))
-            .multilineTextAlignment(.center)
-
-          HStack(spacing: 18) {
-            Button("Restore") {
-              Task {
-                await subscription.restore()
-                if subscription.isPro { dismiss() }
-              }
-            }
-            Link("Terms", destination: AppLinks.termsOfUse)
-            Link("Privacy", destination: AppLinks.privacyPolicy)
-          }
-          .font(.footnote.weight(.semibold))
-          .foregroundStyle(.white.opacity(0.75))
+          Link("Terms", destination: AppLinks.termsOfUse)
+          Link("Privacy", destination: AppLinks.privacyPolicy)
         }
+        .font(.footnote.weight(.semibold))
+        .foregroundStyle(.white.opacity(0.75))
       }
       .padding(.horizontal, 22)
-      .padding(.bottom, 32)
+      .padding(.bottom, 24)
       .frame(maxWidth: 560)
       .frame(maxWidth: .infinity)
     }
+    .scrollIndicators(.hidden)
+    .safeAreaInset(edge: .bottom, spacing: 0) { purchaseBar }
     .foregroundStyle(.white)
     .background(Brand.nightMiddle.ignoresSafeArea())
     .environment(\.colorScheme, .dark)
@@ -102,6 +66,52 @@ struct PaywallView: View {
     .onAppear { pulse = true }
   }
 
+  /// Always visible, so the next step is one tap away wherever the user has scrolled.
+  private var purchaseBar: some View {
+    VStack(spacing: 10) {
+      Button(action: purchase) {
+        Group {
+          if isPurchasing {
+            ProgressView().tint(Brand.owlInk)
+          } else {
+            Text(ctaTitle)
+          }
+        }
+        .font(.headline)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 10)
+      }
+      .buttonStyle(.borderedProminent)
+      .tint(Brand.buy)
+      .foregroundStyle(Brand.owlInk)
+      .disabled(selected == nil || isPurchasing)
+      .scaleEffect(pulse ? 1.02 : 1)
+      .animation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true), value: pulse)
+
+      if let errorMessage {
+        Text(errorMessage)
+          .font(.footnote)
+          .foregroundStyle(Brand.loss)
+          .multilineTextAlignment(.center)
+      }
+
+      Text(finePrint)
+        .font(.caption)
+        .foregroundStyle(.white.opacity(0.6))
+        .multilineTextAlignment(.center)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+    .padding(.horizontal, 22)
+    .padding(.top, 12)
+    .padding(.bottom, 8)
+    .frame(maxWidth: 560)
+    .frame(maxWidth: .infinity)
+    .background {
+      LinearGradient(colors: [Brand.nightMiddle.opacity(0), Brand.nightMiddle], startPoint: .top, endPoint: .init(x: 0.5, y: 0.25))
+        .ignoresSafeArea()
+    }
+  }
+
   // MARK: Sections
 
   private var header: some View {
@@ -113,86 +123,73 @@ struct PaywallView: View {
       Text("Let Dippy watch everything")
         .font(.largeTitle.bold())
         .multilineTextAlignment(.center)
-      Text("Unlimited alerts, 27 smart alerts, odds for every plan, and the whole flock.")
+      Text("Buy the dips and sell the highs with a plan, without watching charts all day.")
         .font(.headline)
         .foregroundStyle(.white.opacity(0.7))
         .multilineTextAlignment(.center)
     }
   }
 
-  /// A taste of Pro using the user's own data.
-  @ViewBuilder
-  private var personalPreview: some View {
-    if let alert = holdings.flatMap(\.activeAlerts).first, let quote = quotes[alert.symbol],
-       let odds = AlertOdds(rule: alert.rule, quote: quote) {
-      HStack(spacing: 14) {
-        Image(systemName: "dice.fill")
-          .font(.title2)
-          .foregroundStyle(Brand.amber)
-        VStack(alignment: .leading, spacing: 4) {
-          Text("Your \(alert.symbol) alert has a \(odds.monthChance.formatted(.percent.precision(.fractionLength(0)))) chance to fire within 30 days.")
-            .font(.subheadline.weight(.semibold))
-          Text("Pro shows odds, signals, and track records for every alert you set.")
-            .font(.caption)
-            .foregroundStyle(.white.opacity(0.65))
-        }
-      }
-      .padding(16)
-      .frame(maxWidth: .infinity, alignment: .leading)
-      .background(.white.opacity(0.08), in: .rect(cornerRadius: 18))
-    }
-  }
-
+  /// Only what changes with Pro, with the Pro column highlighted.
   private var comparison: some View {
-    let rows: [(String, String, String)] = [
-      ("Price alerts", "3", "Unlimited"),
-      ("Smart alerts (RSI, MACD, crosses…)", "–", "27 types"),
-      ("Odds for each alert", "1", "All"),
-      ("Live signals on your stocks", "2", "All"),
-      ("Full crowd report & Dip Radar", "Preview", "✓"),
-      ("Dividend calendar", "–", "✓"),
-      ("Heads-up before a zone", "–", "✓"),
-    ]
+    let rows = ProFeature.all
     return VStack(spacing: 0) {
-      HStack {
-        Text("")
+      HStack(spacing: 0) {
+        Text("What you get")
+          .font(.caption.weight(.bold))
+          .foregroundStyle(.white.opacity(0.6))
           .frame(maxWidth: .infinity, alignment: .leading)
         Text("Free")
           .font(.caption.weight(.bold))
           .foregroundStyle(.white.opacity(0.6))
-          .frame(width: 64)
-        Text("Pro")
+          .frame(width: ProFeature.freeWidth)
+        Text("PRO")
           .font(.caption.weight(.heavy))
           .foregroundStyle(Brand.owlInk)
           .padding(.horizontal, 10)
           .padding(.vertical, 3)
           .background(Brand.amber, in: .capsule)
-          .frame(width: 84)
+          .frame(width: ProFeature.proWidth)
+          .padding(.vertical, 10)
+          .background(Brand.buy.opacity(0.14), in: UnevenRoundedRectangle(topLeadingRadius: 14, topTrailingRadius: 14))
       }
-      .padding(.bottom, 8)
-      ForEach(rows, id: \.0) { row in
-        HStack {
-          Text(row.0)
-            .font(.subheadline)
-            .frame(maxWidth: .infinity, alignment: .leading)
-          Text(row.1)
-            .font(.subheadline)
-            .foregroundStyle(.white.opacity(0.5))
-            .frame(width: 64)
-          Text(row.2)
-            .font(.subheadline.weight(.bold))
-            .foregroundStyle(Brand.buy)
-            .frame(width: 84)
+      ForEach(Array(rows.enumerated()), id: \.element.title) { index, row in
+        HStack(spacing: 0) {
+          HStack(spacing: 10) {
+            Image(systemName: row.systemImage)
+              .font(.subheadline.weight(.semibold))
+              .foregroundStyle(Brand.amber)
+              .frame(width: 22)
+            Text(row.title)
+              .font(.subheadline.weight(.medium))
+              .fixedSize(horizontal: false, vertical: true)
+          }
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .padding(.vertical, 12)
+          ProFeature.cell(row.free, isPro: false)
+            .frame(width: ProFeature.freeWidth)
+          ProFeature.cell(row.pro, isPro: true)
+            .frame(width: ProFeature.proWidth)
+            .frame(maxHeight: .infinity)
+            .background(Brand.buy.opacity(0.14), in: UnevenRoundedRectangle(
+              bottomLeadingRadius: index == rows.count - 1 ? 14 : 0,
+              bottomTrailingRadius: index == rows.count - 1 ? 14 : 0
+            ))
         }
-        .padding(.vertical, 9)
-        .accessibilityElement(children: .combine)
-        if row.0 != rows.last?.0 {
-          Divider().overlay(.white.opacity(0.1))
+        .fixedSize(horizontal: false, vertical: true)
+        .overlay(alignment: .top) {
+          Rectangle().fill(.white.opacity(0.08)).frame(height: 1)
+            .padding(.trailing, ProFeature.proWidth)
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(row.title)
+        .accessibilityValue("Free: \(row.free.spoken). Pro: \(row.pro.spoken).")
       }
     }
-    .padding(16)
-    .background(.white.opacity(0.06), in: .rect(cornerRadius: 20))
+    .padding(.horizontal, 16)
+    .padding(.top, 6)
+    .padding(.bottom, 12)
+    .background(.white.opacity(0.06), in: .rect(cornerRadius: 22))
   }
 
   private func trialTimeline(_ offer: Product.SubscriptionOffer) -> some View {
@@ -409,5 +406,60 @@ private struct PlanCard: View {
     }
     .buttonStyle(.plain)
     .accessibilityAddTraits(isSelected ? .isSelected : [])
+  }
+}
+
+/// One row of the Free vs Pro comparison.
+private struct ProFeature {
+  enum Value {
+    case text(String)
+    case included
+    case missing
+
+    var spoken: String {
+      switch self {
+      case .text(let text): text
+      case .included: "included"
+      case .missing: "not included"
+      }
+    }
+  }
+
+  var title: String
+  var systemImage: String
+  var free: Value
+  var pro: Value
+
+  static let freeWidth: CGFloat = 62
+  static let proWidth: CGFloat = 86
+
+  static let all: [ProFeature] = [
+    ProFeature(title: "Price alerts", systemImage: "bell.fill", free: .text("3"), pro: .text("Unlimited")),
+    ProFeature(title: "Smart alerts like RSI, MACD, and trend crosses", systemImage: "sparkles", free: .missing, pro: .text("27 types")),
+    ProFeature(title: "Odds that each alert fires", systemImage: "dice.fill", free: .text("1"), pro: .text("All")),
+    ProFeature(title: "Live signals on your stocks", systemImage: "dot.radiowaves.left.and.right", free: .text("2"), pro: .text("All")),
+    ProFeature(title: "Full crowd report and Dip Radar", systemImage: "person.3.fill", free: .text("Preview"), pro: .included),
+    ProFeature(title: "Heads-up before a stock reaches your zone", systemImage: "bell.badge.fill", free: .missing, pro: .included),
+    ProFeature(title: "Dividend calendar", systemImage: "leaf.fill", free: .missing, pro: .included),
+  ]
+
+  @ViewBuilder
+  static func cell(_ value: Value, isPro: Bool) -> some View {
+    switch value {
+    case .text(let text):
+      Text(text)
+        .font(.subheadline.weight(isPro ? .bold : .regular))
+        .foregroundStyle(isPro ? AnyShapeStyle(Brand.buy) : AnyShapeStyle(.white.opacity(0.5)))
+        .lineLimit(1)
+        .minimumScaleFactor(0.7)
+    case .included:
+      Image(systemName: "checkmark.circle.fill")
+        .font(.title3)
+        .foregroundStyle(Brand.buy)
+    case .missing:
+      Image(systemName: "minus")
+        .font(.subheadline.weight(.bold))
+        .foregroundStyle(.white.opacity(0.3))
+    }
   }
 }

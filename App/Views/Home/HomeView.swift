@@ -14,6 +14,7 @@ struct HomeView: View {
   @AppStorage(AlertSettings.briefHiddenDayKey) private var briefHiddenDay = ""
   @State private var showsAddStock = false
   @State private var showsPortfolio = false
+  @State private var showsAddPosition = false
   @State private var period: ChartPeriod = .preset(.month)
 
   private var summary: PortfolioSummary {
@@ -82,6 +83,9 @@ struct HomeView: View {
           router.homePath = [symbol]
         }
       }
+      .sheet(isPresented: $showsAddPosition) {
+        AddPositionSheet { showsAddStock = true }
+      }
       .task { await flock.loadOverview() }
       .task(id: period) {
         if period.isIntraday { await quotes.loadIntraday(symbols: holdings.map(\.symbol)) }
@@ -98,12 +102,13 @@ struct HomeView: View {
 
   // MARK: Sections
 
+  @ViewBuilder
   private var hero: some View {
     let summary = summary
     if summary.hasPositions {
       let history = summary.history(period: period)
       let format: (Double) -> String = { quotes.formatBase($0) }
-      return HeroCard(
+      HeroCard(
         title: greeting,
         value: format(summary.totalValue),
         change: summary.dayChange,
@@ -121,30 +126,18 @@ struct HomeView: View {
         openDetails: { showsPortfolio = true },
         mood: OwlMood.current(dayChange: summary.dayChange, isAwake: OwlWake.shared.isAwake)
       )
+    } else {
+      FirstPositionCard(
+        greeting: greeting,
+        stats: [
+          HeroStat(value: "\(holdings.count)", label: "Watching", systemImage: "binoculars.fill", tint: .white),
+          HeroStat(value: "\(summary.activeAlerts.count)", label: "Alerts", systemImage: "bell.fill", tint: Palette.buy),
+          HeroStat(value: "\(summary.closeAlertCount())", label: "Close", systemImage: "scope", tint: Palette.amber),
+        ]
+      ) {
+        showsAddPosition = true
+      }
     }
-    let focus = summary.nearestAlerts.first?.holding ?? holdings.first
-    let quote = focus.flatMap { quotes[$0.symbol] }
-    let recent: (values: [Double], dates: [Date])? = period.isIntraday
-      ? focus.flatMap { quotes.intraday[$0.symbol] }.map { ($0.values, $0.dates) }
-      : quote.map { period.slice(values: $0.closes, dates: $0.dates) }
-    return HeroCard(
-      title: "\(greeting) · Watching \(focus?.symbol ?? "")",
-      value: quote.map { $0.formatted($0.price) } ?? "—",
-      change: quote?.change,
-      changeCaption: "today",
-      values: recent?.values ?? [],
-      dates: recent?.dates ?? [],
-      stats: [
-        HeroStat(value: "\(summary.activeAlerts.count)", label: "Alerts", systemImage: "scope", tint: Palette.buy),
-        HeroStat(value: "\(summary.closeAlertCount())", label: "Close", systemImage: "bell.badge.fill", tint: Palette.amber),
-        HeroStat(value: "\(holdings.count)", label: "Watching", systemImage: "binoculars.fill", tint: .primary),
-      ],
-      format: { quote?.formatted($0) ?? $0.formatted() },
-      period: $period,
-      earliest: quote?.dates.first ?? .now.addingTimeInterval(-365 * 86_400),
-      openDetails: nil,
-      mood: OwlMood.current(dayChange: quote?.change, isAwake: OwlWake.shared.isAwake)
-    )
   }
 
   @ViewBuilder
@@ -160,7 +153,7 @@ struct HomeView: View {
         }
       }
       if alerts.isEmpty {
-        EmptyHint(systemImage: "scope", text: "Open a stock and set a buy zone or sell zone. Dipwise will watch it for you.")
+        EmptyHint(systemImage: "scope", text: "Open a stock and add alerts. Dippy will watch them for you.")
       } else {
         ForEach(alerts) { alert in
           NavigationLink(value: alert.symbol) {
@@ -302,6 +295,8 @@ struct HoldingRow: View {
       if let quote {
         VStack(alignment: .trailing, spacing: 2) {
           Text(holding.isOwned ? quote.formatted(holding.value(at: quote.price)) : quote.formatted(quote.price))
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
             .font(.headline)
             .monospacedDigit()
           ChangeBadge(change: quote.change)

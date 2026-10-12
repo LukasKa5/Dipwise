@@ -102,6 +102,8 @@ struct FlockDetailView: View {
         if let quote {
           HStack(spacing: 8) {
             Text(quote.formatted(quote.price)).monospacedDigit()
+              .lineLimit(1)
+              .minimumScaleFactor(0.7)
             ChangeBadge(change: quote.change)
           }
           .font(.subheadline)
@@ -229,6 +231,8 @@ struct FlockDetailView: View {
       Text(title).font(.subheadline.weight(.semibold))
       Spacer()
       Text("\(format(zone.lowerBound))–\(format(zone.upperBound))")
+        .lineLimit(1)
+        .minimumScaleFactor(0.7)
         .font(.subheadline.monospacedDigit())
       Text("· \(count)")
         .font(.caption)

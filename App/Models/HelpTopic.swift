@@ -115,6 +115,12 @@ enum HelpTopic: Identifiable, Hashable {
     }
   }
 
+  /// The alerts a category covers, each explained in the help sheet.
+  var alertKinds: [AlertKind] {
+    guard case .category(let category) = self, category != .zones else { return [] }
+    return AlertKind.allCases.filter { $0.category == category }
+  }
+
   var example: String? {
     switch self {
     case .zones: "NVDA is $182. Buy zone $165–175, sell zone $210–225."

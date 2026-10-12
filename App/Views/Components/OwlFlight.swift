@@ -103,6 +103,8 @@ struct LivelyOwl: View {
   @State private var spin = 0.0
   @State private var bubble: String?
   @State private var ruffle = 0
+  @State private var wakeUps = 0
+  @State private var isWaking = false
 
   private var effectiveMood: OwlMood {
     if let mood { return mood }
@@ -129,9 +131,34 @@ struct LivelyOwl: View {
         SpringKeyframe(0, duration: 0.25, spring: .bouncy)
       }
     }
+    .keyframeAnimator(initialValue: WakePose(), trigger: wakeUps) { view, pose in
+      view
+        .scaleEffect(x: 2 - pose.stretch, y: pose.stretch, anchor: .bottom)
+        .rotationEffect(.degrees(pose.tilt), anchor: .bottom)
+    } keyframes: { _ in
+      // A sleepy shiver, a crouch, then a long, happy stretch upward.
+      KeyframeTrack(\.stretch) {
+        CubicKeyframe(0.94, duration: 0.18)
+        SpringKeyframe(1.1, duration: 0.4, spring: .smooth)
+        CubicKeyframe(1.08, duration: 0.35)
+        SpringKeyframe(1, duration: 0.5, spring: .bouncy)
+      }
+      KeyframeTrack(\.tilt) {
+        CubicKeyframe(-4, duration: 0.1)
+        CubicKeyframe(4, duration: 0.12)
+        CubicKeyframe(0, duration: 0.2)
+        CubicKeyframe(0, duration: 0.5)
+        CubicKeyframe(-5, duration: 0.2)
+        SpringKeyframe(0, duration: 0.4, spring: .bouncy)
+      }
+    }
     .rotation3DEffect(.degrees(spin), axis: (x: 0, y: 1, z: 0))
     .overlay(alignment: .topTrailing) {
-      if isAsleep && peek < 0.5 { SleepingZs().offset(x: 14, y: -10) }
+      if isAsleep && peek < 0.5 {
+        SleepingZs()
+          .offset(x: 14, y: -10)
+          .transition(.scale(scale: 0.3, anchor: .bottomLeading).combined(with: .opacity))
+      }
     }
     .overlay(alignment: .top) {
       if let bubble {
@@ -152,6 +179,7 @@ struct LivelyOwl: View {
     .owlFlight(trigger: hops, direction: hops.isMultiple(of: 2) ? 1 : -1, height: 22, isEnabled: !reduceMotion)
     .sensoryFeedback(.impact(weight: .light), trigger: taps)
     .sensoryFeedback(.impact(weight: .medium), trigger: ruffle)
+    .sensoryFeedback(.impact(flexibility: .soft, intensity: 0.8), trigger: wakeUps)
     .onAppear {
       guard !reduceMotion else { return }
       withAnimation(.easeInOut(duration: 1.8).repeatForever(autoreverses: true)) { breathing = true }
@@ -173,19 +201,10 @@ struct LivelyOwl: View {
   private func handleTap(isAsleep: Bool) {
     taps += 1
     if isAsleep {
-      // Wake up: one eye first, then both, a big stretch, and a sleepy hoot.
-      withAnimation(.easeOut(duration: 0.3)) { peek = 1 }
-      say("Hoo? I'm up!", for: 2)
-      Task {
-        try? await Task.sleep(for: .seconds(0.5))
-        OwlWake.shared.wake()
-        peek = 0
-        withAnimation(.easeOut(duration: 0.6)) { stretch = 0.8 }
-        try? await Task.sleep(for: .seconds(0.7))
-        withAnimation(.easeInOut(duration: 0.8)) { stretch = 0 }
-      }
+      wakeUp()
       return
     }
+    guard !isWaking else { return }
     guard hopsOnTap else {
       blinkOnce()
       return
@@ -201,10 +220,45 @@ struct LivelyOwl: View {
     }
   }
 
+  /// Waking up: one sleepy eye peeks, then both pop open, a shiver, a big stretch,
+  /// a look around, and a happy little hop. He then stays awake until the app is closed.
+  private func wakeUp() {
+    guard !isWaking else { return }
+    isWaking = true
+    guard !reduceMotion else {
+      OwlWake.shared.wake()
+      isWaking = false
+      return
+    }
+    withAnimation(.snappy(duration: 0.25)) { peek = 1 }
+    Task {
+      try? await Task.sleep(for: .seconds(0.6))
+      wakeUps += 1
+      OwlWake.shared.wake()
+      withAnimation(.snappy(duration: 0.2)) { peek = 0 }
+      try? await Task.sleep(for: .seconds(0.3))
+      withAnimation(.smooth(duration: 0.5)) { stretch = 1 }
+      try? await Task.sleep(for: .seconds(0.75))
+      withAnimation(.smooth(duration: 0.45)) { stretch = 0 }
+      blinkOnce()
+      try? await Task.sleep(for: .seconds(0.25))
+      blinkOnce()
+      try? await Task.sleep(for: .seconds(0.3))
+      withAnimation(.snappy(duration: 0.3)) { look = CGSize(width: -1, height: -0.2) }
+      try? await Task.sleep(for: .seconds(0.45))
+      withAnimation(.snappy(duration: 0.3)) { look = CGSize(width: 1, height: -0.2) }
+      try? await Task.sleep(for: .seconds(0.45))
+      withAnimation(.snappy(duration: 0.3)) { look = .zero }
+      try? await Task.sleep(for: .seconds(0.2))
+      hops += 1
+      isWaking = false
+    }
+  }
+
   /// Long press: Dippy hoots and ruffles his feathers.
   private func hoot() {
     if effectiveMood == .sleeping {
-      say("zzz…")
+      wakeUp()
       return
     }
     ruffle += 1
@@ -225,7 +279,7 @@ struct LivelyOwl: View {
   private func liveForever() async {
     while !Task.isCancelled {
       try? await Task.sleep(for: .seconds(Double.random(in: 1.6...3.8)))
-      if effectiveMood == .sleeping { continue }
+      if effectiveMood == .sleeping || isWaking { continue }
       if effectiveMood == .celebrating, Int.random(in: 0..<8) == 0 {
         hops += 1
         continue
@@ -251,6 +305,12 @@ struct LivelyOwl: View {
       }
     }
   }
+}
+
+/// Squash and tilt for the wake-up stretch.
+private struct WakePose {
+  var stretch: Double = 1
+  var tilt: Double = 0
 }
 
 /// Floating "z" letters for a sleeping owl.

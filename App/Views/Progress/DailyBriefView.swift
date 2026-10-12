@@ -113,6 +113,8 @@ struct DailyBriefView: View {
               VStack(alignment: .leading, spacing: 2) {
                 Text(holding.symbol).font(.headline)
                 Text(quote.formatted(quote.price))
+                  .lineLimit(1)
+                  .minimumScaleFactor(0.7)
                   .font(.subheadline.monospacedDigit())
                   .foregroundStyle(.secondary)
               }

@@ -81,8 +81,6 @@ private struct CustomPeriodSheet: View {
           Section("Quick picks") {
             quickPick("Last day", start: Calendar.current.date(byAdding: .day, value: -1, to: .now) ?? .now)
             quickPick("Year to date", start: Calendar.current.date(from: Calendar.current.dateComponents([.year], from: .now)) ?? .now)
-            quickPick("Last 6 months", start: Calendar.current.date(byAdding: .month, value: -6, to: .now) ?? .now)
-            quickPick("Last 2 years", start: Calendar.current.date(byAdding: .year, value: -2, to: .now) ?? .now)
             quickPick("Last 5 years", start: Calendar.current.date(byAdding: .year, value: -5, to: .now) ?? .now)
           }
         }
@@ -119,15 +117,9 @@ private struct CustomPeriodSheet: View {
       period = .custom(max(date, earliest)...Date.now)
       dismiss()
     } label: {
-      HStack {
-        Text(title)
-        Spacer()
-        if date < earliest {
-          Text("Up to the earliest data")
-            .font(.caption)
-            .foregroundStyle(.secondary)
-        }
-      }
+      Text(title)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(.rect)
     }
   }
 }

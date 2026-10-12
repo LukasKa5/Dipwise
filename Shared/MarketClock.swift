@@ -30,7 +30,8 @@ enum OwlMood: Equatable {
   func message(change: Double?) -> String {
     switch self {
     case .sleeping: "Markets are closed. Dippy is resting, but your alerts aren't."
-    case .celebrating: "Great day! Up \((change ?? 0).formatted(.percent.precision(.fractionLength(1))))."
+    case _ where !MarketClock.isOpen(): "Markets are closed. Dippy is awake and keeping watch."
+    case .celebrating: "A green day. Dippy is watching your zones."
     case .reassuring: "A red day. Dips are where good plans pay off."
     case .calm: "All quiet. Dippy is watching your zones."
     }

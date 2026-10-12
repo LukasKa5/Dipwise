@@ -22,6 +22,7 @@ struct InfoButton: View {
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
         .presentationCornerRadius(32)
+        .presentationBackground(Brand.nightMiddle)
     }
   }
 }
@@ -37,7 +38,7 @@ struct HelpSheet: View {
           VStack(spacing: 12) {
             ZStack {
               Circle()
-                .fill(Brand.nightMiddle)
+                .fill(Brand.nightTop)
                 .frame(width: 104, height: 104)
               LivelyOwl(mood: .calm)
                 .frame(width: 62, height: 72)
@@ -47,7 +48,7 @@ struct HelpSheet: View {
                 .foregroundStyle(.white)
                 .frame(width: 34, height: 34)
                 .background(Palette.amber, in: .circle)
-                .overlay { Circle().strokeBorder(Palette.canvas, lineWidth: 3) }
+                .overlay { Circle().strokeBorder(Brand.nightMiddle, lineWidth: 3) }
                 .offset(x: 38, y: 36)
             }
             Text("Dippy explains")
@@ -64,8 +65,21 @@ struct HelpSheet: View {
             .font(.body)
             .multilineTextAlignment(.leading)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .fixedSize(horizontal: false, vertical: true)
             .padding(18)
-            .cardStyle(cornerRadius: 20)
+            .background(.white.opacity(0.08), in: .rect(cornerRadius: 20))
+
+          if !topic.alertKinds.isEmpty {
+            VStack(alignment: .leading, spacing: 0) {
+              ForEach(topic.alertKinds) { kind in
+                AlertKindExplanation(kind: kind)
+                if kind != topic.alertKinds.last {
+                  Divider().overlay(.white.opacity(0.08)).padding(.leading, 62)
+                }
+              }
+            }
+            .background(.white.opacity(0.08), in: .rect(cornerRadius: 20))
+          }
 
           if let example = topic.example {
             HStack(alignment: .top, spacing: 12) {
@@ -77,6 +91,7 @@ struct HelpSheet: View {
                   .foregroundStyle(.secondary)
                 Text(example)
                   .font(.callout)
+                  .fixedSize(horizontal: false, vertical: true)
               }
               Spacer(minLength: 0)
             }
@@ -96,9 +111,39 @@ struct HelpSheet: View {
           .padding(.vertical, 6)
       }
       .buttonStyle(.borderedProminent)
+      .tint(Brand.buy)
+      .foregroundStyle(Brand.owlInk)
       .padding(.horizontal, 22)
       .padding(.bottom, 16)
     }
-    .background(Palette.canvas)
+    .foregroundStyle(.white)
+    .background(Brand.nightMiddle.ignoresSafeArea())
+    .environment(\.colorScheme, .dark)
+  }
+}
+
+/// One alert type with what it watches for, in plain language.
+struct AlertKindExplanation: View {
+  var kind: AlertKind
+
+  var body: some View {
+    HStack(alignment: .top, spacing: 14) {
+      Image(systemName: kind.systemImage)
+        .font(.subheadline.weight(.bold))
+        .foregroundStyle(kind.side.color)
+        .frame(width: 34, height: 34)
+        .background(kind.side.color.opacity(0.16), in: .circle)
+      VStack(alignment: .leading, spacing: 3) {
+        Text(kind.title)
+          .font(.subheadline.weight(.semibold))
+        Text(kind.explanation)
+          .font(.footnote)
+          .foregroundStyle(.white.opacity(0.7))
+          .fixedSize(horizontal: false, vertical: true)
+      }
+      Spacer(minLength: 0)
+    }
+    .padding(14)
+    .accessibilityElement(children: .combine)
   }
 }

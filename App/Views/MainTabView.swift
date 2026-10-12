@@ -9,7 +9,7 @@ struct MainTabView: View {
       Tab("Home", systemImage: "house", value: AppTab.home) {
         HomeView()
       }
-      Tab("Watchlist", systemImage: "list.star", value: AppTab.watchlist) {
+      Tab("Watchlist", systemImage: "list.bullet", value: AppTab.watchlist) {
         WatchlistView()
       }
       Tab("Alerts", systemImage: "bell", value: AppTab.alerts) {

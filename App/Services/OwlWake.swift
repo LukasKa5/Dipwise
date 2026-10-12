@@ -2,23 +2,28 @@ import Foundation
 import Observation
 import SwiftUI
 
-/// Shared "awake" state, so tapping a sleeping Dippy wakes him up everywhere for a while.
+/// Whether Dippy is awake, shared by every owl in the app.
+/// Dippy only falls asleep when the app is closed while the market is closed. Once he's awake,
+/// because the market was open or the user tapped him, he stays awake until the app is closed.
 @MainActor
 @Observable
 final class OwlWake {
   static let shared = OwlWake()
-  static let awakeDuration: TimeInterval = 60
 
-  private(set) var isAwake = false
-  private var sleepTask: Task<Void, Never>?
+  private(set) var isAwake = MarketClock.isOpen()
 
   func wake() {
-    withAnimation(.easeOut(duration: 0.9)) { isAwake = true }
-    sleepTask?.cancel()
-    sleepTask = Task {
-      try? await Task.sleep(for: .seconds(Self.awakeDuration))
-      guard !Task.isCancelled else { return }
-      withAnimation(.easeIn(duration: 1.6)) { isAwake = false }
-    }
+    guard !isAwake else { return }
+    withAnimation(.smooth(duration: 0.5)) { isAwake = true }
+  }
+
+  /// Call when the app comes to the foreground.
+  func appDidBecomeActive() {
+    if MarketClock.isOpen() { isAwake = true }
+  }
+
+  /// Call when the app is closed. Dippy goes to sleep if the market is closed.
+  func appDidEnterBackground() {
+    isAwake = MarketClock.isOpen()
   }
 }

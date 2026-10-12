@@ -20,7 +20,8 @@ struct HeroCard: View {
   private var moodSymbol: String {
     switch mood {
     case .sleeping: "moon.zzz.fill"
-    case .celebrating: "party.popper.fill"
+    case _ where !MarketClock.isOpen(): "binoculars.fill"
+    case .celebrating: "sun.max.fill"
     case .reassuring: "heart.fill"
     case .calm: "binoculars.fill"
     }
@@ -129,7 +130,7 @@ struct HeroStat: Identifiable {
   var id: String { label }
 }
 
-private struct HeroStatTile: View {
+struct HeroStatTile: View {
   var stat: HeroStat
 
   var body: some View {
@@ -137,6 +138,7 @@ private struct HeroStatTile: View {
       Image(systemName: stat.systemImage)
         .font(.subheadline.weight(.semibold))
         .foregroundStyle(stat.tint)
+        .frame(height: 20)
       Text(stat.value)
         .font(.title3.bold())
         .lineLimit(1)

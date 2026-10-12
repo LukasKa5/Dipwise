@@ -69,12 +69,18 @@ struct ZoneTrack: View {
 
       HStack {
         Text(format(domain.lowerBound))
+          .lineLimit(1)
+          .minimumScaleFactor(0.7)
         Spacer()
         Text("Now \(format(price))")
+          .lineLimit(1)
+          .minimumScaleFactor(0.7)
           .fontWeight(.semibold)
           .foregroundStyle(.primary)
         Spacer()
         Text(format(domain.upperBound))
+          .lineLimit(1)
+          .minimumScaleFactor(0.7)
       }
       .font(.caption2.monospacedDigit())
       .foregroundStyle(.secondary)

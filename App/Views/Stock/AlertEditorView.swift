@@ -794,6 +794,8 @@ struct FlockComparisonRow: View {
       if let zone = side == .buy ? report.buyZone : report.sellZone {
         LabeledContent("Crowd \(side == .buy ? "buy" : "sell") zone") {
           Text("\(format(zone.lowerBound))–\(format(zone.upperBound))")
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
             .monospacedDigit()
             .foregroundStyle(side.color)
         }

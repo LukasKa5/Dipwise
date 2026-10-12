@@ -137,9 +137,12 @@ private struct SummaryPill: View {
         .font(.caption.weight(.semibold))
         .foregroundStyle(.secondary)
     }
+    .lineLimit(1)
+    .minimumScaleFactor(0.7)
     .frame(maxWidth: .infinity)
     .padding(.vertical, 12)
-    .cardStyle(cornerRadius: 18)
+    .padding(.horizontal, 6)
+    .background(Palette.card, in: .rect(cornerRadius: 18))
     .accessibilityElement(children: .combine)
   }
 }
@@ -147,6 +150,7 @@ private struct SummaryPill: View {
 private struct WatchlistRow: View {
   var holding: Holding
   var quote: Quote?
+  @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
   private var nearest: PriceAlert? {
     guard let quote else { return nil }
@@ -161,29 +165,32 @@ private struct WatchlistRow: View {
           Text(holding.symbol)
             .font(.headline)
             .lineLimit(1)
-            .minimumScaleFactor(0.7)
           Text(holding.isOwned ? "\(holding.shares.formatted()) shares" : holding.name)
             .font(.subheadline)
             .foregroundStyle(.secondary)
             .lineLimit(1)
         }
-        .layoutPriority(1)
-        Spacer(minLength: 8)
+        Spacer(minLength: 4)
         if let quote {
-          Sparkline(values: Array(quote.closes.suffix(22)))
-            .frame(width: 64, height: 30)
+          // Long names truncate before anything else, so the price never wraps.
+          if !dynamicTypeSize.isAccessibilitySize {
+            Sparkline(values: Array(quote.closes.suffix(22)))
+              .frame(width: 56, height: 30)
+          }
           VStack(alignment: .trailing, spacing: 4) {
             Text(quote.formatted(quote.price))
               .font(.headline.monospacedDigit())
               .lineLimit(1)
-              .minimumScaleFactor(0.7)
             Text(quote.change, format: .percent.precision(.fractionLength(2)).sign(strategy: .always()))
               .font(.caption.weight(.bold).monospacedDigit())
+              .lineLimit(1)
               .foregroundStyle(.white)
               .padding(.horizontal, 8)
               .padding(.vertical, 3)
               .background(quote.change >= 0 ? Palette.gain : Palette.loss, in: .capsule)
           }
+          .fixedSize()
+          .layoutPriority(2)
         } else {
           ProgressView()
         }
@@ -197,10 +204,13 @@ private struct WatchlistRow: View {
             .font(.caption.weight(.semibold))
             .foregroundStyle(nearest.kind.side.color)
             .lineLimit(1)
-          Spacer()
+            .minimumScaleFactor(0.85)
+          Spacer(minLength: 6)
           Text(nearest.distance(for: quote).map { $0 == 0 ? "Now" : "\($0.formatted(.percent.precision(.fractionLength(1)))) away" } ?? "")
-            .font(.caption.weight(.semibold))
+            .font(.caption.weight(.semibold).monospacedDigit())
             .foregroundStyle(.secondary)
+            .lineLimit(1)
+            .fixedSize()
         }
       } else {
         Label("No alerts yet", systemImage: "bell.slash")

@@ -68,6 +68,10 @@ struct InteractiveChart: View {
     return CGSize(width: max(-1, min(1, dx)), height: dy)
   }
 
+  private var isOwlAsleep: Bool {
+    (owlMood ?? (MarketClock.isOpen() || OwlWake.shared.isAwake ? .calm : .sleeping)) == .sleeping
+  }
+
   private var trendColor: Color {
     if let lineColor { return lineColor }
     guard let first = values.first, let last = values.last else { return Palette.gain }
@@ -160,7 +164,9 @@ struct InteractiveChart: View {
             .owlFlight(trigger: flights, direction: flightDirection, height: 60, isEnabled: !reduceMotion)
             .shadow(color: .black.opacity(0.3), radius: 5, y: 3)
             .position(x: origin.x + position.x, y: origin.y + position.y - owlSize * 0.57)
-            .allowsHitTesting(false)
+            // A sleeping Dippy can be tapped awake; once awake, scrubbing near him startles him instead.
+            .allowsHitTesting(isOwlAsleep)
+            .accessibilityHidden(!isOwlAsleep)
         }
       }
     }
@@ -171,7 +177,7 @@ struct InteractiveChart: View {
     .onChange(of: values) { perchIndex = nil }
     .onAppear {
       // Dippy flies in and lands on the dip the first time the chart appears.
-      guard !landed, !reduceMotion, showsOwl, (owlMood ?? (MarketClock.isOpen() || OwlWake.shared.isAwake ? .calm : .sleeping)) != .sleeping else {
+      guard !landed, !reduceMotion, showsOwl, !isOwlAsleep else {
         landed = true
         return
       }

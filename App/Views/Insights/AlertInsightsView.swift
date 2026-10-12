@@ -58,6 +58,10 @@ struct AlertInsightsView: View {
           .font(.system(size: 30, weight: .heavy, design: .rounded))
       }
       .frame(width: 92, height: 92)
+      .overlay(alignment: .topTrailing) {
+        // Dippy perches on the ring, leaving the text room to breathe.
+        LivelyOwl().frame(width: 32, height: 37).offset(x: 8, y: -16)
+      }
       VStack(alignment: .leading, spacing: 4) {
         HStack(spacing: 2) {
           Text("Plan health")
@@ -67,14 +71,16 @@ struct AlertInsightsView: View {
         }
         Text(insights.healthLabel)
           .font(.title2.bold())
+          .fixedSize(horizontal: false, vertical: true)
         Text("Every stock needs a buy zone, a sell zone, and protection.")
           .font(.footnote)
           .foregroundStyle(.secondary)
+          .fixedSize(horizontal: false, vertical: true)
       }
-      Spacer(minLength: 0)
-      LivelyOwl().frame(width: 44, height: 50)
+      .frame(maxWidth: .infinity, alignment: .leading)
     }
     .padding(20)
+    .padding(.top, 6)
     .heroCardStyle()
     .accessibilityElement(children: .combine)
   }

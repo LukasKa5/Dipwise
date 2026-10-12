@@ -71,6 +71,29 @@ final class OnboardingModel {
   var focusSymbol: String? { selected.first }
   var focusQuote: Quote? { focusSymbol.flatMap { quotes[$0] } }
 
+  /// The picked stocks, or popular ones before anything is picked.
+  var previewSymbols: [String] { selected.isEmpty ? ["NVDA", "AAPL", "MSFT"] : selected }
+
+  /// Sample plans built from the stocks the user picked, for the widget and watch previews.
+  var sampleStatuses: [TargetStatus] {
+    previewSymbols.enumerated().compactMap { offset, symbol in
+      guard let quote = quotes[symbol] else { return nil }
+      let isBuy = offset.isMultiple(of: 2)
+      let rule = symbol == focusSymbol && zoneUpper > 0
+        ? AlertRule(kind: .buyZone, lower: zoneLower, upper: zoneUpper)
+        : AlertRule(kind: isBuy ? .buyZone : .sellZone, lower: quote.price * (isBuy ? 0.88 : 1.08), upper: quote.price * (isBuy ? 0.94 : 1.15))
+      return TargetStatus(target: WatchedTarget(id: Self.previewID(for: symbol), symbol: symbol, name: quote.name, rule: rule), quote: quote)
+    }
+    .sorted { ($0.distance ?? 1) < ($1.distance ?? 1) }
+  }
+
+  /// The same ID for a symbol every time, so previews animate instead of being rebuilt.
+  private static func previewID(for symbol: String) -> UUID {
+    var hash: UInt64 = 5381
+    for byte in symbol.utf8 { hash = (hash &* 33) &+ UInt64(byte) }
+    return UUID(uuidString: String(format: "00000000-0000-4000-8000-%012llX", hash & 0xFFFF_FFFF_FFFF)) ?? UUID()
+  }
+
   func loadQuotes() async {
     guard quotes.isEmpty else { return }
     quotes = await QuoteService().quotes(for: Self.suggestions)

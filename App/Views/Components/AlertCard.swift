@@ -25,6 +25,8 @@ struct AlertCard: View {
         if let quote {
           VStack(alignment: .trailing, spacing: 2) {
             Text(quote.formatted(quote.price))
+              .lineLimit(1)
+              .minimumScaleFactor(0.7)
               .font(.headline)
               .monospacedDigit()
             ChangeBadge(change: quote.change)

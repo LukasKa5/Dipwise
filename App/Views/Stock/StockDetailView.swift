@@ -16,7 +16,6 @@ struct StockDetailView: View {
   @State private var editor: AlertEditorTarget?
   @State private var showsPositionEditor = false
   @State private var showsRemoveConfirmation = false
-  @State private var showsPaywall = false
   @State private var showsPlanBuilder = false
   @State private var journalAlert: PriceAlert?
 
@@ -60,7 +59,6 @@ struct StockDetailView: View {
     .sheet(isPresented: $showsPositionEditor) {
       if let holding { PositionEditorView(holding: holding) }
     }
-    .sheet(isPresented: $showsPaywall) { PaywallView() }
     .sheet(isPresented: $showsPlanBuilder) {
       if let holding { PlanBuilderView(holding: holding) }
     }
@@ -95,7 +93,7 @@ struct StockDetailView: View {
     .toolbar {
       ToolbarItem(placement: .topBarTrailing) {
         Menu("Options", systemImage: "ellipsis") {
-          Button("New Alert", systemImage: "bell.badge") { addAlert(nil) }
+          Button("Add Alerts", systemImage: "bell.badge") { showsPlanBuilder = true }
           Button(holding.isOwned ? "Edit Position" : "Add Position", systemImage: "chart.pie") { showsPositionEditor = true }
           Button("Stop Watching", systemImage: "trash", role: .destructive) { showsRemoveConfirmation = true }
         }
@@ -122,14 +120,22 @@ struct StockDetailView: View {
         Text(selection.map { format(series.values[$0]) } ?? quote.map { format($0.price) } ?? "—")
           .font(.system(size: 40, weight: .bold, design: .rounded))
           .monospacedDigit()
+          .lineLimit(1)
+          .minimumScaleFactor(0.5)
           .contentTransition(.numericText())
         if let quote {
           if let selection, series.values[selection] > 0 {
             ChangeBadge(change: quote.price / series.values[selection] - 1, caption: "since then", positiveColor: Palette.gain, negativeColor: Palette.loss)
           } else if let first = series.values.first, let last = series.values.last, first > 0 {
-            HStack(spacing: 12) {
-              ChangeBadge(change: quote.change, caption: "today", positiveColor: Palette.gain, negativeColor: Palette.loss)
-              ChangeBadge(change: last / first - 1, caption: period.isCustom ? "in period" : period.title, positiveColor: Palette.gain, negativeColor: Palette.loss)
+            ViewThatFits(in: .horizontal) {
+              HStack(spacing: 12) {
+                ChangeBadge(change: quote.change, caption: "today", positiveColor: Palette.gain, negativeColor: Palette.loss)
+                ChangeBadge(change: last / first - 1, caption: period.isCustom ? "in period" : period.title, positiveColor: Palette.gain, negativeColor: Palette.loss)
+              }
+              VStack(alignment: .leading, spacing: 4) {
+                ChangeBadge(change: quote.change, caption: "today", positiveColor: Palette.gain, negativeColor: Palette.loss)
+                ChangeBadge(change: last / first - 1, caption: period.isCustom ? "in period" : period.title, positiveColor: Palette.gain, negativeColor: Palette.loss)
+              }
             }
           }
         }
@@ -171,11 +177,7 @@ struct StockDetailView: View {
     let fired = (holding.alerts ?? []).filter { !$0.isActive }.sorted { ($0.triggeredAt ?? $0.createdAt) > ($1.triggeredAt ?? $1.createdAt) }
     return VStack(alignment: .leading, spacing: 14) {
       SectionHeader(title: "Your Plan", subtitle: "Everything Dippy watches on \(symbol)") {
-        HStack(spacing: 4) {
-          InfoButton(topic: .zones)
-          Button("Add alerts", systemImage: "plus") { showsPlanBuilder = true }
-            .font(.subheadline.weight(.semibold))
-        }
+        InfoButton(topic: .zones)
       }
       VStack(alignment: .leading, spacing: 0) {
         if let quote, ![holding.buyZone, holding.sellZone].compactMap { $0 }.isEmpty {
@@ -229,17 +231,19 @@ struct StockDetailView: View {
           }
         }
 
-        Button {
-          addAlert(nil)
-        } label: {
-          Label("Add alert", systemImage: "plus.circle.fill")
-            .font(.subheadline.weight(.semibold))
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(16)
-            .contentShape(.rect)
+        if !active.isEmpty {
+          Button {
+            showsPlanBuilder = true
+          } label: {
+            Label("Add alerts", systemImage: "plus.circle.fill")
+              .font(.subheadline.weight(.semibold))
+              .frame(maxWidth: .infinity, alignment: .leading)
+              .padding(16)
+              .contentShape(.rect)
+          }
+          .buttonStyle(.plain)
+          .foregroundStyle(.tint)
         }
-        .buttonStyle(.plain)
-        .foregroundStyle(.tint)
 
         if !fired.isEmpty {
           Divider()
@@ -318,6 +322,8 @@ struct StockDetailView: View {
               Text("Total return")
               Spacer()
               Text(format(holding.value(at: quote.price) - holding.costBasis))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
               ChangeBadge(change: gain)
@@ -352,14 +358,6 @@ struct StockDetailView: View {
 
   // MARK: Actions
 
-  private func addAlert(_ rule: AlertRule?) {
-    if AlertLimits.canAddAlert(in: modelContext, isPro: subscription.isPro) {
-      editor = AlertEditorTarget(alert: nil, rule: rule)
-    } else {
-      showsPaywall = true
-    }
-  }
-
   private func remove(_ holding: Holding) {
     let alerts = holding.alerts ?? []
     Task {
@@ -385,11 +383,13 @@ struct DetailRow: View {
   var body: some View {
     HStack {
       Text(title)
-      Spacer()
+      Spacer(minLength: 12)
       Text(value)
         .monospacedDigit()
         .foregroundStyle(.secondary)
         .multilineTextAlignment(.trailing)
+        .lineLimit(1)
+        .minimumScaleFactor(0.7)
     }
     .padding(16)
     .accessibilityElement(children: .combine)
@@ -438,6 +438,7 @@ private struct PlanRow: View {
       VStack(alignment: .trailing, spacing: 2) {
         Text(distance == 0 ? "Now" : distance.map { $0.formatted(.percent.precision(.fractionLength(1))) } ?? "—")
           .font(.subheadline.bold().monospacedDigit())
+          .lineLimit(1)
           .foregroundStyle(distance == 0 || (distance ?? 1) < 0.035 ? tint : .primary)
         Text(distance == 0 ? "active" : "away")
           .font(.caption2)

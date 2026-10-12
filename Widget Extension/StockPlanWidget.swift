@@ -89,8 +89,11 @@ struct StockPlanWidgetView: View {
   var entry: StockPlanEntry
   /// Lets the app preview a specific size.
   var previewFamily: WidgetFamily?
+  /// Lets the app preview the zones side without changing the real widget.
+  var previewShowsZones: Bool?
   @Environment(\.widgetFamily) private var environmentFamily
   private var family: WidgetFamily { previewFamily ?? environmentFamily }
+  private var showsZones: Bool { previewShowsZones ?? WidgetState.showsZones }
 
   private var zones: [AlertRule] { entry.targets.map(\.rule).filter { $0.kind.isZone || $0.kind == .priceBelow || $0.kind == .priceAbove } }
 
@@ -138,7 +141,7 @@ struct StockPlanWidgetView: View {
                 .minimumScaleFactor(0.5)
             }
           }
-          if family == .systemMedium && WidgetState.showsZones {
+          if family == .systemMedium && showsZones {
             WidgetZoneScale(price: quote.price, zones: zones, format: quote.formatted)
             Spacer(minLength: 0)
           } else {
@@ -157,7 +160,7 @@ struct StockPlanWidgetView: View {
             Spacer(minLength: 0)
             if family == .systemMedium {
               Button(intent: ToggleZonesIntent()) {
-                Label(WidgetState.showsZones ? "Chart" : "Zones", systemImage: WidgetState.showsZones ? "chart.xyaxis.line" : "arrow.left.and.right")
+                Label(showsZones ? "Chart" : "Zones", systemImage: showsZones ? "chart.xyaxis.line" : "arrow.left.and.right")
                   .font(.caption2.weight(.bold))
                   .padding(.horizontal, 8)
                   .padding(.vertical, 4)

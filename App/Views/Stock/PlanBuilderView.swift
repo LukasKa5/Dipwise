@@ -4,8 +4,22 @@ import SwiftUI
 /// Add several alerts to a stock at once: one buy zone, one sell zone, and any smart alerts.
 struct PlanBuilderView: View {
   var holding: Holding
-
   @Environment(\.dismiss) private var dismiss
+
+  var body: some View {
+    NavigationStack {
+      PlanBuilderForm(holding: holding, isNewStock: false) { dismiss() }
+    }
+  }
+}
+
+/// The alerts screen itself. Also the last step of adding a stock, pushed inside that flow.
+struct PlanBuilderForm: View {
+  var holding: Holding
+  /// The stock was just added: the user can skip, and there's no way back to the previous step.
+  var isNewStock: Bool
+  var onFinish: () -> Void
+
   @Environment(\.modelContext) private var modelContext
   @Environment(QuoteStore.self) private var quotes
   @Environment(FlockService.self) private var flock
@@ -14,6 +28,7 @@ struct PlanBuilderView: View {
   @State private var draft = PlanDraft()
   @State private var budget: Double?
   @State private var showsPaywall = false
+  @State private var didLoad = false
 
   private var quote: Quote? { quotes[holding.symbol] }
   private func format(_ value: Double) -> String { quote?.formatted(value) ?? value.formatted() }
@@ -47,119 +62,151 @@ struct PlanBuilderView: View {
   }
 
   var body: some View {
-    NavigationStack {
-      Form {
-        Group {
-          if let quote {
-            Section {
-              ZoneTrack(
-                price: quote.price,
-                bands: rules.filter { $0.rule.kind.isZone }.map { ZoneTrack.Band(range: $0.rule.lower...$0.rule.upper, side: $0.rule.kind.side, isCrowd: false) }
-                  + [flock.reports[holding.symbol]?.buyZone.map { ZoneTrack.Band(range: $0, side: .buy, isCrowd: true) }].compactMap { $0 },
-                low: nil,
-                high: nil,
-                format: format
-              )
-              .padding(.vertical, 6)
-              ZoneLegend(showsCrowd: flock.reports[holding.symbol]?.buyZone != nil)
-            } header: {
-              Text("Preview")
+    Form {
+      Group {
+        if isNewStock {
+          Section {
+            HStack(spacing: 14) {
+              LivelyOwl(hopsOnTap: true)
+                .frame(width: 48, height: 55)
+              VStack(alignment: .leading, spacing: 3) {
+                Text("Dippy is watching \(holding.symbol)")
+                  .font(.headline)
+                Text("Now tell him what to look for. Pick a zone, any smart alerts, or skip for now.")
+                  .font(.subheadline)
+                  .foregroundStyle(.secondary)
+                  .fixedSize(horizontal: false, vertical: true)
+              }
+            }
+            .padding(.vertical, 4)
+          }
+        }
+
+        if let quote {
+          Section {
+            ZoneTrack(
+              price: quote.price,
+              bands: rules.filter { $0.rule.kind.isZone }.map { ZoneTrack.Band(range: $0.rule.lower...$0.rule.upper, side: $0.rule.kind.side, isCrowd: false) }
+                + [flock.reports[holding.symbol]?.buyZone.map { ZoneTrack.Band(range: $0, side: .buy, isCrowd: true) }].compactMap { $0 },
+              low: nil,
+              high: nil,
+              format: format
+            )
+            .padding(.vertical, 6)
+            ZoneLegend(showsCrowd: flock.reports[holding.symbol]?.buyZone != nil)
+          } header: {
+            Text("Preview")
+          }
+        }
+
+        Section {
+          Toggle(isOn: $draft.buyZone.animation(.snappy)) {
+            Label("Buy zone", systemImage: "arrow.down.to.line.compact")
+              .foregroundStyle(Palette.buy)
+          }
+          if draft.buyZone, let quote {
+            ZoneEditorChart(values: quote.recent(64).values, side: .buy, lower: $draft.buyLower, upper: $draft.buyUpper,
+                            crowdZone: flock.reports[holding.symbol]?.buyZone, format: format)
+              .frame(height: 210)
+              .padding(.vertical, 4)
+            LabeledContent("Zone", value: "\(format(draft.buyLower)) – \(format(draft.buyUpper))")
+              .foregroundStyle(Palette.buy)
+            LabeledContent("Budget") {
+              TextField("Optional", value: $budget, format: .currency(code: quote.currency))
+                .keyboardType(.decimalPad)
+                .multilineTextAlignment(.trailing)
             }
           }
+        } header: {
+          HStack {
+            Text("Buy")
+            Spacer()
+            InfoButton(topic: .zones)
+          }
+        } footer: {
+          Text("Drag the green handles to the range where you'd happily buy.")
+        }
 
+        Section {
+          Toggle(isOn: $draft.sellZone.animation(.snappy)) {
+            Label("Sell zone", systemImage: "arrow.up.to.line.compact")
+              .foregroundStyle(Palette.sell)
+          }
+          if draft.sellZone, let quote {
+            ZoneEditorChart(values: quote.recent(64).values, side: .sell, lower: $draft.sellLower, upper: $draft.sellUpper,
+                            crowdZone: flock.reports[holding.symbol]?.sellZone, format: format)
+              .frame(height: 210)
+              .padding(.vertical, 4)
+            LabeledContent("Zone", value: "\(format(draft.sellLower)) – \(format(draft.sellUpper))")
+              .foregroundStyle(Palette.sell)
+          }
+        } header: {
+          Text("Sell")
+        } footer: {
+          Text("Drag the red handles to where you'd take profit.")
+        }
+
+        ForEach(AlertCategory.allCases.filter { $0 != .zones }) { category in
+          let kinds = AlertKind.smart.filter { $0.category == category && (holding.isOwned || !$0.needsCost) }
           Section {
-            Toggle(isOn: $draft.buyZone.animation(.snappy)) {
-              Label("Buy zone", systemImage: "arrow.down.to.line.compact")
-                .foregroundStyle(Palette.buy)
-            }
-            if draft.buyZone, let quote {
-              ZoneEditorChart(values: quote.recent(64).values, side: .buy, lower: $draft.buyLower, upper: $draft.buyUpper,
-                              crowdZone: flock.reports[holding.symbol]?.buyZone, format: format)
-                .frame(height: 210)
-                .padding(.vertical, 4)
-              LabeledContent("Zone", value: "\(format(draft.buyLower)) – \(format(draft.buyUpper))")
-                .foregroundStyle(Palette.buy)
-              LabeledContent("Budget") {
-                TextField("Optional", value: $budget, format: .currency(code: quote.currency))
-                  .keyboardType(.decimalPad)
-                  .multilineTextAlignment(.trailing)
+            SmartChips(kinds: kinds, selection: $draft.smart, isPro: subscription.isPro)
+              .listRowInsets(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12))
+            // What each picked alert does, right where it was picked.
+            ForEach(kinds.filter { draft.smart.contains($0) }) { kind in
+              SelectedAlertRow(kind: kind) {
+                withAnimation(.snappy) { _ = draft.smart.remove(kind) }
               }
             }
           } header: {
             HStack {
-              Text("Buy")
+              Text(category.title)
               Spacer()
-              InfoButton(topic: .zones)
-            }
-          } footer: {
-            Text("Drag the green handles to the range where you'd happily buy.")
-          }
-
-          Section {
-            Toggle(isOn: $draft.sellZone.animation(.snappy)) {
-              Label("Sell zone", systemImage: "arrow.up.to.line.compact")
-                .foregroundStyle(Palette.sell)
-            }
-            if draft.sellZone, let quote {
-              ZoneEditorChart(values: quote.recent(64).values, side: .sell, lower: $draft.sellLower, upper: $draft.sellUpper,
-                              crowdZone: flock.reports[holding.symbol]?.sellZone, format: format)
-                .frame(height: 210)
-                .padding(.vertical, 4)
-              LabeledContent("Zone", value: "\(format(draft.sellLower)) – \(format(draft.sellUpper))")
-                .foregroundStyle(Palette.sell)
-            }
-          } header: {
-            Text("Sell")
-          } footer: {
-            Text("Drag the red handles to where you'd take profit.")
-          }
-
-          ForEach(AlertCategory.allCases.filter { $0 != .zones }) { category in
-            Section {
-              SmartChips(kinds: AlertKind.smart.filter { $0.category == category && (holding.isOwned || !$0.needsCost) }, selection: $draft.smart, isPro: subscription.isPro)
-                .listRowInsets(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12))
-            } header: {
-              HStack {
-                Text(category.title)
-                Spacer()
-                InfoButton(topic: .category(category))
-              }
+              InfoButton(topic: .category(category))
             }
           }
-        }
-        .dipwiseRows()
-      }
-      .dipwiseListStyle()
-      .navigationTitle("Alerts for \(holding.symbol)")
-      .navigationBarTitleDisplayMode(.inline)
-      .toolbar {
-        ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-        ToolbarItem(placement: .confirmationAction) {
-          Button(needsPro ? "Unlock" : "Save") {
-            if needsPro { showsPaywall = true } else { save() }
-          }
-          .disabled(rules.isEmpty || quote == nil)
         }
       }
-      .sheet(isPresented: $showsPaywall) { PaywallView() }
-      .onAppear {
-        draft.smart = Set(holding.smartAlerts.map(\.kind))
-        guard let quote else { return }
-        if let zone = holding.buyZone {
-          draft.buyLower = zone.targetPrice
-          draft.buyUpper = max(zone.upperPrice, zone.targetPrice * 1.01)
-          budget = zone.budget > 0 ? zone.budget : nil
-        } else {
-          draft.buyLower = round(quote.price * 0.90)
-          draft.buyUpper = round(quote.price * 0.95)
+      .dipwiseRows()
+    }
+    .dipwiseListStyle()
+    .navigationTitle(isNewStock ? "Set Alerts" : "Alerts for \(holding.symbol)")
+    .navigationBarTitleDisplayMode(.inline)
+    .toolbar {
+      ToolbarItem(placement: .cancellationAction) {
+        Button(isNewStock ? "Skip" : "Cancel", action: onFinish)
+      }
+      ToolbarItem(placement: .confirmationAction) {
+        Button(needsPro ? "Unlock" : "Save") {
+          if needsPro { showsPaywall = true } else { save() }
         }
-        if let zone = holding.sellZone {
-          draft.sellLower = zone.targetPrice
-          draft.sellUpper = max(zone.upperPrice, zone.targetPrice * 1.01)
-        } else {
-          draft.sellLower = round(quote.price * 1.10)
-          draft.sellUpper = round(quote.price * 1.18)
-        }
+        .disabled(rules.isEmpty || quote == nil)
+      }
+    }
+    .navigationBarBackButtonHidden(isNewStock)
+    .sheet(isPresented: $showsPaywall) { PaywallView() }
+    .onAppear {
+      guard !didLoad else { return }
+      didLoad = true
+      draft.smart = Set(holding.smartAlerts.map(\.kind))
+      // With no alerts yet, start with a buy zone. Otherwise show exactly what's set.
+      let hasAlerts = !holding.activeAlerts.isEmpty
+      draft.buyZone = hasAlerts ? holding.buyZone != nil : true
+      draft.sellZone = hasAlerts ? holding.sellZone != nil : false
+      guard let quote else { return }
+      if let zone = holding.buyZone {
+        draft.buyLower = zone.targetPrice
+        draft.buyUpper = max(zone.upperPrice, zone.targetPrice * 1.01)
+        budget = zone.budget > 0 ? zone.budget : nil
+      } else {
+        draft.buyLower = round(quote.price * 0.90)
+        draft.buyUpper = round(quote.price * 0.95)
+      }
+      if let zone = holding.sellZone {
+        draft.sellLower = zone.targetPrice
+        draft.sellUpper = max(zone.upperPrice, zone.targetPrice * 1.01)
+      } else {
+        draft.sellLower = round(quote.price * 1.10)
+        draft.sellUpper = round(quote.price * 1.18)
       }
     }
   }
@@ -194,7 +241,39 @@ struct PlanBuilderView: View {
     SnapshotPublisher.publish(context: modelContext)
     ToastCenter.shared.show("Dippy is watching \(holding.symbol)", systemImage: "binoculars.fill")
     Task { await NotificationManager.requestAuthorization() }
-    dismiss()
+    onFinish()
+  }
+}
+
+/// A picked smart alert with what it does, and a quick way to remove it.
+private struct SelectedAlertRow: View {
+  var kind: AlertKind
+  var remove: () -> Void
+
+  var body: some View {
+  HStack(alignment: .top, spacing: 12) {
+    Image(systemName: kind.systemImage)
+      .font(.footnote.weight(.bold))
+      .foregroundStyle(kind.side.color)
+      .frame(width: 30, height: 30)
+      .background(kind.side.color.opacity(0.14), in: .circle)
+    VStack(alignment: .leading, spacing: 2) {
+      Text(kind.title)
+        .font(.subheadline.weight(.semibold))
+      Text(kind.explanation)
+        .font(.footnote)
+        .foregroundStyle(.secondary)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+    Spacer(minLength: 0)
+    Button("Remove \(kind.title)", systemImage: "xmark.circle.fill", action: remove)
+      .labelStyle(.iconOnly)
+      .font(.title3)
+      .foregroundStyle(.tertiary)
+      .buttonStyle(.plain)
+  }
+  .padding(.vertical, 2)
+  .transition(.opacity.combined(with: .move(edge: .top)))
   }
 }
 
@@ -205,33 +284,33 @@ struct SmartChips: View {
   var isPro: Bool
 
   var body: some View {
-    FlowLayout(spacing: 8) {
-      ForEach(kinds) { kind in
-        let isOn = selection.contains(kind)
-        Button {
-          withAnimation(.snappy) {
-            if isOn { selection.remove(kind) } else { selection.insert(kind) }
-          }
-        } label: {
-          HStack(spacing: 6) {
-            Image(systemName: kind.systemImage)
-            Text(kind.title)
-            if kind.requiresPro && !isPro {
-              Image(systemName: "lock.fill").font(.caption2)
-            }
-          }
-          .font(.subheadline.weight(.semibold))
-          .padding(.horizontal, 12)
-          .padding(.vertical, 8)
-          .foregroundStyle(isOn ? .white : kind.side.color)
-          .background(isOn ? AnyShapeStyle(kind.side.color) : AnyShapeStyle(kind.side.color.opacity(0.12)), in: .capsule)
+  FlowLayout(spacing: 8) {
+    ForEach(kinds) { kind in
+      let isOn = selection.contains(kind)
+      Button {
+        withAnimation(.snappy) {
+          if isOn { selection.remove(kind) } else { selection.insert(kind) }
         }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(isOn ? .isSelected : [])
-        .accessibilityHint(kind.explanation)
+      } label: {
+        HStack(spacing: 6) {
+          Image(systemName: kind.systemImage)
+          Text(kind.title)
+          if kind.requiresPro && !isPro {
+            Image(systemName: "lock.fill").font(.caption2)
+          }
+        }
+        .font(.subheadline.weight(.semibold))
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .foregroundStyle(isOn ? .white : kind.side.color)
+        .background(isOn ? AnyShapeStyle(kind.side.color) : AnyShapeStyle(kind.side.color.opacity(0.12)), in: .capsule)
       }
+      .buttonStyle(.plain)
+      .accessibilityAddTraits(isOn ? .isSelected : [])
+      .accessibilityHint(kind.explanation)
     }
-    .sensoryFeedback(.selection, trigger: selection)
+  }
+  .sensoryFeedback(.selection, trigger: selection)
   }
 }
 
