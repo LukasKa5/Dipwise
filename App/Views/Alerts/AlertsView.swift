@@ -408,7 +408,7 @@ private struct FreePlanUsage: View {
       Button(action: upgrade) {
         HStack {
           ProBadge()
-          Text("Unlimited alerts, 20 smart alert types & odds")
+          Text("Unlimited alerts, 27 smart alert types & odds")
             .font(.subheadline.weight(.semibold))
           Spacer()
           Image(systemName: "chevron.forward")

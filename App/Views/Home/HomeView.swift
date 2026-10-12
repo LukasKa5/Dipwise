@@ -120,7 +120,7 @@ struct HomeView: View {
         period: $period,
         earliest: summary.earliestDate,
         openDetails: { showsPortfolio = true },
-        mood: OwlMood.current(dayChange: summary.dayChange)
+        mood: OwlMood.current(dayChange: summary.dayChange, isAwake: OwlWake.shared.isAwake)
       )
     }
     let focus = summary.nearestAlerts.first?.holding ?? holdings.first
@@ -144,7 +144,7 @@ struct HomeView: View {
       period: $period,
       earliest: quote?.dates.first ?? .now.addingTimeInterval(-365 * 86_400),
       openDetails: nil,
-      mood: OwlMood.current(dayChange: quote?.change)
+      mood: OwlMood.current(dayChange: quote?.change, isAwake: OwlWake.shared.isAwake)
     )
   }
 

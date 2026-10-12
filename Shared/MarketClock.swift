@@ -19,8 +19,8 @@ enum OwlMood: Equatable {
   case reassuring
   case calm
 
-  static func current(dayChange: Double?) -> OwlMood {
-    if !MarketClock.isOpen() { return .sleeping }
+  static func current(dayChange: Double?, isAwake: Bool = false) -> OwlMood {
+    if !MarketClock.isOpen() && !isAwake { return .sleeping }
     guard let dayChange else { return .calm }
     if dayChange >= 0.01 { return .celebrating }
     if dayChange <= -0.01 { return .reassuring }

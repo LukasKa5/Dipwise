@@ -171,7 +171,7 @@ struct InteractiveChart: View {
     .onChange(of: values) { perchIndex = nil }
     .onAppear {
       // Dippy flies in and lands on the dip the first time the chart appears.
-      guard !landed, !reduceMotion, showsOwl, (owlMood ?? (MarketClock.isOpen() ? .calm : .sleeping)) != .sleeping else {
+      guard !landed, !reduceMotion, showsOwl, (owlMood ?? (MarketClock.isOpen() || OwlWake.shared.isAwake ? .calm : .sleeping)) != .sleeping else {
         landed = true
         return
       }

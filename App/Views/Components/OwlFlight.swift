@@ -33,45 +33,44 @@ private struct OwlFlightModifier: ViewModifier {
           .scaleEffect(pose.scale, anchor: .bottom)
           .offset(y: -pose.lift)
       } keyframes: { _ in
+        // A slower, more natural flight: crouch, push off, a few deep wing beats, glide, flare, land.
         KeyframeTrack(\.squash) {
-          CubicKeyframe(0.9, duration: 0.12)
-          SpringKeyframe(1.06, duration: 0.18, spring: .snappy)
-          CubicKeyframe(1, duration: 0.7)
-          CubicKeyframe(0.92, duration: 0.1)
-          SpringKeyframe(1, duration: 0.3, spring: .bouncy)
+          CubicKeyframe(0.9, duration: 0.18)
+          SpringKeyframe(1.05, duration: 0.25, spring: .smooth)
+          CubicKeyframe(1, duration: 1.2)
+          CubicKeyframe(0.93, duration: 0.15)
+          SpringKeyframe(1, duration: 0.45, spring: .bouncy)
         }
         KeyframeTrack(\.lift) {
-          LinearKeyframe(0, duration: 0.12)
-          SpringKeyframe(height, duration: 0.3, spring: .snappy)
-          CubicKeyframe(height * 0.85, duration: 0.2)
-          CubicKeyframe(height * 0.95, duration: 0.2)
-          CubicKeyframe(height * 0.6, duration: 0.18)
-          SpringKeyframe(0, duration: 0.35, spring: .bouncy)
+          LinearKeyframe(0, duration: 0.18)
+          SpringKeyframe(height, duration: 0.45, spring: .smooth)
+          CubicKeyframe(height * 0.88, duration: 0.35)
+          CubicKeyframe(height * 0.96, duration: 0.35)
+          CubicKeyframe(height * 0.7, duration: 0.3)
+          SpringKeyframe(0, duration: 0.55, spring: .bouncy)
         }
         KeyframeTrack(\.wing) {
-          LinearKeyframe(0.15, duration: 0.12)
-          CubicKeyframe(1, duration: 0.09)
-          CubicKeyframe(0.25, duration: 0.1)
-          CubicKeyframe(1, duration: 0.09)
-          CubicKeyframe(0.3, duration: 0.1)
-          CubicKeyframe(0.95, duration: 0.1)
-          CubicKeyframe(0.4, duration: 0.11)
-          CubicKeyframe(0.8, duration: 0.12)
-          CubicKeyframe(0.75, duration: 0.15)
-          CubicKeyframe(1, duration: 0.1)
-          CubicKeyframe(0, duration: 0.25)
+          CubicKeyframe(0.2, duration: 0.18)
+          CubicKeyframe(1, duration: 0.2)
+          CubicKeyframe(0.35, duration: 0.22)
+          CubicKeyframe(1, duration: 0.2)
+          CubicKeyframe(0.4, duration: 0.24)
+          CubicKeyframe(0.9, duration: 0.22)
+          CubicKeyframe(0.75, duration: 0.35)
+          CubicKeyframe(1, duration: 0.18)
+          CubicKeyframe(0, duration: 0.4)
         }
         KeyframeTrack(\.tilt) {
-          CubicKeyframe(-4 * direction, duration: 0.12)
-          CubicKeyframe(14 * direction, duration: 0.3)
-          CubicKeyframe(6 * direction, duration: 0.4)
-          CubicKeyframe(-8 * direction, duration: 0.15)
-          SpringKeyframe(0, duration: 0.35, spring: .bouncy)
+          CubicKeyframe(-3 * direction, duration: 0.18)
+          CubicKeyframe(10 * direction, duration: 0.45)
+          CubicKeyframe(4 * direction, duration: 0.7)
+          CubicKeyframe(-6 * direction, duration: 0.25)
+          SpringKeyframe(0, duration: 0.5, spring: .bouncy)
         }
         KeyframeTrack(\.scale) {
-          CubicKeyframe(1, duration: 0.12)
-          CubicKeyframe(1.08, duration: 0.3)
-          CubicKeyframe(1.0, duration: 0.6)
+          CubicKeyframe(1, duration: 0.18)
+          CubicKeyframe(1.05, duration: 0.45)
+          CubicKeyframe(1.0, duration: 1.0)
         }
       }
     } else {
@@ -106,7 +105,8 @@ struct LivelyOwl: View {
   @State private var ruffle = 0
 
   private var effectiveMood: OwlMood {
-    mood ?? (MarketClock.isOpen() ? .calm : .sleeping)
+    if let mood { return mood }
+    return MarketClock.isOpen() || OwlWake.shared.isAwake ? .calm : .sleeping
   }
 
   var body: some View {
@@ -173,12 +173,16 @@ struct LivelyOwl: View {
   private func handleTap(isAsleep: Bool) {
     taps += 1
     if isAsleep {
-      // A sleepy peek with one eye, then back to sleep.
-      withAnimation(.easeOut(duration: 0.25)) { peek = 1 }
-      say("?")
+      // Wake up: one eye first, then both, a big stretch, and a sleepy hoot.
+      withAnimation(.easeOut(duration: 0.3)) { peek = 1 }
+      say("Hoo? I'm up!", for: 2)
       Task {
-        try? await Task.sleep(for: .seconds(1.3))
-        withAnimation(.easeIn(duration: 0.45)) { peek = 0 }
+        try? await Task.sleep(for: .seconds(0.5))
+        OwlWake.shared.wake()
+        peek = 0
+        withAnimation(.easeOut(duration: 0.6)) { stretch = 0.8 }
+        try? await Task.sleep(for: .seconds(0.7))
+        withAnimation(.easeInOut(duration: 0.8)) { stretch = 0 }
       }
       return
     }
@@ -222,7 +226,7 @@ struct LivelyOwl: View {
     while !Task.isCancelled {
       try? await Task.sleep(for: .seconds(Double.random(in: 1.6...3.8)))
       if effectiveMood == .sleeping { continue }
-      if effectiveMood == .celebrating, Int.random(in: 0..<3) == 0 {
+      if effectiveMood == .celebrating, Int.random(in: 0..<8) == 0 {
         hops += 1
         continue
       }
@@ -243,7 +247,7 @@ struct LivelyOwl: View {
         try? await Task.sleep(for: .seconds(0.45))
         withAnimation(.easeIn(duration: 0.3)) { stretch = 0 }
       default:
-        if hopsOnTap { hops += 1 } else { blinkOnce() }
+        blinkOnce()
       }
     }
   }

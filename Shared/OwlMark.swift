@@ -22,7 +22,7 @@ struct OwlMark: View, Animatable {
   /// The owl's body (including feet), in icon coordinates.
   private static let bounds = CGRect(x: 298, y: 290, width: 428, height: 492)
   /// Extra room around the body so open wings aren't clipped.
-  private static let margin: CGFloat = 0.45
+  private static let margin: CGFloat = 0.8
 
   var body: some View {
     GeometryReader { geometry in
@@ -40,6 +40,7 @@ struct OwlMark: View, Animatable {
       }
       .frame(width: canvasSize.width, height: canvasSize.height)
       .position(x: size.width / 2, y: size.height - canvasSize.height / 2)
+      .allowsHitTesting(false)
     }
     .aspectRatio(Self.bounds.width / Self.bounds.height, contentMode: .fit)
     .accessibilityHidden(true)

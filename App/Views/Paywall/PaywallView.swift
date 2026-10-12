@@ -106,9 +106,9 @@ struct PaywallView: View {
 
   private var header: some View {
     VStack(spacing: 12) {
-      LivelyOwl(hopsOnTap: true, mood: .celebrating)
+      LivelyOwl(hopsOnTap: true, mood: .calm)
         .frame(width: 104, height: 120)
-        .owlFlight(trigger: flaps, height: 30)
+        .owlFlight(trigger: flaps, height: 12)
         .padding(.top, 40)
       Text("Let Dippy watch everything")
         .font(.largeTitle.bold())
@@ -247,7 +247,7 @@ struct PaywallView: View {
 
   private func flapForever() async {
     while !Task.isCancelled {
-      try? await Task.sleep(for: .seconds(3.5))
+      try? await Task.sleep(for: .seconds(9))
       flaps += 1
     }
   }
