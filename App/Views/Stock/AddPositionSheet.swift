@@ -5,6 +5,7 @@ import SwiftUI
 struct AddPositionSheet: View {
   /// Called when the user wants a stock that isn't on their watchlist yet.
   var searchOther: () -> Void
+  @State private var showsImport = false
 
   @Query(sort: \Holding.addedAt) private var holdings: [Holding]
   @Environment(QuoteStore.self) private var quotes
@@ -45,6 +46,7 @@ struct AddPositionSheet: View {
           }
 
           Section {
+            Button("Import from Broker or CSV", systemImage: "tray.and.arrow.down") { showsImport = true }
             Button("Search for Another Stock", systemImage: "magnifyingglass") {
               dismiss()
               searchOther()
@@ -60,6 +62,11 @@ struct AddPositionSheet: View {
         ToolbarItem(placement: .cancellationAction) {
           Button("Cancel") { dismiss() }
         }
+      }
+      .sheet(isPresented: $showsImport, onDismiss: {
+        if holdings.contains(where: \.isOwned) { dismiss() }
+      }) {
+        ImportPortfolioView()
       }
       .navigationDestination(for: Holding.self) { holding in
         PositionForm(holding: holding) { dismiss() }

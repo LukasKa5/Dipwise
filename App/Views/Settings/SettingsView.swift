@@ -26,6 +26,7 @@ struct SettingsView: View {
   @Environment(\.requestReview) private var requestReview
   @State private var notificationStatus: UNAuthorizationStatus = .notDetermined
   @State private var showsPaywall = false
+  @State private var showsImport = false
   @State private var showsManageSubscription = false
   @State private var showsRedeemCode = false
   @State private var isRestoring = false
@@ -57,6 +58,7 @@ struct SettingsView: View {
       .dipwiseListStyle()
       .navigationTitle("Settings")
       .sheet(isPresented: $showsPaywall) { PaywallView() }
+      .sheet(isPresented: $showsImport) { ImportPortfolioView() }
       .manageSubscriptionsSheet(isPresented: $showsManageSubscription)
       .offerCodeRedemption(isPresented: $showsRedeemCode)
       .task { notificationStatus = await NotificationManager.authorizationStatus() }
@@ -252,6 +254,7 @@ struct SettingsView: View {
           .keyboardType(.decimalPad)
           .multilineTextAlignment(.trailing)
       }
+      Button("Import from Broker or CSV", systemImage: "tray.and.arrow.down") { showsImport = true }
     } header: {
       Text("Portfolio")
     } footer: {

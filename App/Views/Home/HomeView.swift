@@ -15,6 +15,7 @@ struct HomeView: View {
   @State private var showsAddStock = false
   @State private var showsPortfolio = false
   @State private var showsAddPosition = false
+  @State private var showsImport = false
   @State private var period: ChartPeriod = .preset(.month)
 
   private var summary: PortfolioSummary {
@@ -27,7 +28,7 @@ struct HomeView: View {
       ScrollView {
         VStack(alignment: .leading, spacing: 32) {
           if holdings.isEmpty {
-            WelcomeCard { showsAddStock = true }
+            WelcomeCard { showsAddStock = true } importPortfolio: { showsImport = true }
           } else {
             if showsBrief && !progress.isBriefDoneToday && briefHiddenDay != Self.today {
               BriefBanner(streak: progress.streak) {
@@ -83,6 +84,7 @@ struct HomeView: View {
           router.homePath = [symbol]
         }
       }
+      .sheet(isPresented: $showsImport) { ImportPortfolioView() }
       .sheet(isPresented: $showsAddPosition) {
         AddPositionSheet { showsAddStock = true }
       }
@@ -136,6 +138,8 @@ struct HomeView: View {
         ]
       ) {
         showsAddPosition = true
+      } importPortfolio: {
+        showsImport = true
       }
     }
   }
@@ -236,6 +240,7 @@ struct HomeView: View {
 
 private struct WelcomeCard: View {
   var addStock: () -> Void
+  var importPortfolio: () -> Void
 
   var body: some View {
     VStack(spacing: 18) {
@@ -256,6 +261,8 @@ private struct WelcomeCard: View {
           .padding(.vertical, 6)
       }
       .buttonStyle(.borderedProminent)
+      Button("Import from Broker or CSV", systemImage: "tray.and.arrow.down", action: importPortfolio)
+        .font(.subheadline.weight(.semibold))
     }
     .padding(28)
     .frame(maxWidth: .infinity)

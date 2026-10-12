@@ -5,6 +5,7 @@ struct FirstPositionCard: View {
   var greeting: String
   var stats: [HeroStat]
   var addPosition: () -> Void
+  var importPortfolio: () -> Void
 
   var body: some View {
     VStack(alignment: .leading, spacing: 18) {
@@ -36,6 +37,15 @@ struct FirstPositionCard: View {
       .buttonStyle(.borderedProminent)
       .tint(Palette.buy)
       .foregroundStyle(Brand.owlInk)
+
+      Button(action: importPortfolio) {
+        Label("Import from Broker or CSV", systemImage: "tray.and.arrow.down")
+          .font(.subheadline.weight(.semibold))
+          .frame(maxWidth: .infinity)
+      }
+      .buttonStyle(.plain)
+      .foregroundStyle(.white.opacity(0.85))
+      .padding(.top, -6)
 
       HStack(spacing: 10) {
         ForEach(stats) { stat in
