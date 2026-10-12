@@ -217,7 +217,7 @@ private struct StockAlertsCard: View {
                 .font(.title3.bold())
               Text(holding.name)
                 .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.65))
+                .foregroundStyle(.secondary)
                 .lineLimit(1)
             }
             Spacer()
@@ -225,24 +225,26 @@ private struct StockAlertsCard: View {
               VStack(alignment: .trailing, spacing: 2) {
                 Text(quote.formatted(quote.price))
                   .font(.title3.bold().monospacedDigit())
-                ChangeBadge(change: quote.change, positiveColor: Palette.gain, negativeColor: Palette.loss)
+                ChangeBadge(change: quote.change)
               }
             }
             Image(systemName: "chevron.forward")
               .font(.footnote.weight(.bold))
-              .foregroundStyle(.white.opacity(0.4))
+              .foregroundStyle(.tertiary)
           }
           if let quote {
             MiniPlanChart(quote: quote, buyZone: holding.buyZone, sellZone: holding.sellZone)
-              .frame(height: 64)
+              .frame(height: 76)
+              .padding(10)
+              .background(Palette.canvas.opacity(0.7), in: .rect(cornerRadius: 16))
           }
         }
         .padding(16)
         .contentShape(.rect)
       }
       .buttonStyle(.plain)
-      .heroCardStyle(cornerRadius: 22)
-      .padding(6)
+
+      Divider().padding(.horizontal, 16)
 
       if alerts.isEmpty {
         Text("No alerts yet. Give \(holding.symbol) a plan.")
@@ -314,12 +316,24 @@ private struct MiniPlanChart: View {
       if let last = values.last {
         PointMark(x: .value("Day", values.count - 1), y: .value("Price", last))
           .symbolSize(50)
-          .foregroundStyle(.white)
+          .foregroundStyle(isUp ? Palette.gain : Palette.loss)
       }
     }
     .chartXAxis(.hidden)
     .chartYAxis(.hidden)
-    .chartYScale(domain: (bounds.min() ?? 0) * 0.99...(bounds.max() ?? 1) * 1.01)
+    .chartYScale(domain: (bounds.min() ?? 0) * 0.99...(bounds.max() ?? 1) * 1.04)
+    .chartOverlay { proxy in
+      GeometryReader { geometry in
+        if let plotFrame = proxy.plotFrame,
+           let dip = values.indices.dropLast().min(by: { values[$0] < values[$1] }),
+           let position = proxy.position(for: (x: dip, y: values[dip])) {
+          let origin = geometry[plotFrame].origin
+          LivelyOwl(hopsOnTap: false)
+            .frame(width: 24, height: 28)
+            .position(x: origin.x + position.x, y: origin.y + position.y - 14)
+        }
+      }
+    }
     .accessibilityHidden(true)
   }
 }
