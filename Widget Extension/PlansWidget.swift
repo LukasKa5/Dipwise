@@ -160,7 +160,7 @@ struct PlansWidgetView: View {
         .padding(.top, 6)
       }
       .id(status.id)
-      .transition(.push(from: .trailing))
+      .transition(.opacity.combined(with: .scale(scale: 0.96)))
     } else {
       empty
     }

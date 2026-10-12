@@ -521,314 +521,62 @@ private struct FlockStep: View {
 
 private struct WidgetStep: View {
   var model: OnboardingModel
-  @Environment(\.accessibilityReduceMotion) private var reduceMotion
-  @State private var index = 0
-  @State private var showsZones = false
-  @State private var width: CGFloat = 0
-
-  /// Real iPhone widget metrics, so the preview matches the Home Screen exactly.
-  private enum Metrics {
-    static let small: CGFloat = 158
-    static let gap: CGFloat = 22
-    static let medium = small * 2 + gap
-    static let margin: CGFloat = 16
-    static let radius: CGFloat = 22
-    static let wallpaperPadding: CGFloat = 18
-    static let total = medium + wallpaperPadding * 2
-  }
-
-  private var statuses: [TargetStatus] { model.sampleStatuses }
-  private var focus: String? { model.focusSymbol ?? model.previewSymbols.first }
-
-  /// Scales the full-size Home Screen to the width available, never larger than life.
-  private var scale: CGFloat {
-    guard width > 0 else { return 0.85 }
-    return min(1, (width - 40) / Metrics.total)
-  }
 
   var body: some View {
-    VStack(spacing: 24) {
-      Spacer(minLength: 8)
-      homeScreen
-        .scaleEffect(scale)
-        .frame(width: Metrics.total * scale, height: Metrics.total * scale)
-      MissionChip(text: "Tap a widget", isDone: model.completedMissions.contains("widget"))
-      StepTitle(title: "Dippy on your Home Screen", message: "Your plans at a glance, without opening the app. Tap the widgets to flip through plans and switch to zones.")
-      Spacer(minLength: 8)
-    }
-    .frame(maxWidth: .infinity)
-    .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
-    .sensoryFeedback(.selection, trigger: index)
-    .sensoryFeedback(.selection, trigger: showsZones)
-    .task {
-      // A gentle hint: the plans widget flips on its own until the user tries it.
-      guard !reduceMotion else { return }
-      while !Task.isCancelled && !model.completedMissions.contains("widget") {
-        try? await Task.sleep(for: .seconds(2.6))
-        guard !model.completedMissions.contains("widget") else { break }
-        withAnimation(.smooth) { index += 1 }
-      }
-    }
-  }
-
-  private var homeScreen: some View {
-    VStack(spacing: Metrics.gap) {
-      HStack(spacing: Metrics.gap) {
-        widget(width: Metrics.small, label: "Plans widget. Tap to see the next plan.") {
-          PlansWidgetView(entry: PlansEntry(date: .now, statuses: statuses, index: index), previewFamily: .systemSmall)
-        } action: {
-          withAnimation(.smooth) { index += 1 }
-          model.complete("widget")
-        }
-        widget(width: Metrics.small, label: "Streak widget") {
-          StreakWidgetView(entry: StreakEntry(date: .now, progress: ProgressSnapshot(
-            streak: 1, lastBrief: Calendar.current.date(byAdding: .day, value: -1, to: .now), level: 1, levelTitle: "Owlet")))
-        } action: {}
-      }
-      widget(width: Metrics.medium, label: "Stock plan widget. Tap to switch between chart and zones.") {
-        StockPlanWidgetView(
-          entry: StockPlanEntry(date: .now, symbol: focus, quote: focus.flatMap { model.quotes[$0] },
-                                targets: statuses.map(\.target).filter { $0.symbol == focus }),
-          previewFamily: .systemMedium,
-          previewShowsZones: showsZones
-        )
-        .id(showsZones)
-        .transition(.opacity.combined(with: .scale(scale: 0.97)))
-      } action: {
-        withAnimation(.smooth) { showsZones.toggle() }
+    VStack(spacing: 20) {
+      Spacer(minLength: 4)
+      HomeScreenPreview(statuses: model.sampleStatuses, quotes: model.quotes, symbols: model.previewSymbols) {
         model.complete("widget")
       }
+      MissionChip(text: "Tap a widget", isDone: model.completedMissions.contains("widget"))
+      StepTitle(title: "Dippy on your Home Screen", message: "Your plans flip by on their own, today's movers update all day, and one tap switches a chart to your zones.")
+      Spacer(minLength: 4)
     }
-    .padding(Metrics.wallpaperPadding)
-    .frame(width: Metrics.total, height: Metrics.total)
-    .background {
-      RoundedRectangle(cornerRadius: 44)
-        .fill(LinearGradient(
-          colors: [Color(red: 0.36, green: 0.42, blue: 0.86), Color(red: 0.55, green: 0.33, blue: 0.78), Color(red: 0.93, green: 0.55, blue: 0.45)],
-          startPoint: .topLeading, endPoint: .bottomTrailing))
-        .overlay { RoundedRectangle(cornerRadius: 44).strokeBorder(.white.opacity(0.18), lineWidth: 1.5) }
-    }
-  }
-
-  private func widget<Content: View>(width: CGFloat, label: String, @ViewBuilder content: () -> Content, action: @escaping () -> Void) -> some View {
-    Button(action: action) {
-      content()
-        .padding(Metrics.margin)
-        .frame(width: width, height: Metrics.small)
-        .background(Brand.nightMiddle, in: .rect(cornerRadius: Metrics.radius))
-        .clipShape(.rect(cornerRadius: Metrics.radius))
-        // The widgets' own buttons and links stay inert; the whole widget is one tap target.
-        .allowsHitTesting(false)
-        .overlay { Color.clear.contentShape(.rect(cornerRadius: Metrics.radius)) }
-        .shadow(color: .black.opacity(0.25), radius: 12, y: 6)
-    }
-    .buttonStyle(WidgetPressStyle())
-    .accessibilityElement(children: .combine)
-    .accessibilityLabel(label)
-  }
-}
-
-/// Widgets shrink slightly while pressed, like on the Home Screen.
-private struct WidgetPressStyle: ButtonStyle {
-  func makeBody(configuration: Configuration) -> some View {
-    configuration.label
-      .scaleEffect(configuration.isPressed ? 0.95 : 1)
-      .animation(.snappy(duration: 0.2), value: configuration.isPressed)
   }
 }
 
 private struct WatchStep: View {
   var model: OnboardingModel
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
-  @State private var page = 0
-  @State private var notification = false
-
-  private var symbol: String { model.focusSymbol ?? "NVDA" }
-  private var statuses: [TargetStatus] { Array(model.sampleStatuses.prefix(3)) }
+  @State private var screen: WatchPreview.Screen = .face
+  @State private var userTapped = false
 
   var body: some View {
-    VStack(spacing: 26) {
-      Spacer(minLength: 8)
-      watch
+    VStack(spacing: 18) {
+      Spacer(minLength: 4)
+      WatchPreview(statuses: model.sampleStatuses, quotes: model.quotes, symbol: model.focusSymbol ?? "NVDA", screen: $screen)
         .onTapGesture {
-          withAnimation(reduceMotion ? .easeInOut(duration: 0.2) : .smooth(duration: 0.45)) { page = (page + 1) % 2 }
+          userTapped = true
+          advance()
           model.complete("watch")
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(page == 0 ? "Apple Watch face with your nearest plan" : "Apple Watch plans list")
-        .accessibilityHint("Tap to switch screens.")
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Apple Watch. \(screen.title).")
+        .accessibilityHint("Tap to see the next screen.")
         .accessibilityAddTraits(.isButton)
-      MissionChip(text: "Tap the watch", isDone: model.completedMissions.contains("watch"))
-      StepTitle(title: "On your wrist", message: "A gentle tap when a stock reaches your zone, your nearest plan on the watch face, and every plan a glance away.")
-      Spacer(minLength: 8)
-    }
-    .sensoryFeedback(.impact(weight: .medium), trigger: notification)
-    .sensoryFeedback(.selection, trigger: page)
-    .task {
-      while !Task.isCancelled {
-        try? await Task.sleep(for: .seconds(2.5))
-        withAnimation(.bouncy) { notification = true }
-        try? await Task.sleep(for: .seconds(2.4))
-        withAnimation(.smooth) { notification = false }
-        try? await Task.sleep(for: .seconds(1.8))
-      }
-    }
-  }
-
-  /// An Apple Watch drawn to scale: case, Digital Crown, side button, and a screen that clips its content.
-  private var watch: some View {
-    ZStack {
-      // Band
-      VStack(spacing: 0) {
-        UnevenRoundedRectangle(topLeadingRadius: 18, topTrailingRadius: 18)
-          .fill(LinearGradient(colors: [Color(white: 0.16), Color(white: 0.22)], startPoint: .top, endPoint: .bottom))
-          .frame(width: 150, height: 60)
-        Spacer()
-        UnevenRoundedRectangle(bottomLeadingRadius: 18, bottomTrailingRadius: 18)
-          .fill(LinearGradient(colors: [Color(white: 0.22), Color(white: 0.16)], startPoint: .top, endPoint: .bottom))
-          .frame(width: 150, height: 60)
-      }
-      .frame(height: 360)
-
-      // Case
-      RoundedRectangle(cornerRadius: 56, style: .continuous)
-        .fill(LinearGradient(colors: [Color(white: 0.42), Color(white: 0.2), Color(white: 0.32)], startPoint: .topLeading, endPoint: .bottomTrailing))
-        .frame(width: 214, height: 256)
-        .shadow(color: .black.opacity(0.45), radius: 20, y: 10)
-
-      // Digital Crown and side button
-      RoundedRectangle(cornerRadius: 4)
-        .fill(LinearGradient(colors: [Color(white: 0.55), Color(white: 0.3)], startPoint: .top, endPoint: .bottom))
-        .frame(width: 10, height: 38)
-        .overlay { RoundedRectangle(cornerRadius: 3).fill(Brand.amber).frame(width: 4, height: 30).offset(x: 3) }
-        .offset(x: 110, y: -48)
-      Capsule()
-        .fill(Color(white: 0.35))
-        .frame(width: 6, height: 48)
-        .offset(x: 108, y: 30)
-
-      // Screen
-      ZStack {
-        Color.black
-        Group {
-          if page == 0 { face } else { plans }
-        }
-        .transition(.asymmetric(
-          insertion: .scale(scale: 0.86).combined(with: .opacity),
-          removal: .scale(scale: 1.12).combined(with: .opacity)
-        ))
-        if notification {
-          notificationCard
-            .transition(.move(edge: .bottom).combined(with: .opacity))
-        }
-      }
-      .frame(width: 192, height: 234)
-      .clipShape(.rect(cornerRadius: 44, style: .continuous))
-      .overlay {
-        RoundedRectangle(cornerRadius: 44, style: .continuous).strokeBorder(.black, lineWidth: 4)
-      }
-    }
-    .frame(width: 240, height: 360)
-    .compositingGroup()
-  }
-
-  private var notificationCard: some View {
-    VStack(spacing: 6) {
-      Image(.appIconPreview).resizable().frame(width: 32, height: 32).clipShape(.circle)
-      Text("\(symbol) entered your buy zone")
-        .font(.system(size: 14, weight: .semibold))
-        .multilineTextAlignment(.center)
-        .fixedSize(horizontal: false, vertical: true)
-      Text("Your plan: buy a little")
-        .font(.system(size: 12))
-        .foregroundStyle(.white.opacity(0.65))
-    }
-    .padding(12)
-    .frame(maxWidth: .infinity)
-    .background(Color(white: 0.17), in: .rect(cornerRadius: 22, style: .continuous))
-    .padding(10)
-    .frame(maxHeight: .infinity, alignment: .bottom)
-  }
-
-  private var face: some View {
-    let nearest = statuses.first
-    return VStack(spacing: 10) {
-      Text(Date.now, format: .dateTime.weekday(.abbreviated).day())
-        .font(.system(size: 13, weight: .semibold))
-        .foregroundStyle(Brand.amber)
-        .textCase(.uppercase)
-      Text("10:09")
-        .font(.system(size: 46, weight: .semibold, design: .rounded))
-        .monospacedDigit()
-      HStack(spacing: 12) {
-        ZStack {
-          Circle().stroke(.white.opacity(0.2), lineWidth: 5)
-          Circle()
-            .trim(from: 0, to: nearest?.progress ?? 0.78)
-            .stroke(nearest?.target.rule.kind.side.brandColor ?? Brand.buy, style: StrokeStyle(lineWidth: 5, lineCap: .round))
-            .rotationEffect(.degrees(-90))
-          Text(symbol.prefix(4))
-            .font(.system(size: 11, weight: .bold))
-            .minimumScaleFactor(0.6)
-            .padding(6)
-        }
-        .frame(width: 50, height: 50)
-        ZStack {
-          Circle().fill(.white.opacity(0.1))
-          VStack(spacing: 0) {
-            Image(systemName: "flame.fill").foregroundStyle(Brand.amber)
-            Text("1").font(.system(size: 12, weight: .bold))
-          }
-        }
-        .frame(width: 50, height: 50)
-      }
-      HStack(spacing: 6) {
-        OwlMark().frame(width: 20)
-        VStack(alignment: .leading, spacing: 1) {
-          Text("\(nearest?.target.symbol ?? symbol) · \(distanceText(nearest?.distance))")
-            .font(.system(size: 12, weight: .bold))
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
-          Text(nearest?.target.rule.kind.side == .sell ? "to sell zone" : "to buy zone")
-            .font(.system(size: 10))
-            .foregroundStyle(.white.opacity(0.6))
-        }
-      }
-    }
-    .foregroundStyle(.white)
-    .frame(maxWidth: .infinity, maxHeight: .infinity)
-  }
-
-  private var plans: some View {
-    VStack(alignment: .leading, spacing: 7) {
-      Text("Plans")
-        .font(.system(size: 17, weight: .bold))
+      Text(screen.title)
+        .font(.subheadline.weight(.semibold))
         .foregroundStyle(Brand.buy)
-        .padding(.leading, 4)
-      ForEach(statuses) { status in
-        let color = status.target.rule.kind.side.brandColor
-        VStack(alignment: .leading, spacing: 5) {
-          HStack {
-            Text(status.target.symbol)
-              .font(.system(size: 13, weight: .bold))
-              .lineLimit(1)
-            Spacer(minLength: 4)
-            Text(distanceText(status.distance))
-              .font(.system(size: 12, weight: .semibold).monospacedDigit())
-              .foregroundStyle(color)
-              .lineLimit(1)
-          }
-          WidgetTrack(progress: status.progress, color: color)
-        }
-        .padding(9)
-        .background(Color(white: 0.14), in: .rect(cornerRadius: 14, style: .continuous))
-      }
-      Spacer(minLength: 0)
+        .contentTransition(.opacity)
+        .id(screen)
+      MissionChip(text: "Tap the watch", isDone: model.completedMissions.contains("watch"))
+      StepTitle(title: "The best stocks app on your wrist", message: "A tap when a stock hits your zone, your plans on the watch face, and charts you scrub with the Digital Crown.")
+      Spacer(minLength: 4)
     }
-    .padding(.horizontal, 12)
-    .padding(.top, 18)
-    .foregroundStyle(.white)
-    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .sensoryFeedback(.selection, trigger: screen)
+    .task {
+      // Tours the screens by itself until the user takes over.
+      guard !reduceMotion else { return }
+      while !Task.isCancelled && !userTapped {
+        try? await Task.sleep(for: .seconds(4.2))
+        if !userTapped { advance() }
+      }
+    }
+  }
+
+  private func advance() {
+    let next = WatchPreview.Screen(rawValue: (screen.rawValue + 1) % WatchPreview.Screen.allCases.count) ?? .face
+    withAnimation(reduceMotion ? .easeInOut(duration: 0.2) : .smooth(duration: 0.5)) { screen = next }
   }
 }
 
