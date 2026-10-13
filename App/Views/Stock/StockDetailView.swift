@@ -174,7 +174,7 @@ struct StockDetailView: View {
         InfoButton(topic: .zones)
       }
       VStack(alignment: .leading, spacing: 0) {
-        if let quote, ![holding.buyZone, holding.sellZone].compactMap { $0 }.isEmpty {
+        if let quote, ![holding.buyZone, holding.sellZone].compactMap({ $0 }).isEmpty {
           let report = flock.reports[symbol]
           VStack(alignment: .leading, spacing: 10) {
             ZoneTrack(

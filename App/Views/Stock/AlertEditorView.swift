@@ -284,7 +284,6 @@ struct AlertEditorView: View {
   }
 
   private func presetOptions(for quote: Quote) -> [(title: String, lower: Double, upper: Double)] {
-    let price = quote.price
     var options: [(String, Double, Double)]
     if kind.side == .buy {
       options = [("Near 52-week low", quote.low52, quote.low52 * 1.04)]
