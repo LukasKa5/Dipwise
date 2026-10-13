@@ -15,9 +15,34 @@ struct MarketingSceneView: View {
     return arguments[index + 1]
   }
 
+  /// Dippy in several poses on pure green, so the screenshot compositor can cut him out.
+  private var owls: some View {
+    let poses: [(blink: Double, look: CGSize, rightEye: Double)] = [
+      (0, .zero, 0),
+      (0, CGSize(width: -1, height: 0), 0),
+      (0, CGSize(width: 0.3, height: -0.9), 0),
+      (1, .zero, 1),
+      (1, .zero, 0),
+      (0, CGSize(width: 1, height: 0.2), 0),
+    ]
+    return ZStack {
+      Color(red: 0, green: 1, blue: 0)
+      LazyVGrid(columns: [GridItem(.fixed(200)), GridItem(.fixed(200))], spacing: 40) {
+        ForEach(poses.indices, id: \.self) { index in
+          let pose = poses[index]
+          OwlMark(blink: pose.blink, lookOffset: pose.look, rightEyeOpen: pose.rightEye)
+            .frame(width: 170, height: 196)
+            .frame(width: 200, height: 250)
+        }
+      }
+    }
+  }
+
   var body: some View {
     Group {
-      if isReady {
+      if scene == "owls" {
+        owls
+      } else if isReady {
         if scene == "lock" {
           NotifyStep(model: model, showsScreenOnly: true)
         } else {

@@ -261,17 +261,12 @@ struct WidgetShowcaseStep: View {
               }
             }
           }
-          // The full-size Home Screen for App Store screenshots shows the rest of the widget family too.
+          // The full-size Home Screen for App Store screenshots also shows today's movers.
           if showsScreenOnly {
             labeled {
               widget(width: Metrics.medium) {
                 MoversWidgetView(entry: MoversEntry(date: LivingClock.tick(step), quotes: MoversProvider.sorted(model.previewSymbols.compactMap { model.quotes[$0] })),
                                  previewFamily: .systemMedium)
-              }
-            }
-            labeled {
-              widget(width: Metrics.medium) {
-                FlockWidgetView(entry: FlockWidgetEntry(date: LivingClock.tick(step), snapshot: FlockSnapshot.load() ?? .sample), previewFamily: .systemMedium)
               }
             }
           }

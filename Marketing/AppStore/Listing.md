@@ -13,8 +13,8 @@ stock,price,portfolio,tracker,watchlist,dividend,rsi,invest,market,etf,crypto,si
 
 Words already in the name and subtitle (dip, alerts, buy, zones, widgets) are indexed automatically, so they aren't repeated here.
 
-## Promotional text (146/170)
-Draw your buy zone, and Dippy taps you the second a stock gets there. Now with living widgets, Apple Watch, and portfolio import from your broker.
+## Promotional text (143/170)
+Buy the dip with a plan. Draw your buy zone and Dippy taps you the second a stock gets there. Widgets, Apple Watch, and broker import included.
 
 ## Description
 Buy the dip. Calmly.
@@ -45,20 +45,15 @@ YOUR PORTFOLIO, IN ONE CALM PLACE
 • A watchlist with prices, trends, and how close each plan is
 
 LIVING WIDGETS AND APPLE WATCH
-• Home Screen widgets for your plans, a stock's chart and zones, today's movers, the flock, and your streak
-• Dippy changes pose through the day and reacts when you tap him
+• Home Screen widgets for your plans, a stock's chart and zones, today's movers, and your streak
+• Tap Dippy on a widget and he says hello
 • On Apple Watch: your portfolio, closest plans, and charts you scrub with the Digital Crown, plus complications for your portfolio and market hours
-
-THE FLOCK
-• See the price ranges where other Dipwise investors plan to buy and sell, shared anonymously
-• Dip Radar: popular stocks trading inside the crowd's buy zone right now
-• Vote each week on where a stock is heading
 
 A ONE-MINUTE DAILY HABIT
 • A short daily brief, streaks, and achievements that reward calm, steady investing
 
 DIPWISE PRO
-Free includes 3 price alerts. Pro unlocks unlimited alerts, all 27 smart alerts, odds for every plan, live signals on all your stocks, the full crowd report and Dip Radar, heads-up alerts before a zone, and the dividend calendar.
+Free includes 3 price alerts. Pro unlocks unlimited alerts, all 27 smart alerts, odds for every plan, live signals on all your stocks, heads-up alerts before a zone, and the dividend calendar.
 
 Payment is charged to your Apple Account at confirmation of purchase. Subscriptions renew automatically unless canceled at least 24 hours before the end of the current period. Manage or cancel any time in your App Store account settings.
 
@@ -69,24 +64,28 @@ Dipwise is not a broker, doesn't execute trades, and doesn't give investment adv
 
 ## Screenshots
 
-iPhone 6.9-inch (1320 × 2868), upload in this order from `iPhone-6.9/`:
+iPhone 6.9-inch (1320 × 2868), upload in this order from `iPhone-6.9/`. The ten images are cut from one continuous scene, so in the App Store they flow into each other as people swipe.
 
 | # | File | Headline |
 |---|------|----------|
-| 1 | 01-home.png | Buy the dip. Calmly. |
-| 2 | 02-zones.png | Draw where you'd buy |
-| 3 | 03-lock.png | Never miss your moment |
-| 4 | 04-stock.png | Know your odds |
-| 5 | 05-smart.png | 27 smart alerts, in plain English |
+| 1 | 01-buy-the-dip.png | Buy the dip. |
+| 2 | 02-buy-zone.png | Draw your buy zone |
+| 3 | 03-alerts.png | Never miss the dip |
+| 4 | 04-odds.png | Know your odds before you buy |
+| 5 | 05-smart-alerts.png | Pro signals, plain English |
 | 6 | 06-widgets.png | Your plans, always in sight |
-| 7 | 07-watch.png | A glance is enough |
-| 8 | 08-flock.png | See where the crowd buys |
-| 9 | 09-import.png | Bring your portfolio in seconds |
-| 10 | 10-watchlist.png | Every stock, one calm list |
+| 7 | 07-apple-watch.png | Your portfolio, on your wrist |
+| 8 | 08-import.png | Your portfolio in seconds |
+| 9 | 09-portfolio.png | Everything you own, one calm place |
+| 10 | 10-start-free.png | Sleep well. Dippy's on watch. |
 
-Apple scales the 6.9-inch set down for smaller iPhones, so this one set covers every iPhone.
+The first three appear in search results, so they carry the core promise: buy the dip, draw your zone, get the alert.
 
-Apple Watch Ultra (422 × 514), from `AppleWatch-Ultra/`: 01-today, 02-plans, 03-stock, 04-watchlist. Apple uses these for every watch size.
+Apple scales the 6.9-inch set down for smaller iPhones, so this one set covers every iPhone. `panorama-preview.png` shows the whole scene at once.
 
-To regenerate after the app changes: capture new screens into `ScreenshotStudio/Raw/` with the same names, then run
+Apple Watch Ultra (422 × 514), from `AppleWatch-Ultra/`: 01-today, 02-plans, 03-stock, 04-watchlist.
+
+The Flock isn't in the screenshots or description yet, because App Store builds hide it until its iCloud backend is live. Add it back once it is.
+
+To regenerate after the app changes, capture new screens into `ScreenshotStudio/Raw/` with the same names, then run
 `python3 Marketing/ScreenshotStudio/compose.py Marketing/ScreenshotStudio/Raw Marketing/AppStore/iPhone-6.9`.
