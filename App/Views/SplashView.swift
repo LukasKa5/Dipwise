@@ -22,7 +22,7 @@ struct SplashView: View {
           Text("Dipwise")
             .font(.system(size: 32, weight: .bold, design: .rounded))
             .foregroundStyle(.white)
-          Text("Buy the dip. Calmly.")
+          Text("Buy the dip.")
             .font(.subheadline.weight(.medium))
             .foregroundStyle(.white.opacity(0.6))
         }

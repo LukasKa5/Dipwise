@@ -39,8 +39,7 @@ struct WidgetBadge: View {
   }
 }
 
-/// One of Dippy's poses. Widgets can't animate continuously, so each update shows a new pose,
-/// which makes Dippy feel alive across the day: looking around, blinking, stretching, and cheering.
+/// Dippy's poses on widgets and Apple Watch. He stays still and calm there; only his eyes change for a wink or a reaction.
 enum DippyPose: Int, CaseIterable {
   case idle
   case lookLeft
@@ -50,12 +49,9 @@ enum DippyPose: Int, CaseIterable {
   case cheer
   case wink
 
-  /// A pose that changes every few minutes on its own.
+  /// Dippy sits still on widgets: always the same calm pose, whatever the time.
   static func at(_ date: Date, seed: Int = 0) -> DippyPose {
-    let step = Int(date.timeIntervalSinceReferenceDate / 300) + seed
-    // Cheering stays special, so it's left out of the idle rotation.
-    let idle: [DippyPose] = [.idle, .lookLeft, .idle, .lookRight, .wink, .lookUp, .idle, .stretch]
-    return idle[((step % idle.count) + idle.count) % idle.count]
+    .idle
   }
 
   var look: CGSize {
@@ -68,13 +64,8 @@ enum DippyPose: Int, CaseIterable {
     }
   }
 
-  var wings: Double {
-    switch self {
-    case .stretch: 0.55
-    case .cheer: 0.9
-    default: 0
-    }
-  }
+  /// Dippy's wings stay folded on widgets and the watch.
+  var wings: Double { 0 }
 }
 
 /// Dippy for widgets and the watch, asleep while the market is closed.

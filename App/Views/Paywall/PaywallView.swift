@@ -5,6 +5,7 @@ import SwiftUI
 struct PaywallView: View {
   @Environment(\.dismiss) private var dismiss
   @Environment(SubscriptionManager.self) private var subscription
+  @Environment(FlockService.self) private var flock
   @State private var products: [Product] = []
   @State private var selectedID = SubscriptionManager.yearlyID
   @State private var isLoading = true
@@ -132,7 +133,8 @@ struct PaywallView: View {
 
   /// Only what changes with Pro, with the Pro column highlighted.
   private var comparison: some View {
-    let rows = ProFeature.all
+    // Only sell what works today: crowd features appear once the Flock is live.
+    let rows = ProFeature.all.filter { flock.isAvailable || !$0.needsFlock }
     return VStack(spacing: 0) {
       HStack(spacing: 0) {
         Text("What you get")
@@ -429,6 +431,7 @@ private struct ProFeature {
   var systemImage: String
   var free: Value
   var pro: Value
+  var needsFlock = false
 
   static let freeWidth: CGFloat = 62
   static let proWidth: CGFloat = 86
@@ -438,7 +441,7 @@ private struct ProFeature {
     ProFeature(title: "Smart alerts like RSI, MACD, and trend crosses", systemImage: "sparkles", free: .missing, pro: .text("27 types")),
     ProFeature(title: "Odds that each alert fires", systemImage: "dice.fill", free: .text("1"), pro: .text("All")),
     ProFeature(title: "Live signals on your stocks", systemImage: "dot.radiowaves.left.and.right", free: .text("2"), pro: .text("All")),
-    ProFeature(title: "Full crowd report and Dip Radar", systemImage: "person.3.fill", free: .text("Preview"), pro: .included),
+    ProFeature(title: "Full crowd report and Dip Radar", systemImage: "person.3.fill", free: .text("Preview"), pro: .included, needsFlock: true),
     ProFeature(title: "Heads-up before a stock reaches your zone", systemImage: "bell.badge.fill", free: .missing, pro: .included),
     ProFeature(title: "Dividend calendar", systemImage: "leaf.fill", free: .missing, pro: .included),
   ]

@@ -96,7 +96,7 @@ struct OnboardingView: View {
   private var topBar: some View {
     HStack(spacing: 14) {
       Button("Back", systemImage: "chevron.backward") {
-        withAnimation(.smooth) { page -= 1 }
+        withAnimation(.smooth) { page -= (page == 6 && !flock.isAvailable) ? 2 : 1 }
       }
       .labelStyle(.iconOnly)
       .font(.title3.weight(.semibold))
@@ -149,7 +149,8 @@ struct OnboardingView: View {
     default: break
     }
     if page == 2 { model.prepareZone() }
-    withAnimation(reduceMotion ? .easeInOut : .smooth) { page += 1 }
+    // The Flock step is skipped until the Flock is live.
+    withAnimation(reduceMotion ? .easeInOut : .smooth) { page += (page == 4 && !flock.isAvailable) ? 2 : 1 }
   }
 }
 
@@ -208,7 +209,8 @@ private struct WelcomeStep: View {
   @State private var taps = 0
   @State private var arrived = false
   private let lines = [
-    "Hoo! Tap me three times.",
+    "Hoo! Tap me four times.",
+    "That tickles! Keep going…",
     "I'm Dippy, your stock-watching owl.",
     "I watch your stocks day and night…",
     "…and tell you when it's time to act.",
@@ -218,14 +220,14 @@ private struct WelcomeStep: View {
   var body: some View {
     VStack(spacing: 24) {
       Spacer()
-      MissionChip(text: "Tap Dippy 3 times", isDone: model.completedMissions.contains("welcome"))
+      MissionChip(text: "Tap Dippy 4 times", isDone: model.completedMissions.contains("welcome"))
       SpeechBubble(text: lines[min(taps, lines.count - 1)])
         .animation(.snappy, value: taps)
       LivelyOwl(mood: .calm)
         .frame(width: 180, height: 206)
         .simultaneousGesture(TapGesture().onEnded {
           taps += 1
-          if taps >= 3 { model.complete("welcome") }
+          if taps >= 4 { model.complete("welcome") }
         })
         .offset(x: arrived ? 0 : 260, y: arrived ? 0 : -520)
         .rotationEffect(.degrees(arrived ? 0 : 30))

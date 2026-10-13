@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MainTabView: View {
   @Environment(Router.self) private var router
+  @Environment(FlockService.self) private var flock
 
   var body: some View {
     @Bindable var router = router
@@ -15,8 +16,11 @@ struct MainTabView: View {
       Tab("Alerts", systemImage: "bell", value: AppTab.alerts) {
         AlertsView()
       }
-      Tab("Flock", systemImage: "person.3", value: AppTab.flock) {
-        FlockView()
+      // The Flock appears once its iCloud backend is connected, so nobody sees an empty tab.
+      if flock.isAvailable {
+        Tab("Flock", systemImage: "person.3", value: AppTab.flock) {
+          FlockView()
+        }
       }
       Tab("Settings", systemImage: "gearshape", value: AppTab.settings) {
         SettingsView()

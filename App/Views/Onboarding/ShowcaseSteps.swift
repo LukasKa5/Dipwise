@@ -337,20 +337,20 @@ struct WatchShowcaseStep: View {
 
   /// Apple Watch proportions: display, the black border around it, and the case.
   private enum Size {
-    static let display = CGSize(width: 198, height: 236)
-    static let displayRadius: CGFloat = 42
+    static let display = CGSize(width: 208, height: 250)
+    static let displayRadius: CGFloat = 44
     static let border: CGFloat = 7
     static let caseInset: CGFloat = 9
     static var bezel: CGSize { CGSize(width: display.width + border * 2, height: display.height + border * 2) }
     static var watchCase: CGSize { CGSize(width: bezel.width + caseInset * 2, height: bezel.height + caseInset * 2) }
     /// The title bar sits inside the rounded corners, like every watchOS app.
-    static let titleInset: CGFloat = 24
-    static let titleTop: CGFloat = 14
+    static let titleInset: CGFloat = 22
+    static let titleTop: CGFloat = 10
     /// Content begins below the title, and fades out fully before reaching it.
-    static let contentTop: CGFloat = 50
-    static let fadeStart: CGFloat = 36
-    static let fadeEnd: CGFloat = 66
-    static let scrollDistance: CGFloat = 170
+    static let contentTop: CGFloat = 58
+    static let fadeStart: CGFloat = 46
+    static let fadeEnd: CGFloat = 70
+    static let scrollDistance: CGFloat = 300
   }
 
   private var movers: [Quote] { MoversProvider.sorted(model.previewSymbols.compactMap { model.quotes[$0] }) }
@@ -448,6 +448,8 @@ struct WatchShowcaseStep: View {
       content
         .padding(.horizontal, 8)
         .padding(.top, Size.contentTop)
+        // Full natural height, like a scroll view, so no text gets squeezed.
+        .fixedSize(horizontal: false, vertical: true)
         .offset(y: scroll)
         .frame(width: Size.display.width, height: Size.display.height, alignment: .top)
         // Content fades out beneath the title instead of hitting a hard edge, as on watchOS.
@@ -465,17 +467,19 @@ struct WatchShowcaseStep: View {
     .foregroundStyle(.white)
   }
 
+  /// The same top as the real watch app: the time, with the app's title in green beneath it, both on the right.
   private var titleBar: some View {
-    HStack(alignment: .firstTextBaseline) {
-      Text("Dipwise")
-        .foregroundStyle(Brand.buy)
-      Spacer()
+    VStack(alignment: .trailing, spacing: 0) {
       Text(Date.now, format: .dateTime.hour().minute())
+        .font(.system(size: 15, weight: .semibold, design: .rounded))
         .monospacedDigit()
+      Text("Dipwise")
+        .font(.system(size: 17, weight: .semibold, design: .rounded))
+        .foregroundStyle(Brand.buy)
     }
-    .font(.system(size: 15, weight: .semibold, design: .rounded))
     .lineLimit(1)
-    .padding(.horizontal, Size.titleInset)
+    .frame(maxWidth: .infinity, alignment: .trailing)
+    .padding(.trailing, Size.titleInset)
     .padding(.top, Size.titleTop)
     .accessibilityHidden(true)
   }
@@ -493,10 +497,19 @@ struct WatchShowcaseStep: View {
       .accessibilityHidden(true)
   }
 
+  /// A sample portfolio of the stocks the user just picked, so the screen looks like their own watch will.
+  private var portfolio: WatchPortfolio? {
+    let stocks = model.previewSymbols.compactMap { symbol -> WatchedStock? in
+      guard let quote = model.quotes[symbol] else { return nil }
+      return WatchedStock(symbol: symbol, name: quote.name, shares: max(5, (4_000 / quote.price).rounded()), averageCost: quote.price * 0.8)
+    }
+    return WatchPortfolio.make(stocks: stocks, quotes: model.quotes, currency: model.focusQuote?.currency ?? "USD", rates: [:])
+  }
+
+  /// The real watch app's Today page, in the same order: Dippy, portfolio, closest plans, movers, and market hours.
   private var content: some View {
     VStack(alignment: .leading, spacing: 8) {
       WatchDippyHeader(greeting: WatchGreeting.text(), message: OwlMood.calm.watchMessage, isAsleep: false, hops: hops)
-        .padding(.horizontal, 4)
         .contentShape(.rect)
         .onTapGesture {
           hops += 1
@@ -504,14 +517,19 @@ struct WatchShowcaseStep: View {
         }
         .accessibilityAddTraits(.isButton)
         .accessibilityHint("Tap Dippy")
+      if let portfolio {
+        WatchPortfolioHero(portfolio: portfolio)
+      }
+      WatchSectionTitle(title: "Closest plans")
       ForEach(model.sampleStatuses.prefix(2)) { status in
         WatchPlanCard(status: status)
       }
       WatchSectionTitle(title: "Today's movers")
-        .padding(.horizontal, 4)
       ForEach(movers.prefix(2), id: \.symbol) { quote in
         WatchMoverRow(quote: quote)
       }
+      WatchMarketStatus(isOpen: MarketClock.isOpen(), nextChange: MarketClock.nextChange(), market: nil)
+        .padding(.top, 2)
     }
     .sensoryFeedback(.impact(weight: .light), trigger: hops)
   }
