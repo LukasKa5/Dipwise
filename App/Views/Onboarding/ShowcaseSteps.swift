@@ -186,6 +186,8 @@ private func phoneScale(for width: CGFloat) -> CGFloat {
 /// The real widgets on a Home Screen, alive: plans page by themselves, Dippy changes pose, and taps get a reaction.
 struct WidgetShowcaseStep: View {
   var model: OnboardingModel
+  /// Shows just the Home Screen, full size, for App Store screenshots.
+  var showsScreenOnly = false
 
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @State private var step = 0
@@ -200,6 +202,14 @@ struct WidgetShowcaseStep: View {
   private var focus: String? { model.focusSymbol ?? model.previewSymbols.first }
 
   var body: some View {
+    if showsScreenOnly {
+      homeScreen
+    } else {
+      showcase
+    }
+  }
+
+  private var showcase: some View {
     ShowcaseLayout(
       eyebrow: "Home Screen",
       title: "Your plans, always in sight",
@@ -248,6 +258,20 @@ struct WidgetShowcaseStep: View {
               widget(width: Metrics.small) {
                 StreakWidgetView(entry: StreakEntry(date: LivingClock.tick(step), progress: ProgressSnapshot(
                   streak: 1, lastBrief: Calendar.current.date(byAdding: .day, value: -1, to: .now), level: 1, levelTitle: "Owlet")), isPreview: true)
+              }
+            }
+          }
+          // The full-size Home Screen for App Store screenshots shows the rest of the widget family too.
+          if showsScreenOnly {
+            labeled {
+              widget(width: Metrics.medium) {
+                MoversWidgetView(entry: MoversEntry(date: LivingClock.tick(step), quotes: MoversProvider.sorted(model.previewSymbols.compactMap { model.quotes[$0] })),
+                                 previewFamily: .systemMedium)
+              }
+            }
+            labeled {
+              widget(width: Metrics.medium) {
+                FlockWidgetView(entry: FlockWidgetEntry(date: LivingClock.tick(step), snapshot: FlockSnapshot.load() ?? .sample), previewFamily: .systemMedium)
               }
             }
           }
@@ -498,6 +522,8 @@ struct WatchShowcaseStep: View {
 /// A lock screen on the same iPhone, where the user's own alerts arrive one by one. Tap one to expand it.
 struct NotifyStep: View {
   var model: OnboardingModel
+  /// Shows just the lock screen, full size with every alert, for App Store screenshots.
+  var showsScreenOnly = false
 
   private struct Alert: Identifiable, Equatable {
     var id: String
@@ -534,6 +560,18 @@ struct NotifyStep: View {
   }
 
   var body: some View {
+    if showsScreenOnly {
+      lockScreen
+        .task {
+          visible = alerts
+          expanded = alerts.first?.id
+        }
+    } else {
+      showcase
+    }
+  }
+
+  private var showcase: some View {
     ShowcaseLayout(
       eyebrow: "Notifications",
       title: "Never miss your moment",
@@ -554,6 +592,17 @@ struct NotifyStep: View {
   private var lockScreen: some View {
     ZStack(alignment: .top) {
       DeviceFinish.wallpaper
+      if showsScreenOnly {
+        // The flashlight and camera buttons of a real lock screen.
+        HStack {
+          lockButton("flashlight.off.fill")
+          Spacer()
+          lockButton("camera.fill")
+        }
+        .padding(.horizontal, 48)
+        .padding(.bottom, 52)
+        .frame(maxHeight: .infinity, alignment: .bottom)
+      }
       VStack(spacing: 0) {
         PhoneStatusBar(showsTime: false)
         Image(systemName: "lock.fill")
@@ -637,6 +686,15 @@ struct NotifyStep: View {
     .buttonStyle(ShowcasePressStyle())
     .accessibilityElement(children: .combine)
     .accessibilityHint(isExpanded ? "Collapses the alert" : "Expands the alert")
+  }
+
+  private func lockButton(_ systemImage: String) -> some View {
+    Image(systemName: systemImage)
+      .font(.system(size: 22, weight: .medium))
+      .foregroundStyle(.white)
+      .frame(width: 54, height: 54)
+      .background(.white.opacity(0.14), in: .circle)
+      .accessibilityHidden(true)
   }
 
   private func actionLabel(_ title: String) -> some View {

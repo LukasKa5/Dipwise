@@ -12,6 +12,18 @@ struct RootView: View {
   @State private var showsSplash = true
 
   var body: some View {
+    #if DEBUG
+    if let scene = MarketingSceneView.requestedScene {
+      MarketingSceneView(scene: scene)
+    } else {
+      app
+    }
+    #else
+    app
+    #endif
+  }
+
+  private var app: some View {
     Group {
       if hasCompletedOnboarding {
         MainTabView()
