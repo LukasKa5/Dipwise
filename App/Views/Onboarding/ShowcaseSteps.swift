@@ -471,7 +471,7 @@ struct WatchShowcaseStep: View {
 
   private var content: some View {
     VStack(alignment: .leading, spacing: 8) {
-      WatchDippyHeader(greeting: WatchGreeting.text(), message: "All quiet. I'm watching your zones.", isAsleep: false, hops: hops)
+      WatchDippyHeader(greeting: WatchGreeting.text(), message: OwlMood.calm.watchMessage, isAsleep: false, hops: hops)
         .padding(.horizontal, 4)
         .contentShape(.rect)
         .onTapGesture {

@@ -19,7 +19,7 @@ struct WatchDippyHeader: View {
   var hops = 0
 
   var body: some View {
-    HStack(alignment: .center, spacing: 8) {
+    HStack(alignment: .center, spacing: isAsleep ? 12 : 9) {
       WidgetOwl(size: 30, isAsleep: isAsleep)
         .phaseAnimator([0.0, -6.0, 0.0], trigger: hops) { view, lift in
           view.offset(y: lift)
@@ -32,11 +32,13 @@ struct WatchDippyHeader: View {
         Text(message)
           .font(.system(size: 12, weight: .medium))
           .foregroundStyle(.white.opacity(0.7))
-          .lineLimit(2)
-          .minimumScaleFactor(0.8)
-          .fixedSize(horizontal: false, vertical: true)
+          .lineLimit(3)
+          .multilineTextAlignment(.leading)
       }
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .layoutPriority(1)
     }
+    .padding(.leading, 4)
     .frame(maxWidth: .infinity, alignment: .leading)
     .accessibilityElement(children: .combine)
   }
@@ -68,8 +70,11 @@ struct WatchPortfolioHero: View {
       .font(.system(size: 13, weight: .semibold))
       .foregroundStyle(color)
       if portfolio.history.count > 1 {
+        let low = portfolio.history.min() ?? 0
+        let high = portfolio.history.max() ?? 1
+        let pad = max((high - low) * 0.1, high * 0.001)
         Chart(Array(portfolio.history.enumerated()), id: \.offset) { index, value in
-          AreaMark(x: .value("Day", index), y: .value("Value", value))
+          AreaMark(x: .value("Day", index), yStart: .value("Floor", low - pad), yEnd: .value("Value", value))
             .foregroundStyle(LinearGradient(colors: [color.opacity(0.25), color.opacity(0)], startPoint: .top, endPoint: .bottom))
             .interpolationMethod(.monotone)
           LineMark(x: .value("Day", index), y: .value("Value", value))
@@ -79,7 +84,7 @@ struct WatchPortfolioHero: View {
         }
         .chartXAxis(.hidden)
         .chartYAxis(.hidden)
-        .chartYScale(domain: .automatic(includesZero: false))
+        .chartYScale(domain: (low - pad)...(high + pad))
         .frame(height: 40)
         .padding(.top, 2)
         .accessibilityHidden(true)
@@ -223,6 +228,18 @@ struct WatchSectionTitle: View {
       .foregroundStyle(.white.opacity(0.7))
       .padding(.top, 4)
       .accessibilityAddTraits(.isHeader)
+  }
+}
+
+extension OwlMood {
+  /// A short line for Apple Watch, where every word counts.
+  var watchMessage: String {
+    switch self {
+    case .sleeping: "Markets closed. Your alerts stay on."
+    case .celebrating: "A green day. I'm on watch."
+    case .reassuring: "A red day. Plans pay off in dips."
+    case .calm: "All quiet. I'm watching your zones."
+    }
   }
 }
 

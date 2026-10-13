@@ -39,7 +39,7 @@ private struct TodayPage: View {
   var body: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: 8) {
-        WatchDippyHeader(greeting: WatchGreeting.text(), message: mood.message(change: nil), isAsleep: mood == .sleeping, hops: hops)
+        WatchDippyHeader(greeting: WatchGreeting.text(), message: mood.watchMessage, isAsleep: mood == .sleeping, hops: hops)
           .onTapGesture { hops += 1 }
           .sensoryFeedback(.impact(weight: .light), trigger: hops)
         if let portfolio = store.portfolio {
@@ -239,9 +239,12 @@ private struct StockDetail: View {
         .foregroundStyle(isLatest ? (quote.change >= 0 ? Brand.buy : Brand.sell) : .white.opacity(0.7))
         .lineLimit(1)
       if values.count > 1 {
+        let low = values.min() ?? 0
+        let high = values.max() ?? 1
+        let pad = max((high - low) * 0.1, high * 0.001)
         Chart {
           ForEach(Array(values.enumerated()), id: \.offset) { offset, value in
-            AreaMark(x: .value("Day", offset), y: .value("Price", value))
+            AreaMark(x: .value("Day", offset), yStart: .value("Floor", low - pad), yEnd: .value("Price", value))
               .foregroundStyle(LinearGradient(colors: [color.opacity(0.25), color.opacity(0)], startPoint: .top, endPoint: .bottom))
               .interpolationMethod(.monotone)
             LineMark(x: .value("Day", offset), y: .value("Price", value))
@@ -259,7 +262,7 @@ private struct StockDetail: View {
         }
         .chartXAxis(.hidden)
         .chartYAxis(.hidden)
-        .chartYScale(domain: .automatic(includesZero: false))
+        .chartYScale(domain: (low - pad)...(high + pad))
         .frame(height: 62)
         .focusable()
         .digitalCrownRotation($crown, from: 0, through: Double(max(values.count - 1, 1)), by: 1,
