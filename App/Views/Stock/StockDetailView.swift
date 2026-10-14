@@ -13,10 +13,10 @@ struct StockDetailView: View {
   @State private var period: ChartPeriod = .preset(.month)
   @State private var fiveYearQuote: Quote?
   @State private var selectedIndex: Int?
-  @State private var editor: AlertEditorTarget?
   @State private var showsPositionEditor = false
   @State private var showsRemoveConfirmation = false
   @State private var showsPlanBuilder = false
+  @State private var showsPaywall = false
   @State private var journalAlert: PriceAlert?
 
   init(symbol: String) {
@@ -51,11 +51,6 @@ struct StockDetailView: View {
     .background(Palette.canvas)
     .navigationTitle(symbol)
     .navigationBarTitleDisplayMode(.inline)
-    .sheet(item: $editor) { target in
-      if let holding {
-        AlertEditorView(holding: holding, alert: target.alert, initialRule: target.rule)
-      }
-    }
     .sheet(isPresented: $showsPositionEditor) {
       if let holding { PositionEditorView(holding: holding) }
     }
@@ -63,6 +58,7 @@ struct StockDetailView: View {
       if let holding { PlanBuilderView(holding: holding) }
     }
     .sheet(item: $journalAlert) { alert in JournalSheet(alert: alert, quote: quote) }
+    .sheet(isPresented: $showsPaywall) { PaywallView() }
     .task(id: period) {
       if period.isIntraday { await quotes.loadIntraday(symbols: [symbol]) }
       guard period.needsLongHistory(earliestDaily: quote?.dates.first), fiveYearQuote == nil else { return }
@@ -216,13 +212,13 @@ struct StockDetailView: View {
         } else {
           FoldedAlertList(alerts: active, quote: quote, delete: deleteAlert) { alert in
             Button {
-              editor = AlertEditorTarget(alert: alert)
+              showsPlanBuilder = true
             } label: {
               PlanRow(alert: alert, quote: quote, showsOdds: subscription.isPro || alert.id == active.first?.id)
             }
             .buttonStyle(.plain)
             .contextMenu {
-              Button("Edit", systemImage: "pencil") { editor = AlertEditorTarget(alert: alert) }
+              Button("Edit", systemImage: "pencil") { showsPlanBuilder = true }
               Button("Delete", systemImage: "trash", role: .destructive) { deleteAlert(alert) }
             }
           }
@@ -269,7 +265,7 @@ struct StockDetailView: View {
               }
               .padding(.vertical, 4)
               .contextMenu {
-                Button("Edit or Re-arm", systemImage: "pencil") { editor = AlertEditorTarget(alert: alert) }
+                Button("Re-arm", systemImage: "arrow.clockwise") { rearm(alert) }
               }
             }
           } label: {
@@ -356,6 +352,17 @@ struct StockDetailView: View {
 
   // MARK: Actions
 
+  /// Turns a fired alert back on, if the free plan still has room.
+  private func rearm(_ alert: PriceAlert) {
+    guard AlertLimits.canAddAlert(in: modelContext, isPro: subscription.isPro) else {
+      showsPaywall = true
+      return
+    }
+    alert.rearm(currentPrice: quote?.price ?? alert.priceAtCreation)
+    try? modelContext.save()
+    SnapshotPublisher.publish(context: modelContext)
+  }
+
   private func deleteAlert(_ alert: PriceAlert) {
     Task { await flock.withdraw(alert) }
     withAnimation(.smooth) { modelContext.delete(alert) }
@@ -373,12 +380,6 @@ struct StockDetailView: View {
     SnapshotPublisher.publish(context: modelContext)
     dismiss()
   }
-}
-
-struct AlertEditorTarget: Identifiable {
-  var alert: PriceAlert?
-  var rule: AlertRule?
-  var id: String { alert.map { "\($0.id)" } ?? "new-\(rule?.kind.rawValue ?? "")" }
 }
 
 struct DetailRow: View {

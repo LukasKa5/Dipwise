@@ -1,16 +1,26 @@
 import SwiftData
 import SwiftUI
 
-/// Add several alerts to a stock at once: one buy zone, one sell zone, and any smart alerts.
+/// Every alert on a stock in one place: one buy zone, one sell zone, and any smart alerts.
+/// It's the only alert screen, so adding, changing, and following a suggestion all happen here.
 struct PlanBuilderView: View {
   var holding: Holding
+  /// An alert to start with already picked, such as a signal from Insights or a zone copied from the crowd.
+  var suggestion: AlertRule?
   @Environment(\.dismiss) private var dismiss
 
   var body: some View {
     NavigationStack {
-      PlanBuilderForm(holding: holding, isNewStock: false) { dismiss() }
+      PlanBuilderForm(holding: holding, isNewStock: false, suggestion: suggestion) { dismiss() }
     }
   }
+}
+
+/// Opens the plan for a stock, optionally with a suggested alert already picked.
+struct PlanRequest: Identifiable {
+  var holding: Holding
+  var suggestion: AlertRule?
+  var id: String { "\(holding.symbol)-\(suggestion?.kind.rawValue ?? "plan")" }
 }
 
 /// The alerts screen itself. Also the last step of adding a stock, pushed inside that flow.
@@ -18,6 +28,7 @@ struct PlanBuilderForm: View {
   var holding: Holding
   /// The stock was just added: the user can skip, and there's no way back to the previous step.
   var isNewStock: Bool
+  var suggestion: AlertRule? = nil
   var onFinish: () -> Void
 
   @Environment(\.modelContext) private var modelContext
@@ -208,6 +219,23 @@ struct PlanBuilderForm: View {
         draft.sellLower = round(quote.price * 1.10)
         draft.sellUpper = round(quote.price * 1.18)
       }
+      if let suggestion { apply(suggestion) }
+    }
+  }
+
+  /// Turns on the suggested alert, keeping everything already planned.
+  private func apply(_ rule: AlertRule) {
+    switch rule.kind {
+    case .buyZone:
+      draft.buyZone = true
+      draft.buyLower = round(rule.lower)
+      draft.buyUpper = round(max(rule.upper, rule.lower * 1.01))
+    case .sellZone:
+      draft.sellZone = true
+      draft.sellLower = round(rule.lower)
+      draft.sellUpper = round(max(rule.upper, rule.lower * 1.01))
+    default:
+      draft.smart.insert(rule.kind)
     }
   }
 

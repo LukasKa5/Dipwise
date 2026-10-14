@@ -42,10 +42,23 @@ struct QuoteService: Sendable {
       volumes.append((index < rawVolumes.count ? rawVolumes[index] : nil) ?? 0)
     }
 
+    #if DEBUG
+    // App Store screenshots: every capture shows the market as it closed on one chosen day.
+    if let day = Self.marketingDate, let end = dates.lastIndex(where: { $0 < day }) {
+      closes = Array(closes[...end])
+      dates = Array(dates[...end])
+      opens = Array(opens[...end])
+      volumes = Array(volumes[...end])
+    }
+    #endif
+
     // London listings quote in pence; normalise to pounds.
     let isPence = meta.currency == "GBp" || meta.currency == "GBX"
     let scale = isPence ? 0.01 : 1
     var price = (meta.regularMarketPrice ?? closes.last ?? 0) * scale
+    #if DEBUG
+    if Self.marketingDate != nil, let last = closes.last { price = last }
+    #endif
     closes = closes.map { $0 * scale }
     opens = opens.map { $0 * scale }
     guard price > 0 || !closes.isEmpty else { throw QuoteError.noData }
@@ -77,6 +90,19 @@ struct QuoteService: Sendable {
       updatedAt: .now
     )
   }
+
+  #if DEBUG
+  /// Launch with `-marketingDate 2026-10-13` to freeze quotes at that day's close, so every screenshot matches.
+  /// Holds the following midnight in New York, so the given day's own bar is kept.
+  static let marketingDate: Date? = {
+    let arguments = ProcessInfo.processInfo.arguments
+    guard let index = arguments.firstIndex(of: "-marketingDate"), arguments.indices.contains(index + 1) else { return nil }
+    let formatter = DateFormatter()
+    formatter.dateFormat = "yyyy-MM-dd"
+    formatter.timeZone = TimeZone(identifier: "America/New_York")
+    return formatter.date(from: arguments[index + 1]).map { $0.addingTimeInterval(24 * 60 * 60) }
+  }()
+  #endif
 
   /// Today's prices in five-minute steps.
   func intraday(for symbol: String) async throws -> (values: [Double], dates: [Date]) {

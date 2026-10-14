@@ -8,8 +8,7 @@ struct AlertInsightsView: View {
   @Environment(QuoteStore.self) private var quotes
   @Environment(SubscriptionManager.self) private var subscription
   @State private var planHolding: Holding?
-  @State private var signalRequest: AlertEditorRequest?
-  @State private var signalRule: AlertRule?
+  @State private var signalRequest: PlanRequest?
 
   private var insights: AlertInsights { AlertInsights(holdings: holdings, quotes: quotes.quotes) }
   private var isPro: Bool { subscription.isPro }
@@ -40,7 +39,7 @@ struct AlertInsightsView: View {
     .navigationBarTitleDisplayMode(.inline)
     .sheet(item: $planHolding) { PlanBuilderView(holding: $0) }
     .sheet(item: $signalRequest) { request in
-      AlertEditorView(holding: request.holding, alert: nil, initialRule: signalRule)
+      PlanBuilderView(holding: request.holding, suggestion: request.suggestion)
     }
   }
 
@@ -134,8 +133,7 @@ struct AlertInsightsView: View {
           .accessibilityLabel("Alert already set")
       } else if let holding, let quote = quotes[signal.symbol] {
         Button("Alert me") {
-          signalRule = AlertRule.defaults(for: signal.kind, price: quote.price, cost: holding.averageCost)
-          signalRequest = AlertEditorRequest(holding: holding, alert: nil)
+          signalRequest = PlanRequest(holding: holding, suggestion: AlertRule.defaults(for: signal.kind, price: quote.price, cost: holding.averageCost))
         }
         .font(.caption.weight(.semibold))
         .buttonStyle(.bordered)

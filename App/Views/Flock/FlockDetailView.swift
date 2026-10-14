@@ -14,7 +14,7 @@ struct FlockDetailView: View {
   @State private var quote: Quote?
   @State private var showsAddStock = false
   @State private var showsPaywall = false
-  @State private var editor: AlertEditorTarget?
+  @State private var suggestion: PlanRequest?
 
   init(symbol: String) {
     self.symbol = symbol
@@ -78,8 +78,8 @@ struct FlockDetailView: View {
       }
     }
     .sheet(isPresented: $showsPaywall) { PaywallView() }
-    .sheet(item: $editor) { target in
-      if let holding { AlertEditorView(holding: holding, alert: nil, initialRule: target.rule) }
+    .sheet(item: $suggestion) { request in
+      PlanBuilderView(holding: request.holding, suggestion: request.suggestion)
     }
     .task {
       quote = quotes[symbol]
@@ -406,7 +406,7 @@ struct FlockDetailView: View {
   // MARK: Actions
 
   private func copyZone(_ zone: ClosedRange<Double>, kind: AlertKind) {
-    guard holding != nil else {
+    guard let holding else {
       showsAddStock = true
       return
     }
@@ -414,7 +414,7 @@ struct FlockDetailView: View {
       showsPaywall = true
       return
     }
-    editor = AlertEditorTarget(alert: nil, rule: AlertRule(kind: kind, lower: zone.lowerBound, upper: zone.upperBound))
+    suggestion = PlanRequest(holding: holding, suggestion: AlertRule(kind: kind, lower: zone.lowerBound, upper: zone.upperBound))
   }
 }
 

@@ -28,7 +28,6 @@ struct AlertsView: View {
   @Environment(\.modelContext) private var modelContext
   @AppStorage("alertsSort") private var sortRaw = Sort.closest.rawValue
   @State private var filter: Filter = .active
-  @State private var editor: AlertEditorRequest?
   @State private var journalAlert: PriceAlert?
   @State private var planHolding: Holding?
   @State private var showsPaywall = false
@@ -92,7 +91,7 @@ struct AlertsView: View {
               alerts: group.alerts,
               showsOdds: subscription.isPro,
               edit: { alert in
-                if alert.isActive { editor = AlertEditorRequest(holding: group.holding, alert: alert) } else { journalAlert = alert }
+                if alert.isActive { planHolding = group.holding } else { journalAlert = alert }
               },
               add: { addAlert(for: group.holding) },
               plan: { planHolding = group.holding },
@@ -128,9 +127,6 @@ struct AlertsView: View {
       }
       .refreshable { await MarketMonitor.refresh(context: modelContext, quotes: quotes, flock: flock) }
       .navigationDestination(for: String.self) { StockDetailView(symbol: $0) }
-      .sheet(item: $editor) { request in
-        AlertEditorView(holding: request.holding, alert: request.alert)
-      }
       .sheet(item: $journalAlert) { alert in JournalSheet(alert: alert, quote: quotes[alert.symbol]) }
       .sheet(item: $planHolding) { holding in PlanBuilderView(holding: holding) }
       .sheet(isPresented: $showsPaywall) { PaywallView() }
@@ -164,7 +160,7 @@ struct AlertsView: View {
 
   private func addAlert(for holding: Holding) {
     if AlertLimits.canAddAlert(in: modelContext, isPro: subscription.isPro) {
-      editor = AlertEditorRequest(holding: holding, alert: nil)
+      planHolding = holding
     } else {
       showsPaywall = true
     }
@@ -186,12 +182,6 @@ struct AlertsView: View {
     try? modelContext.save()
     SnapshotPublisher.publish(context: modelContext)
   }
-}
-
-struct AlertEditorRequest: Identifiable {
-  var holding: Holding
-  var alert: PriceAlert?
-  var id: String { alert.map { "\($0.id)" } ?? "new-\(holding.symbol)" }
 }
 
 /// One stock and all of its alerts.
