@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Composes the Dipwise App Store screenshots for iPhone, iPad, and Apple Watch.
 
-Each set is one continuous night panorama, so swiping through the App Store page tells Dippy's story. His price
-line, drawn exactly like the charts in the app, runs from the first image to the last: it drifts down, drops into
-your buy zone, pings the alert, climbs back out, and ends on a peak where Dippy falls asleep under the moon.
+Every image shares one seamless navy night sky in the app's own colors, so the set reads as a single scene as
+people swipe. Dippy is the main character: he perches on top of each device and reacts to what's on it. He keeps
+watch, peers down at the buy zone, flaps his wings when the alert lands, checks the odds, and in the last image
+falls asleep in the crescent moon.
 
-The devices stand behind that horizon like a skyline, so the line hides the least important bottom of each screen
-and the part that matters sits big and readable. Dippy stands on the line in every image, reacting to what happens.
-Each image still works on its own: one short headline, one screen, and at most one enlarged moment from it.
+Each image still works on its own: one short headline, one real screen, and at most one moment from it enlarged.
+The first three carry the promise, because they're the only ones people see in search results.
 
 Usage: python3 compose.py <raw folder> <output folder>
 Writes iPhone-6.9 (1320 × 2868), iPhone-6.5 (1284 × 2778), iPad-13 (2064 × 2752), and AppleWatch-Ultra
@@ -20,18 +20,18 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
-# The app's own colors (Shared/Brand.swift).
+# The app's own colors: Brand.swift and the asset catalog, as they render on screen.
 NIGHT_TOP = (22, 64, 90)
 NIGHT_MIDDLE = (12, 36, 56)
 NIGHT_BOTTOM = (6, 15, 28)
 WATCH_NAVY = NIGHT_MIDDLE
 GREEN = (24, 196, 124)
-LINE_GREEN = (46, 214, 142)
-GROUND = (8, 22, 38)
+SOFT = (176, 192, 208)
+MINT = (47, 230, 160)
+WATCH_GREEN = (18, 184, 115)
 WHITE = (255, 255, 255)
-SOFT = (186, 200, 215)
 INK = (10, 27, 46)
-AMBER = (255, 178, 36)
+SECONDARY = (108, 117, 128)
 
 ROUNDED = "/System/Library/Fonts/SFNSRounded.ttf"
 TEXT = "/System/Library/Fonts/SFNS.ttf"
@@ -45,212 +45,84 @@ def font(path, size, weight):
         pass
     return f
 
+# MARK: - The night sky
 
-# MARK: - The night
+class Sky:
+    """One seamless navy night across every image, in the app's own night colors, with a few quiet stars."""
 
-class Story:
-    """One panorama: the sky, Dippy's price line across every image, and the ground beneath it."""
-
-    def __init__(self, frame, count, line, seed=7):
+    def __init__(self, frame, count, seed=11):
         self.W, self.H = frame
         self.count = count
-        self.points = line
-        width = self.W * count
-        self.canvas = self.sky((width, self.H), seed)
         self.unit = self.W / 1320
+        width = self.W * count
+        strip = Image.new("RGB", (1, 512))
+        for y in range(512):
+            t = y / 511
+            a, b, k = (NIGHT_TOP, NIGHT_MIDDLE, t / 0.6) if t < 0.6 else (NIGHT_MIDDLE, NIGHT_BOTTOM, (t - 0.6) / 0.4)
+            strip.putpixel((0, y), tuple(int(a[i] + (b[i] - a[i]) * k) for i in range(3)))
+        self.canvas = strip.resize((width, self.H), Image.BICUBIC).convert("RGBA")
+        stars = Image.new("RGBA", self.canvas.size, (0, 0, 0, 0))
+        draw = ImageDraw.Draw(stars)
+        rng = random.Random(seed)
+        for _ in range(int(count * 26)):
+            x, y = rng.uniform(0, width), rng.uniform(0, self.H * 0.42)
+            r = rng.choice([1.4, 1.8, 2.2, 2.8]) * self.unit
+            draw.ellipse((x - r, y - r, x + r, y + r), fill=(255, 255, 255, rng.randint(50, 140)))
+        self.canvas.alpha_composite(stars)
 
     def x0(self, index):
         return self.W * index
 
-    def sky(self, size, seed):
-        """The app's night gradient, with a scatter of small stars in the upper sky."""
-        width, height = size
-        strip = Image.new("RGB", (1, 512))
-        for y in range(512):
-            t = y / 511
-            a, b, k = (NIGHT_TOP, NIGHT_MIDDLE, t / 0.55) if t < 0.55 else (NIGHT_MIDDLE, NIGHT_BOTTOM, (t - 0.55) / 0.45)
-            strip.putpixel((0, y), tuple(int(a[i] + (b[i] - a[i]) * k) for i in range(3)))
-        image = strip.resize(size, Image.BICUBIC).convert("RGBA")
-        stars = Image.new("RGBA", size, (0, 0, 0, 0))
-        draw = ImageDraw.Draw(stars)
-        rng = random.Random(seed)
-        unit = self.W / 1320
-        for _ in range(int(width / 1320 * 60)):
-            x, y = rng.uniform(0, width), rng.uniform(0, height * 0.5)
-            r = rng.choice([1.3, 1.6, 2, 2, 2.6, 3.4]) * unit
-            draw.ellipse((x - r, y - r, x + r, y + r), fill=(255, 255, 255, rng.randint(40, 150)))
-        image.alpha_composite(stars)
-        return image
-
-    def y(self, x):
-        """The line's height at panorama x: a smooth Catmull-Rom curve through its points."""
-        pts = self.points
-        if x <= pts[0][0]:
-            return pts[0][1]
-        for i in range(len(pts) - 1):
-            if pts[i][0] <= x <= pts[i + 1][0]:
-                p0, p1, p2, p3 = pts[max(i - 1, 0)], pts[i], pts[i + 1], pts[min(i + 2, len(pts) - 1)]
-                t = (x - p1[0]) / (p2[0] - p1[0])
-                return 0.5 * ((2 * p1[1]) + (-p0[1] + p2[1]) * t + (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * t * t
-                              + (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * t ** 3)
-        return pts[-1][1]
-
-    def ground(self):
-        """The area under the line, filled the way the app fills its charts: green fading into deep navy."""
-        width, height = self.canvas.size
-        points = [(x, self.y(x)) for x in range(0, width + 1, 4)]
-        mask = Image.new("L", (width, height), 0)
-        ImageDraw.Draw(mask).polygon(points + [(width, height), (0, height)], fill=255)
-        fill = Image.new("RGBA", (width, height), GROUND + (255,))
-        # The chart's green wash, strongest at the line and fading out below it.
-        span = 420 * self.unit
-        wash_layer = Image.new("RGBA", (width, height), GREEN + (0,))
-        offset = Image.new("L", (width, height), 0)
-        od = ImageDraw.Draw(offset)
-        for step in range(0, int(span), 6):
-            alpha = int(64 * (1 - step / span) ** 1.6)
-            od.line([(x, y + step) for x, y in points], fill=alpha, width=7)
-        wash_layer.putalpha(offset)
-        fill.alpha_composite(wash_layer)
-        self.canvas.paste(fill, (0, 0), mask)
-        # The line itself: a soft glow and a crisp stroke.
-        glow = Image.new("RGBA", (width, height), (0, 0, 0, 0))
-        ImageDraw.Draw(glow).line(points, fill=LINE_GREEN + (150,), width=round(30 * self.unit), joint="curve")
-        self.canvas.alpha_composite(glow.filter(ImageFilter.GaussianBlur(18 * self.unit)))
-        crisp = Image.new("RGBA", (width, height), (0, 0, 0, 0))
-        ImageDraw.Draw(crisp).line(points, fill=LINE_GREEN + (255,), width=round(11 * self.unit), joint="curve")
-        self.canvas.alpha_composite(crisp)
-
-    def zone(self, x_from, x_to, low, high, label=None):
-        """A buy zone across the ground, drawn like the app's zone chart: a soft green band between two lines,
-        with a capsule label like the app's High and Low handles."""
-        width, height = self.canvas.size
-        band = Image.new("RGBA", (width, height), (0, 0, 0, 0))
-        draw = ImageDraw.Draw(band)
-        draw.rectangle((x_from, high, x_to, low), fill=GREEN + (52,))
-        for y in (high, low):
-            draw.line([(x_from, y), (x_to, y)], fill=GREEN + (230,), width=round(6 * self.unit))
-        # Fades in and out at its ends instead of stopping hard.
-        fade = Image.new("L", (width, height), 255)
-        fd = ImageDraw.Draw(fade)
-        edge = round(160 * self.unit)
-        for i in range(edge):
-            a = 255 * i // edge
-            fd.line([(x_from + i, 0), (x_from + i, height)], fill=a)
-            fd.line([(x_to - i, 0), (x_to - i, height)], fill=a)
-        band.putalpha(Image.composite(band.split()[3], Image.new("L", band.size, 0), fade))
-        self.canvas.alpha_composite(band)
-        if label:
-            capsule(self.canvas, label[0], (high + low) / 2, label[1], self.unit)
-
-    def ping(self, x):
-        """The moment the price enters the zone: the app's chart dot with rings spreading out."""
-        y = self.y(x)
-        u = self.unit
-        rings = Image.new("RGBA", self.canvas.size, (0, 0, 0, 0))
-        draw = ImageDraw.Draw(rings)
-        for r, a in [(150, 40), (105, 80), (66, 130)]:
-            draw.ellipse((x - r * u, y - r * u, x + r * u, y + r * u), outline=LINE_GREEN + (a,), width=round(5 * u))
-        self.canvas.alpha_composite(rings)
-        halo = Image.new("RGBA", self.canvas.size, (0, 0, 0, 0))
-        ImageDraw.Draw(halo).ellipse((x - 46 * u, y - 46 * u, x + 46 * u, y + 46 * u), fill=LINE_GREEN + (90,))
-        self.canvas.alpha_composite(halo.filter(ImageFilter.GaussianBlur(10 * u)))
-        draw = ImageDraw.Draw(self.canvas)
-        draw.ellipse((x - 28 * u, y - 28 * u, x + 28 * u, y + 28 * u), fill=LINE_GREEN)
-        draw.ellipse((x - 12 * u, y - 12 * u, x + 12 * u, y + 12 * u), fill=WHITE)
-
-    def moon(self, cx, cy, r):
-        """A soft crescent with a gentle halo, like the app's sleeping-market moon."""
-        halo = Image.new("RGBA", self.canvas.size, (0, 0, 0, 0))
-        ImageDraw.Draw(halo).ellipse((cx - r * 2.6, cy - r * 2.6, cx + r * 2.6, cy + r * 2.6), fill=(255, 236, 190, 26))
-        self.canvas.alpha_composite(halo.filter(ImageFilter.GaussianBlur(r * 0.8)))
+    def moon(self, cx, cy, r, glow=True):
+        """A soft crescent, like the one the app shows while markets sleep. Returns its mask box."""
+        if glow:
+            halo = Image.new("RGBA", self.canvas.size, (0, 0, 0, 0))
+            ImageDraw.Draw(halo).ellipse((cx - r * 1.9, cy - r * 1.9, cx + r * 1.9, cy + r * 1.9), fill=(255, 232, 180, 22))
+            self.canvas.alpha_composite(halo.filter(ImageFilter.GaussianBlur(r * 0.5)))
         s = 4
         disc = Image.new("L", (r * 2 * s, r * 2 * s), 0)
-        ImageDraw.Draw(disc).ellipse((0, 0, r * 2 * s - 1, r * 2 * s - 1), fill=245)
-        ImageDraw.Draw(disc).ellipse((round(r * 0.6 * s), round(-r * 0.32 * s), round(r * 2.6 * s), round(r * 1.68 * s)), fill=0)
+        ImageDraw.Draw(disc).ellipse((0, 0, r * 2 * s - 1, r * 2 * s - 1), fill=255)
+        ImageDraw.Draw(disc).ellipse((round(r * 0.62 * s), round(-r * 0.36 * s), round(r * 2.62 * s), round(r * 1.64 * s)), fill=0)
         disc = disc.resize((r * 2, r * 2), Image.LANCZOS)
-        self.canvas.paste((255, 236, 196), (cx - r, cy - r), disc)
+        self.canvas.paste((255, 230, 170), (round(cx - r), round(cy - r)), disc)
 
-    def owl(self, raw_dir, pose, cx, height, lift=0):
-        """Dippy standing on the line at panorama x = cx."""
+    def owl(self, raw_dir, pose, cx, feet, height):
+        """Dippy with his feet at (cx, feet), perched on whatever is there."""
         image = Image.open(raw_dir / f"owl-{pose}.png").convert("RGBA")
         image = image.resize((round(image.width * height / image.height), round(height)), Image.LANCZOS)
-        feet = self.y(cx) + height * 0.03 - lift
-        shade = Image.new("RGBA", self.canvas.size, (0, 0, 0, 0))
-        body = height * 0.36
-        ImageDraw.Draw(shade).ellipse((cx - body, feet - height * 0.04, cx + body, feet + height * 0.05), fill=(0, 0, 0, 110))
-        self.canvas.alpha_composite(shade.filter(ImageFilter.GaussianBlur(height * 0.03)))
         paste_clipped(self.canvas, image, round(cx - image.width / 2), round(feet - image.height))
 
     def frames(self):
         return [self.canvas.crop((self.W * i, 0, self.W * (i + 1), self.H)) for i in range(self.count)]
 
 
-def capsule(canvas, cx, cy, text, unit=1.0):
-    """The app's zone label: a solid green capsule with white bold text."""
-    label_font = font(ROUNDED, 44 * unit, "Bold")
-    draw = ImageDraw.Draw(canvas)
-    w = draw.textlength(text, font=label_font) + 64 * unit
-    h = round(80 * unit)
-    layer = Image.new("RGBA", (round(w), h), (0, 0, 0, 0))
-    layer.paste(GREEN, (0, 0), rounded_mask(layer.size, h // 2))
-    ImageDraw.Draw(layer).text((32 * unit, h * 0.17), text, font=label_font, fill=WHITE)
-    shadowed(canvas, layer, cx - w / 2, cy - h / 2, blur=round(16 * unit), offset=round(8 * unit), opacity=120)
-
-
-def tags(canvas, cx, top, labels, columns, unit=1.0, dots=None):
-    """Small dark tiles with a colored dot, like the app's tiles on navy."""
-    label_font = font(ROUNDED, 44 * unit, "Bold")
-    draw = ImageDraw.Draw(canvas)
-    height, gap = round(92 * unit), round(20 * unit)
-    y = top
-    for start in range(0, len(labels), columns):
-        row = labels[start:start + columns]
-        widths = [draw.textlength(label, font=label_font) + (100 if dots else 70) * unit for label in row]
-        x = cx - (sum(widths) + gap * (len(row) - 1)) / 2
-        for index, (label, w) in enumerate(zip(row, widths)):
-            tile = Image.new("RGBA", (round(w), height), (0, 0, 0, 0))
-            tile.paste((255, 255, 255, 30), (0, 0), rounded_mask(tile.size, height // 2))
-            td = ImageDraw.Draw(tile)
-            td.rounded_rectangle((1, 1, tile.width - 2, height - 2), radius=height // 2, outline=(255, 255, 255, 40), width=2)
-            tx = 35 * unit
-            if dots:
-                color = dots[(start + index) % len(dots)]
-                td.ellipse((32 * unit, height / 2 - 11 * unit, 54 * unit, height / 2 + 11 * unit), fill=color)
-                tx = 70 * unit
-            td.text((tx, height * 0.18), label, font=label_font, fill=WHITE)
-            canvas.alpha_composite(tile, (round(x), round(y)))
-            x += w + gap
-        y += height + gap
-
-
 # MARK: - Text
 
 def headline(canvas, ox, frame_width, title, subline, size=140, top=None):
-    """A bold two-line headline with *highlighted* words in green and one short supporting line, centered in the
-    image that starts at x = ox. Returns the y just below the text."""
+    """A bold two-line headline with *highlighted* words in the app's night green and a short supporting line,
+    centered in the image that starts at x = ox."""
     width = frame_width
     draw = ImageDraw.Draw(canvas)
-    head_font = font(ROUNDED, size, "Heavy")
+    head_font = font(ROUNDED, size, "Bold")
     widest = max(draw.textlength(line.replace("*", ""), font=head_font) for line in title.split("\n"))
     if widest > width * 0.9:
         size = size * width * 0.9 / widest
-        head_font = font(ROUNDED, size, "Heavy")
-    sub_font = font(TEXT, size * 0.36, "Medium")
+        head_font = font(ROUNDED, size, "Bold")
+    sub_font = font(ROUNDED, size * 0.34, "Medium")
     y = top if top is not None else round(size * 1.0)
     for line in title.split("\n"):
         parts = line.split("*")
         x = ox + (width - sum(draw.textlength(part, font=head_font) for part in parts)) / 2
         for index, part in enumerate(parts):
-            draw.text((x, y), part, font=head_font, fill=GREEN if index % 2 else WHITE)
+            draw.text((x, y), part, font=head_font, fill=MINT if index % 2 else WHITE)
             x += draw.textlength(part, font=head_font)
         y += round(size * 1.08)
     if subline:
-        y += round(size * 0.18)
+        y += round(size * 0.14)
         for line in balanced(draw, subline, sub_font, width * 0.86):
             w = draw.textlength(line, font=sub_font)
             draw.text((ox + (width - w) / 2, y), line, font=sub_font, fill=SOFT)
-            y += round(size * 0.48)
+            y += round(size * 0.46)
     return y
 
 
@@ -397,7 +269,7 @@ def watch(content, display_width, title="Dipwise", time="10:09", strap=0):
     clock = font(ROUNDED, 34 * k, "Semibold")
     name = font(ROUNDED, 38 * k, "Semibold")
     draw.text((dw - round(48 * k) - draw.textlength(time, font=clock), round(22 * k)), time, font=clock, fill=WHITE)
-    draw.text((dw - round(48 * k) - draw.textlength(title, font=name), round(62 * k)), title, font=name, fill=GREEN)
+    draw.text((dw - round(48 * k) - draw.textlength(title, font=name), round(62 * k)), title, font=name, fill=WATCH_GREEN)
 
     radius = round(96 * k)
     border = round(20 * k)
@@ -471,43 +343,44 @@ def notification(width, icon, title, body):
 
 
 
+
+
 def checklist(canvas, cx, top, items, scale=1.0):
-    """Everything Dipwise does, ticked off, on a frosted card."""
-    item_font = font(ROUNDED, 56 * scale, "Bold")
-    row = round(116 * scale)
+    """Everything Dipwise does, ticked off on a soft tile like the app's tiles on navy."""
+    item_font = font(ROUNDED, 56 * scale, "Semibold")
+    row = round(114 * scale)
     width = round(940 * scale)
-    height = row * len(items) + round(64 * scale)
+    height = row * len(items) + round(60 * scale)
     layer = Image.new("RGBA", (width, height), (0, 0, 0, 0))
-    layer.paste((255, 255, 255, 20), (0, 0), rounded_mask((width, height), round(60 * scale)))
+    layer.paste((255, 255, 255, 22), (0, 0), rounded_mask((width, height), round(60 * scale)))
     draw = ImageDraw.Draw(layer)
-    draw.rounded_rectangle((1, 1, width - 2, height - 2), radius=round(60 * scale), outline=(255, 255, 255, 46), width=3)
     for index, item in enumerate(items):
-        y = round(32 * scale) + index * row
-        d = round(64 * scale)
-        draw.ellipse((round(56 * scale), y + round(24 * scale), round(56 * scale) + d, y + round(24 * scale) + d), fill=GREEN)
-        cx0, cy0 = round(56 * scale), y + round(24 * scale)
-        draw.line([(cx0 + 17 * scale, cy0 + 33 * scale), (cx0 + 28 * scale, cy0 + 44 * scale), (cx0 + 48 * scale, cy0 + 21 * scale)], fill=INK, width=round(8 * scale), joint="curve")
-        draw.text((round(152 * scale), y + round(24 * scale)), item, font=item_font, fill=WHITE)
+        y = round(30 * scale) + index * row
+        d = round(62 * scale)
+        x0, y0 = round(56 * scale), y + round(26 * scale)
+        draw.ellipse((x0, y0, x0 + d, y0 + d), fill=GREEN)
+        draw.line([(x0 + 17 * scale, y0 + 32 * scale), (x0 + 27 * scale, y0 + 42 * scale), (x0 + 46 * scale, y0 + 21 * scale)], fill=WHITE, width=round(7 * scale), joint="curve")
+        draw.text((round(148 * scale), y + round(26 * scale)), item, font=item_font, fill=WHITE)
     canvas.alpha_composite(layer, (round(cx - width / 2), round(top)))
 
 
 def pill(canvas, cx, top, label, scale=1.0):
-    """A solid green call-to-action pill."""
+    """The app's prominent button: solid green with white text."""
     draw = ImageDraw.Draw(canvas)
-    label_font = font(ROUNDED, 54 * scale, "Bold")
-    w = draw.textlength(label, font=label_font) + 120 * scale
-    h = round(120 * scale)
+    label_font = font(ROUNDED, 58 * scale, "Bold")
+    w = draw.textlength(label, font=label_font) + 150 * scale
+    h = round(132 * scale)
     layer = Image.new("RGBA", (round(w), h), (0, 0, 0, 0))
     layer.paste(GREEN, (0, 0), rounded_mask(layer.size, h // 2))
-    ImageDraw.Draw(layer).text((60 * scale, h * 0.21), label, font=label_font, fill=INK)
-    shadowed(canvas, layer, cx - w / 2, top, blur=30, offset=16, opacity=120)
+    ImageDraw.Draw(layer).text((75 * scale, h * 0.2), label, font=label_font, fill=WHITE)
+    shadowed(canvas, layer, cx - w / 2, top, blur=round(30 * scale), offset=round(16 * scale), opacity=120)
 
 
 # MARK: - iPhone
 
 # Regions of the raw iPhone captures that get lifted out as cards: (left, top, right, bottom).
-ZONE_CHART = (60, 1719, 1260, 2660)
-ODDS_CARD = (60, 960, 1260, 1525)
+PLAN_CARD = (60, 1935, 1260, 2620)
+ZONE_CARD = (60, 1190, 1260, 2310)
 STAT_TILES = (108, 1838, 1212, 2182)
 # The NVDA plan card in the high-resolution watch render.
 WATCH_PLAN = (0, 561, 1170, 1062)
@@ -521,16 +394,8 @@ class Raw:
         return Image.open(self.folder / f"{name}.png")
 
 
-def line(frame_width, chapters, dy=0):
-    """Turns per-image points [(x within the image, y), …] into one panorama line, shifted down by dy."""
-    points = []
-    for index, chapter in enumerate(chapters):
-        points += [(frame_width * index + x, y + dy) for x, y in chapter]
-    return points
-
-
 def clean_lock_screen(screen):
-    """Hides the flashlight and camera buttons, which would otherwise poke out right at the horizon."""
+    """Hides the flashlight and camera buttons at the bottom of the lock screen."""
     screen = screen.convert("RGB")
     strip = screen.crop((0, 2300, screen.width, 2340)).resize((screen.width, screen.height - 2300), Image.BICUBIC)
     screen.paste(strip, (0, 2300))
@@ -538,93 +403,90 @@ def clean_lock_screen(screen):
 
 
 def device(canvas, layer, cx, top, unit=1.0):
+    """Places a device by its center and top edge. Returns its left and right edges."""
     x = cx - layer.width / 2
-    shadowed(canvas, layer, x, top, blur=round(50 * unit), offset=round(30 * unit), opacity=150)
-    return x
+    shadowed(canvas, layer, x, top, blur=round(60 * unit), offset=round(40 * unit), opacity=170)
+    return x, x + layer.width
+
+
+def lift(canvas, layer, x, top, unit=1.0):
+    shadowed(canvas, layer, x, top, blur=round(44 * unit), offset=round(30 * unit), opacity=180)
 
 
 def iphone_story(raw, raw_dir):
     W, H = 1320, 2868
     icon = Image.open(raw_dir / "app-icon.png")
-    story = Story((W, H), 10, line(W, [
-        # 1 · Calm, drifting down.
-        [(-120, 2200), (180, 2250), (430, 2200), (700, 2270), (1000, 2250), (1240, 2320)],
-        # 2 · Falling toward the zone.
-        [(160, 2330), (420, 2300), (700, 2380), (960, 2400), (1200, 2500)],
-        # 3 · In the zone: the bottom, the ping, then a turn.
-        [(150, 2560), (420, 2590), (700, 2560), (980, 2570), (1240, 2520)],
-        # 4 · Climbing out.
-        [(220, 2450), (520, 2400), (820, 2340), (1160, 2300)],
-        # 5–8 · Steady, with small waves.
-        [(160, 2290), (480, 2240), (820, 2280), (1150, 2230)],
-        [(160, 2260), (480, 2220), (820, 2250), (1150, 2220)],
-        [(160, 2250), (480, 2210), (820, 2240), (1150, 2200)],
-        [(160, 2230), (480, 2190), (820, 2220), (1150, 2180)],
-        # 9 · Rising.
-        [(180, 2200), (480, 2150), (800, 2160), (1120, 2090)],
-        # 10 · The peak where Dippy sleeps.
-        [(150, 2060), (420, 2030), (660, 2010), (900, 2050), (1200, 2110), (1500, 2120)],
-    ], dy=200))
-    x0 = story.x0
-    phone_w, phone_top = 880, 760
-    c = story.canvas
+    sky = Sky((W, H), 10)
+    x0 = sky.x0
+    c = sky.canvas
+    phone_w, top = 900, 920
+    perch = 250
 
-    # Devices first: they stand behind the horizon.
-    device(c, iphone(fix_iphone_clock(raw("iphone-stock")), phone_w), x0(0) + 780, phone_top)
-    device(c, iphone(fix_iphone_clock(raw("iphone-zones")), phone_w), x0(1) + 560, phone_top)
-    device(c, iphone(clean_lock_screen(raw("scene-lock")), phone_w), x0(2) + 780, phone_top)
-    device(c, iphone(fix_iphone_clock(raw("iphone-alerts")), phone_w), x0(3) + 560, phone_top)
-    device(c, iphone(fix_iphone_clock(raw("iphone-smart")), phone_w), x0(4) + 760, phone_top)
-    device(c, iphone(fix_iphone_clock(raw("iphone-import")), phone_w), x0(7) + 660, phone_top)
-    device(c, iphone(fix_iphone_clock(raw("iphone-home")), phone_w), x0(8) + 560, phone_top)
-    wrist = watch(raw("watch-today"), 640, strap=300)
-    device(c, wrist, x0(6) + 600, 880 - 300)
+    def phone(index, screen):
+        left, right = device(c, iphone(screen, phone_w), x0(index) + W / 2, top)
+        return left, right
 
-    # 6 · Widgets float above the horizon instead of sitting in a phone.
+    # 1 · Dippy keeps watch on NVDA as the alert arrives.
+    l, r = phone(0, fix_iphone_clock(raw("iphone-stock")))
+    banner = notification(1180, icon, "NVDA entered your buy zone", ["Now $209.35, inside $206.35–$217.80.", "Your plan: buy a little."])
+    lift(c, banner, x0(0) + (W - banner.width) / 2, 1560)
+    sky.owl(raw_dir, "idle", r - 200, top + 24, perch)
+
+    # 2 · He peers down at the zone being drawn.
+    l, r = phone(1, fix_iphone_clock(raw("iphone-plan")))
+    sky.owl(raw_dir, "look-down", l + 210, top + 24, perch)
+
+    # 3 · The alert lands, and he can't sit still.
+    l, r = phone(2, clean_lock_screen(raw("scene-lock")))
+    sky.owl(raw_dir, "wings", r - 230, top + 24, perch)
+
+    # 4 · He checks the odds.
+    l, r = phone(3, fix_iphone_clock(raw("iphone-alerts")))
+    plan = card(fix_iphone_clock(raw("iphone-stock")), PLAN_CARD, 1180, radius=60)
+    lift(c, plan, x0(3) + (W - plan.width) / 2, 1980)
+    sky.owl(raw_dir, "look-left", r - 200, top + 24, perch)
+
+    # 5 · Smart alerts, each explained.
+    l, r = phone(4, fix_iphone_clock(raw("iphone-plan-smart")))
+    sky.owl(raw_dir, "look-right", l + 200, top + 24, perch)
+
+    # 6 · Widgets, full size, with Dippy on top of the big one.
     scene = raw("scene-widgets")
     big = card(scene, (155, 229, 1165, 699), 1160, radius=86)
-    shadowed(c, big, x0(5) + (W - big.width) / 2, 760, blur=40, offset=28, opacity=170)
+    big_top = 1000
+    lift(c, big, x0(5) + (W - big.width) / 2, big_top)
     small = 560
     left = card(scene, (155, 806, 626, 1277), small, radius=96)
     right = card(scene, (694, 806, 1165, 1277), small, radius=96)
-    shadowed(c, left, x0(5) + W / 2 - 20 - small, 760 + big.height + 40, blur=40, offset=28, opacity=170)
-    shadowed(c, right, x0(5) + W / 2 + 20, 760 + big.height + 40, blur=40, offset=28, opacity=170)
+    lift(c, left, x0(5) + W / 2 - 20 - small, big_top + big.height + 40)
+    lift(c, right, x0(5) + W / 2 + 20, big_top + big.height + 40)
+    movers = card(scene, (155, 1383, 1165, 1853), 1160, radius=86)
+    lift(c, movers, x0(5) + (W - movers.width) / 2, big_top + big.height + 40 + small + 40)
+    sky.owl(raw_dir, "look-up", x0(5) + W / 2 + 360, big_top + 24, perch)
 
-    story.moon(x0(9) + 1150, 640, 56)
-    story.ground()
+    # 7 · Apple Watch, with Dippy perched on the case.
+    wrist = watch(raw("watch-today"), 720)
+    wl, wr = device(c, wrist, x0(6) + W / 2, 1000)
+    plan = card(raw("watch-plans"), WATCH_PLAN, 960, radius=80)
+    lift(c, plan, x0(6) + (W - plan.width) / 2, 2160)
+    sky.owl(raw_dir, "wink", wl + 230, 1000 + 24, perch)
 
-    # The zone and the alert.
-    story.zone(x0(1) + 540, x0(3) + 420, 2840, 2700, label=(x0(1) + 1010, "Your buy zone"))
-    story.ping(x0(2) + 420)
+    # 8 · Import.
+    l, r = phone(7, fix_iphone_clock(raw("iphone-import")))
+    sky.owl(raw_dir, "look-down", r - 210, top + 24, perch)
 
-    # Ground details.
-    tags(c, x0(4) + W / 2, 2640, ["Golden cross", "RSI oversold", "52-week low", "Trailing stop"], 2,
-         dots=[AMBER, LINE_GREEN, (120, 170, 255), (255, 110, 110)])
-    tags(c, x0(7) + W / 2, 2590, ["Robinhood", "Fidelity", "Schwab", "Vanguard", "E*TRADE", "IBKR", "Trading 212", "DEGIRO"], 4)
-    pill(c, x0(9) + W / 2, 2560, "Start free")
+    # 9 · Portfolio, with the stat tiles enlarged.
+    l, r = phone(8, fix_iphone_clock(raw("iphone-home")))
+    tiles = card(fix_iphone_clock(raw("iphone-home")), STAT_TILES, 1180, radius=60)
+    lift(c, tiles, x0(8) + (W - tiles.width) / 2, 2200)
+    sky.owl(raw_dir, "idle", l + 210, top + 24, perch)
 
-    # Cards lifted out of the screens.
-    banner = notification(1180, icon, "NVDA entered your buy zone", ["Now $209.35, inside $206.35–$217.80.", "Your plan: buy a little."])
-    shadowed(c, banner, x0(0) + (W - banner.width) / 2, 1520, blur=40, offset=26, opacity=170)
-    lift = card(fix_iphone_clock(raw("iphone-zones")), ZONE_CHART, 1080)
-    shadowed(c, lift, x0(1) + 120, 1640, blur=44, offset=30, opacity=180)
-    lift = card(fix_iphone_clock(raw("iphone-zones")), ODDS_CARD, 1080)
-    shadowed(c, lift, x0(3) + 120, 1860, blur=44, offset=30, opacity=180)
-    plan = card(raw("watch-plans"), WATCH_PLAN, 820, radius=70)
-    shadowed(c, plan, x0(6) + 80, 2020, blur=44, offset=30, opacity=190)
-    lift = card(fix_iphone_clock(raw("iphone-home")), STAT_TILES, 1080, radius=56)
-    shadowed(c, lift, x0(8) + 120, 1940, blur=44, offset=30, opacity=180)
-    checklist(c, x0(9) + W / 2, 760, ["Buy and sell zones", "Instant price alerts", "27 smart alerts", "Odds for every plan", "Widgets & Apple Watch", "Import from any broker"])
+    # 10 · Asleep in the moon, everything ticked off, free to start.
+    sky.moon(x0(9) + W / 2 - 20, 1000, 300)
+    sky.owl(raw_dir, "sleep", x0(9) + W / 2 + 70, 1262, 300)
+    checklist(c, x0(9) + W / 2, 1540, ["Buy and sell zones", "Instant price alerts", "27 smart alerts", "Odds for every plan", "Widgets & Apple Watch", "Import from any broker"])
+    pill(c, x0(9) + W / 2, 2460, "Start free")
 
-    # Dippy, reacting to each chapter.
-    story.owl(raw_dir, "idle", x0(0) + 190, 360)
-    story.owl(raw_dir, "wings", x0(2) + 190, 260)
-    story.owl(raw_dir, "look-up", x0(5) + 660, 260)
-    story.owl(raw_dir, "wink", x0(6) + 1170, 250)
-    story.owl(raw_dir, "look-left", x0(7) + 1190, 230)
-    story.owl(raw_dir, "sleep", x0(9) + 660, 470)
-
-    # Headlines last, so nothing ever covers them.
     for index, (title, subline) in enumerate([
         ("Buy the *dip*.\nNever miss it.", "Dippy watches your stocks day and night."),
         ("Draw your\n*buy zone*", "Drag two handles. That's your whole plan."),
@@ -634,14 +496,14 @@ def iphone_story(raw, raw_dir):
         ("Your plans,\nalways *in sight*", "Live widgets with your zones and today's movers."),
         ("Your portfolio,\n*on your wrist*", "Plans, prices, and charts on Apple Watch."),
         ("Your portfolio\nin *seconds*", "Import a CSV from any broker. No login needed."),
-        ("Watch it\n*grow*", "Value, returns, and dividends in one calm place."),
-        ("Sleep well.\n*Dippy's on watch.*", None),
+        ("All your stocks,\n*one calm place*", "Value, returns, and dividends at a glance."),
+        ("Sleep well.\n*Dippy's on watch.*", "Free to start. Go Pro for every alert."),
     ]):
         headline(c, x0(index), W, title, subline)
 
     names = ["01-buy-the-dip", "02-buy-zone", "03-alert", "04-odds", "05-smart-alerts",
              "06-widgets", "07-apple-watch", "08-import", "09-portfolio", "10-start-free"]
-    return list(zip(names, story.frames())), story.canvas
+    return list(zip(names, sky.frames())), sky.canvas
 
 
 # MARK: - iPad
@@ -650,52 +512,49 @@ def ipad_story(raw, raw_dir):
     W, H = 2064, 2752
     u = W / 1320
     icon = Image.open(raw_dir / "app-icon.png")
-    story = Story((W, H), 5, line(W, [
-        [(-150, 2180), (400, 2230), (900, 2180), (1400, 2250), (1950, 2300)],
-        [(300, 2360), (800, 2400), (1300, 2470), (1900, 2540)],
-        [(250, 2560), (600, 2580), (1100, 2520), (1600, 2420), (2000, 2330)],
-        [(400, 2280), (900, 2230), (1400, 2250), (1950, 2160)],
-        [(400, 2100), (900, 2040), (1300, 2060), (1800, 2120), (2300, 2130)],
-    ], dy=140))
-    x0 = story.x0
-    c = story.canvas
-    tablet_w, top = 1640, 880
+    sky = Sky((W, H), 5)
+    x0 = sky.x0
+    c = sky.canvas
+    tablet_w, top = 1700, 900
+    perch = 300
 
-    device(c, ipad(fix_ipad_status(raw("ipad-home")), tablet_w), x0(0) + W / 2 + 80, top, u)
-    device(c, ipad(fix_ipad_status(raw("ipad-stock")), tablet_w), x0(1) + W / 2 - 80, top, u)
-    device(c, ipad(fix_ipad_status(raw("ipad-alerts")), tablet_w), x0(2) + W / 2 + 80, top, u)
-    device(c, ipad(fix_ipad_status(raw("ipad-watchlist")), tablet_w), x0(3) + W / 2 - 80, top, u)
-    story.moon(x0(4) + 1800, 700, 80)
-    story.ground()
+    def tablet(index, screen):
+        return device(c, ipad(fix_ipad_status(screen), tablet_w), x0(index) + W / 2, top, u)
 
-    story.zone(x0(1) + 900, x0(2) + 1400, 2770, 2640, label=(x0(1) + 1350, "Your buy zone"))
-    story.ping(x0(2) + 600)
-    pill(c, x0(4) + W / 2, 2500, "Start free", scale=1.2)
+    l, r = tablet(0, raw("ipad-home"))
+    banner = notification(1400, icon, "NVDA entered your buy zone", ["Now $209.35, inside $206.35–$217.80.", "Your plan: buy a little."])
+    lift(c, banner, x0(0) + (W - banner.width) / 2, 1560, u)
+    sky.owl(raw_dir, "idle", r - 260, top + 28, perch)
 
-    banner = notification(1360, icon, "NVDA entered your buy zone", ["Now $209.35, inside $206.35–$217.80.", "Your plan: buy a little."])
-    shadowed(c, banner, x0(0) + (W - banner.width) / 2 + 80, 1500, blur=44, offset=30, opacity=180)
-    lift = card(fix_iphone_clock(raw("iphone-zones")), ZONE_CHART, 1300)
-    shadowed(c, lift, x0(1) + (W - 1300) / 2 - 80, 1450, blur=50, offset=34, opacity=180)
-    lift = card(fix_iphone_clock(raw("iphone-zones")), ODDS_CARD, 1300)
-    shadowed(c, lift, x0(2) + (W - 1300) / 2 + 80, 1640, blur=50, offset=34, opacity=180)
-    checklist(c, x0(4) + W / 2, 760, ["Buy and sell zones", "Instant price alerts", "27 smart alerts", "Odds for every plan", "Widgets & Apple Watch", "Import from any broker"], scale=1.15)
+    l, r = tablet(1, raw("ipad-stock"))
+    zone = card(fix_iphone_clock(raw("iphone-plan")), ZONE_CARD, 1300, radius=60)
+    lift(c, zone, x0(1) + (W - zone.width) / 2, 1560, u)
+    sky.owl(raw_dir, "look-down", l + 260, top + 28, perch)
 
-    story.owl(raw_dir, "idle", x0(0) + 190, 380)
-    story.owl(raw_dir, "wings", x0(2) + 230, 300)
-    story.owl(raw_dir, "look-left", x0(3) + 1930, 300)
-    story.owl(raw_dir, "sleep", x0(4) + 1000, 560)
+    l, r = tablet(2, raw("ipad-alerts"))
+    plan = card(fix_iphone_clock(raw("iphone-stock")), PLAN_CARD, 1400, radius=60)
+    lift(c, plan, x0(2) + (W - plan.width) / 2, 1820, u)
+    sky.owl(raw_dir, "wings", r - 280, top + 28, perch)
+
+    l, r = tablet(3, raw("ipad-watchlist"))
+    sky.owl(raw_dir, "look-left", r - 260, top + 28, perch)
+
+    sky.moon(x0(4) + W / 2 - 20, 980, 330)
+    sky.owl(raw_dir, "sleep", x0(4) + W / 2 + 80, 1268, 330)
+    checklist(c, x0(4) + W / 2, 1480, ["Buy and sell zones", "Instant price alerts", "27 smart alerts", "Odds for every plan", "Widgets & Apple Watch", "Import from any broker"], scale=1.05)
+    pill(c, x0(4) + W / 2, 2420, "Start free", scale=1.15)
 
     for index, (title, subline) in enumerate([
         ("Buy the *dip*.\nNever miss it.", "Dippy watches your stocks day and night."),
         ("Draw your\n*buy zone*", "Drag two handles. That's your whole plan."),
         ("It dips.\n*Dippy taps you.*", "See your odds, and get an alert the second it's in your zone."),
         ("Every stock,\n*one calm list*", "Prices, trends, and how close each plan is."),
-        ("Sleep well.\n*Dippy's on watch.*", None),
+        ("Sleep well.\n*Dippy's on watch.*", "Free to start. Go Pro for every alert."),
     ]):
-        headline(c, x0(index), W, title, subline, size=176)
+        headline(c, x0(index), W, title, subline, size=160)
 
     names = ["01-buy-the-dip", "02-buy-zone", "03-alert", "04-watchlist", "05-start-free"]
-    return list(zip(names, story.frames())), story.canvas
+    return list(zip(names, sky.frames())), sky.canvas
 
 
 # MARK: - Apple Watch
@@ -717,7 +576,7 @@ def watch_set(raw):
         parts = caption.split("*")
         x = (c.width - sum(draw.textlength(p, font=caption_font) for p in parts)) / 2
         for index, part in enumerate(parts):
-            draw.text((x, 30 * k), part, font=caption_font, fill=GREEN if index % 2 else WHITE)
+            draw.text((x, 30 * k), part, font=caption_font, fill=WATCH_GREEN if index % 2 else WHITE)
             x += draw.textlength(part, font=caption_font)
         side, top = 16 * k, 92 * k
         content = raw(page).convert("RGBA")

@@ -29,7 +29,7 @@ DRAW YOUR ZONES
 NEVER MISS YOUR MOMENT
 • An alert the second a stock enters your zone, with your plan inside
 • A gentle heads-up when a stock gets close
-• Alerts that repeat, expire, or carry your own note about why you chose that price
+• Every plan in one place: buy zone, sell zone, and smart alerts set together
 
 27 SMART ALERTS, IN PLAIN ENGLISH
 • Sharp drops, new 52-week lows, and big daily moves
@@ -64,11 +64,11 @@ Dipwise is not a broker, doesn't execute trades, and doesn't give investment adv
 
 ## Screenshots
 
-Each set is one continuous night panorama, so swiping through the App Store page tells Dippy's story. His price line, drawn like the charts in the app, runs through every image: it drifts down, drops into your buy zone, pings the alert, climbs back out, grows, and ends on a peak where Dippy falls asleep under the moon. The devices stand behind that horizon, and Dippy stands on the line, reacting to each chapter.
+Every image shares one seamless navy night sky in the app's own colors, so the set reads as a single scene as people swipe. Dippy is the main character: he perches on top of each device and reacts to what's on it. He keeps watch, peers down at the buy zone, flaps his wings when the alert lands, checks the odds, and in the last image falls asleep in the crescent moon.
 
-Each image still works on its own, with one short headline, one screen, and at most one moment from it enlarged. The first three carry the promise (buy the dip, draw your zone, get the alert), because they're the only ones people see in search results. All captures match the App Store build: Flock hidden, U.S. English, dollars.
+Each image still works on its own, with one short headline, one real screen, and at most one moment from it enlarged. The first three carry the promise (buy the dip, draw your zone, get the alert), because they're the only ones people see in search results. All captures match the App Store build: Flock hidden, U.S. English, dollars, and the same prices everywhere.
 
-`preview-iphone.png` and `preview-ipad.png` show each whole panorama; `preview-watch.png` shows the watch set.
+`preview-iphone.png` and `preview-ipad.png` show each whole set side by side; `preview-watch.png` shows the watch set.
 
 ### iPhone 6.9-inch (1320 × 2868), from `iPhone-6.9/`
 
@@ -107,6 +107,6 @@ The Flock isn't in the screenshots or description yet, because App Store builds 
 
 ### Regenerating
 
-1. Capture iPhone screens on the iPhone 6.9-inch simulator and iPad screens on the iPad Pro 13-inch simulator, launching the debug build with `-hideFlock -AppleLanguages "(en)" -AppleLocale en_US`. Save them into `ScreenshotStudio/Raw/` with the same names (`iphone-*.png`, `ipad-*.png`).
-2. Launch with `-marketingScene watch` to render `watch-*.png` and Dippy's `owl-*.png` poses into the app's Documents folder, and copy them into `Raw/` (trim the owls to their visible edges). Prices are live, so render on a green day to keep the watch matching the iPhone shots.
+1. Capture iPhone screens on the iPhone 6.9-inch simulator and iPad screens on the iPad Pro 13-inch simulator, launching the debug build with `-hideFlock -AppleLanguages "(en)" -AppleLocale en_US -marketingDate 2026-10-13`. The date freezes every quote at that day's close, so all screens show the same prices. Save them into `ScreenshotStudio/Raw/` with the same names (`iphone-*.png`, `ipad-*.png`).
+2. Launch with `-marketingScene watch` to render `watch-*.png` and Dippy's `owl-*.png` poses into the app's Documents folder, and copy them into `Raw/` (trim the owls to their visible edges).
 3. Run `python3 Marketing/ScreenshotStudio/compose.py Marketing/ScreenshotStudio/Raw Marketing/AppStore`.
