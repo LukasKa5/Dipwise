@@ -3,7 +3,7 @@ import SwiftUI
 
 /// Development only: shows the intro's Home Screen or lock screen full size, so App Store screenshots
 /// can be captured from the same views. Launch with `-marketingScene widgets` or `-marketingScene lock`, or
-/// `-marketingScene watch` to render the Apple Watch pages at high resolution.
+/// `-marketingScene watch` to render the Apple Watch pages and Dippy at high resolution.
 struct MarketingSceneView: View {
   var scene: String
 
@@ -45,7 +45,7 @@ struct MarketingSceneView: View {
         owls
       } else if isReady {
         if scene == "watch" {
-          MarketingWatchRenders(model: model)
+          MarketingRenders(model: model)
         } else if scene == "lock" {
           NotifyStep(model: model, showsScreenOnly: true)
         } else {

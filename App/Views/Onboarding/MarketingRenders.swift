@@ -2,10 +2,10 @@
 import Charts
 import SwiftUI
 
-/// Development only: renders the Apple Watch pages from the real watch components at 6× scale, so App Store
-/// screenshots show the watch razor sharp instead of an upscaled simulator capture. Launch with
-/// `-marketingScene watch`; the PNGs land in the app's Documents folder as `watch-<page>.png`.
-struct MarketingWatchRenders: View {
+/// Development only: renders the Apple Watch pages from the real watch components at 6× scale, and Dippy's poses
+/// at 8× on a transparent background, so App Store screenshots stay razor sharp at any size. Launch with
+/// `-marketingScene watch`; the PNGs land in the app's Documents folder as `watch-<page>.png` and `owl-<pose>.png`.
+struct MarketingRenders: View {
   var model: OnboardingModel
 
   @State private var saved: [String] = []
@@ -46,7 +46,7 @@ struct MarketingWatchRenders: View {
 
   var body: some View {
     VStack(spacing: 8) {
-      Text("Rendered \(saved.count) watch pages")
+      Text("Rendered \(saved.count) images")
       ForEach(saved, id: \.self) { Text($0).font(.caption.monospaced()) }
     }
     .task { render() }
@@ -159,6 +159,34 @@ struct MarketingWatchRenders: View {
       renderer.scale = Self.scale
       guard let data = renderer.uiImage?.pngData() else { continue }
       let url = folder.appending(path: "watch-\(name).png")
+      try? data.write(to: url)
+      saved.append(url.lastPathComponent)
+    }
+    renderOwls(into: folder)
+  }
+
+  /// Dippy's poses, with room around him for open wings.
+  private func renderOwls(into folder: URL) {
+    let poses: [(name: String, owl: OwlMark)] = [
+      ("idle", OwlMark()),
+      ("look-left", OwlMark(lookOffset: CGSize(width: -1, height: 0))),
+      ("look-right", OwlMark(lookOffset: CGSize(width: 1, height: 0.2))),
+      ("look-up", OwlMark(lookOffset: CGSize(width: 0.3, height: -0.9))),
+      ("look-down", OwlMark(lookOffset: CGSize(width: 0.2, height: 1))),
+      ("wink", OwlMark(blink: 1, rightEyeOpen: 1)),
+      ("sleep", OwlMark(blink: 1)),
+      ("wings", OwlMark(wingSpread: 1)),
+    ]
+    for pose in poses {
+      let renderer = ImageRenderer(content:
+        pose.owl
+          .frame(width: 170, height: 196)
+          .padding(.horizontal, 140)
+          .padding(.top, 160)
+      )
+      renderer.scale = 8
+      guard let data = renderer.uiImage?.pngData() else { continue }
+      let url = folder.appending(path: "owl-\(pose.name).png")
       try? data.write(to: url)
       saved.append(url.lastPathComponent)
     }

@@ -64,9 +64,11 @@ Dipwise is not a broker, doesn't execute trades, and doesn't give investment adv
 
 ## Screenshots
 
-Every set follows the same rules: one idea per image, a short benefit-first headline that reads at thumbnail size, the real app on an upright device, and one moment from that screen lifted out and enlarged. The first three images carry the promise (buy the dip, draw your zone, know your odds), because they're the only ones people see in search results. All captures match the App Store build: Flock hidden, U.S. English, dollars.
+Each set is one continuous night panorama, so swiping through the App Store page tells Dippy's story. His price line, drawn like the charts in the app, runs through every image: it drifts down, drops into your buy zone, pings the alert, climbs back out, grows, and ends on a peak where Dippy falls asleep under the moon. The devices stand behind that horizon, and Dippy stands on the line, reacting to each chapter.
 
-`preview-iphone.png`, `preview-ipad.png`, and `preview-watch.png` show each set side by side.
+Each image still works on its own, with one short headline, one screen, and at most one moment from it enlarged. The first three carry the promise (buy the dip, draw your zone, get the alert), because they're the only ones people see in search results. All captures match the App Store build: Flock hidden, U.S. English, dollars.
+
+`preview-iphone.png` and `preview-ipad.png` show each whole panorama; `preview-watch.png` shows the watch set.
 
 ### iPhone 6.9-inch (1320 × 2868), from `iPhone-6.9/`
 
@@ -74,15 +76,16 @@ Every set follows the same rules: one idea per image, a short benefit-first head
 |---|------|----------|
 | 1 | 01-buy-the-dip.png | Buy the dip. Never miss it. |
 | 2 | 02-buy-zone.png | Draw your buy zone |
-| 3 | 03-odds.png | Know your odds before you buy |
-| 4 | 04-smart-alerts.png | 27 smart alerts, plain English |
-| 5 | 05-widgets.png | Your plans on your Home Screen |
-| 6 | 06-apple-watch.png | Your portfolio, on your wrist |
-| 7 | 07-import.png | Your portfolio in seconds |
-| 8 | 08-portfolio.png | All your stocks, one calm place |
-| 9 | 09-start-free.png | Sleep well. Dippy's on watch. |
+| 3 | 03-alert.png | It dips. Dippy taps you. |
+| 4 | 04-odds.png | Know your odds before you buy |
+| 5 | 05-smart-alerts.png | 27 smart alerts, plain English |
+| 6 | 06-widgets.png | Your plans, always in sight |
+| 7 | 07-apple-watch.png | Your portfolio, on your wrist |
+| 8 | 08-import.png | Your portfolio in seconds |
+| 9 | 09-portfolio.png | Watch it grow |
+| 10 | 10-start-free.png | Sleep well. Dippy's on watch. |
 
-Apple scales the 6.9-inch set down for every smaller iPhone, so it's the only iPhone set you need to upload. `iPhone-6.5/` (1284 × 2778) has the same images in case you'd rather supply the 6.5-inch size yourself.
+Upload them in this order so the panorama lines up. Apple scales the 6.9-inch set down for every smaller iPhone, so it's the only iPhone set you need. `iPhone-6.5/` (1284 × 2778) has the same images in case you'd rather supply the 6.5-inch size yourself.
 
 ### iPad 13-inch (2064 × 2752), from `iPad-13/`
 
@@ -92,7 +95,7 @@ Required, because Dipwise runs on iPad. Apple scales this set down for smaller i
 |---|------|----------|
 | 1 | 01-buy-the-dip.png | Buy the dip. Never miss it. |
 | 2 | 02-buy-zone.png | Draw your buy zone |
-| 3 | 03-odds.png | Know your odds before you buy |
+| 3 | 03-alert.png | It dips. Dippy taps you. |
 | 4 | 04-watchlist.png | Every stock, one calm list |
 | 5 | 05-start-free.png | Sleep well. Dippy's on watch. |
 
@@ -105,5 +108,5 @@ The Flock isn't in the screenshots or description yet, because App Store builds 
 ### Regenerating
 
 1. Capture iPhone screens on the iPhone 6.9-inch simulator and iPad screens on the iPad Pro 13-inch simulator, launching the debug build with `-hideFlock -AppleLanguages "(en)" -AppleLocale en_US`. Save them into `ScreenshotStudio/Raw/` with the same names (`iphone-*.png`, `ipad-*.png`).
-2. Launch with `-marketingScene watch` to render `watch-*.png` into the app's Documents folder, and copy them into `Raw/`.
+2. Launch with `-marketingScene watch` to render `watch-*.png` and Dippy's `owl-*.png` poses into the app's Documents folder, and copy them into `Raw/` (trim the owls to their visible edges). Prices are live, so render on a green day to keep the watch matching the iPhone shots.
 3. Run `python3 Marketing/ScreenshotStudio/compose.py Marketing/ScreenshotStudio/Raw Marketing/AppStore`.
