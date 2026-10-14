@@ -23,6 +23,8 @@ enum FlockConfiguration {
       return CloudKitFlockBackend(containerID: containerID)
     }
     #if DEBUG
+    // `-hideFlock` matches App Store builds, for screenshot captures.
+    if ProcessInfo.processInfo.arguments.contains("-hideFlock") { return nil }
     return SampleFlockBackend()
     #else
     return nil
