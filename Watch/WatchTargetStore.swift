@@ -16,6 +16,20 @@ final class WatchTargetStore: NSObject {
   private(set) var isLoading = false
   private(set) var lastUpdated: Date?
 
+  #if DEBUG
+  /// Launch with `-demoData` to fill a standalone watch simulator with the demo portfolio, for checking layouts.
+  override init() {
+    super.init()
+    guard ProcessInfo.processInfo.arguments.contains("-demoData") else { return }
+    let holdings: [(String, Double)] = [("NVDA", 120), ("AAPL", 60), ("AMZN", 50), ("GOOGL", 40), ("MSFT", 30), ("META", 12), ("TSLA", 10)]
+    watched = holdings.map { WatchedStock(symbol: $0.0, name: $0.0, shares: $0.1, averageCost: nil) }
+    targets = [("AMZN", 236.20, 249.30), ("NVDA", 206.35, 217.80), ("AAPL", 306.30, 323.35), ("META", 668.65, 705.80)].map {
+      WatchedTarget(id: UUID(), symbol: $0.0, name: $0.0, rule: AlertRule(kind: .buyZone, lower: $0.1, upper: $0.2))
+    }
+    baseCurrency = "USD"
+  }
+  #endif
+
   var statuses: [TargetStatus] { TargetStatus.sorted(targets: targets, quotes: quotes) }
 
   var portfolio: WatchPortfolio? {

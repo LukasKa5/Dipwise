@@ -73,6 +73,7 @@ private struct TodayPage: View {
             .foregroundStyle(.white.opacity(0.7))
         }
       }
+      .scenePadding(.horizontal)
     }
     .navigationTitle("Dipwise")
     .refreshable { await store.refresh() }
@@ -109,6 +110,7 @@ private struct PlansPage: View {
           }
         }
       }
+      .scenePadding(.horizontal)
     }
     .navigationTitle("Plans")
     .refreshable { await store.refresh() }
@@ -145,6 +147,7 @@ private struct WatchlistPage: View {
           .buttonStyle(.plain)
         }
       }
+      .scenePadding(.horizontal)
     }
     .navigationTitle("Watchlist")
     .refreshable { await store.refresh() }
@@ -211,6 +214,7 @@ private struct StockDetail: View {
             .minimumScaleFactor(0.6)
         }
       }
+      .scenePadding(.horizontal)
     }
     .navigationTitle(symbol)
     .containerBackground(Brand.nightMiddle, for: .navigation)
@@ -225,8 +229,8 @@ private struct StockDetail: View {
     let color = (values.last ?? 0) >= (values.first ?? 0) ? Brand.buy : Brand.sell
     return VStack(alignment: .leading, spacing: 3) {
       Text(isLatest ? quote.name : (dates.indices.contains(index) ? dates[index].formatted(.dateTime.month(.abbreviated).day()) : ""))
-        .font(.system(size: 12, weight: .semibold))
-        .foregroundStyle(isLatest ? .white.opacity(0.65) : Brand.buy)
+        .font(.system(size: 13, weight: .semibold))
+        .foregroundStyle(isLatest ? .white.opacity(0.7) : Brand.buy)
         .lineLimit(1)
       Text(quote.formatted(shown))
         .font(.system(size: 26, weight: .bold, design: .rounded))
@@ -235,8 +239,8 @@ private struct StockDetail: View {
         .minimumScaleFactor(0.5)
         .contentTransition(.numericText())
       Text(isLatest ? "\(changeText(quote.change)) today" : "\(changeText(quote.price / max(shown, 0.0001) - 1)) since then")
-        .font(.system(size: 12, weight: .semibold).monospacedDigit())
-        .foregroundStyle(isLatest ? (quote.change >= 0 ? Brand.buy : Brand.sell) : .white.opacity(0.7))
+        .font(.system(size: 13, weight: .semibold).monospacedDigit())
+        .foregroundStyle(isLatest ? (quote.change >= 0 ? Brand.buy : Brand.sell) : .white.opacity(0.75))
         .lineLimit(1)
       if values.count > 1 {
         let low = values.min() ?? 0
@@ -303,8 +307,8 @@ private struct StockDetail: View {
         .lineLimit(1)
         .minimumScaleFactor(0.6)
       Text(title)
-        .font(.system(size: 11, weight: .semibold))
-        .foregroundStyle(.white.opacity(0.65))
+        .font(.system(size: 12, weight: .semibold))
+        .foregroundStyle(.white.opacity(0.7))
         .lineLimit(1)
         .minimumScaleFactor(0.7)
     }

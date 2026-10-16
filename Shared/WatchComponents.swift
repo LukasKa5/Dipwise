@@ -30,7 +30,7 @@ struct WatchDippyHeader: View {
           .lineLimit(1)
           .minimumScaleFactor(0.7)
         Text(message)
-          .font(.system(size: 12, weight: .medium))
+          .font(.system(size: 13, weight: .medium))
           .foregroundStyle(.white.opacity(0.7))
           .lineLimit(3)
           .multilineTextAlignment(.leading)
@@ -52,7 +52,7 @@ struct WatchPortfolioHero: View {
     let color = portfolio.dayChangeAmount >= 0 ? Brand.buy : Brand.sell
     VStack(alignment: .leading, spacing: 3) {
       Text("Portfolio")
-        .font(.system(size: 12, weight: .semibold))
+        .font(.system(size: 13, weight: .semibold))
         .foregroundStyle(.white.opacity(0.65))
       Text(portfolio.formatted(portfolio.value))
         .font(.system(size: 28, weight: .bold, design: .rounded))
@@ -114,8 +114,8 @@ struct WatchPlanCard: View {
             .minimumScaleFactor(0.6)
           if let quote = status.quote {
             Text(compactPrice(quote.price, currency: quote.currency))
-              .font(.system(size: 11, weight: .medium).monospacedDigit())
-              .foregroundStyle(.white.opacity(0.6))
+              .font(.system(size: 12, weight: .medium).monospacedDigit())
+              .foregroundStyle(.white.opacity(0.7))
               .lineLimit(1)
           }
         }
@@ -127,9 +127,9 @@ struct WatchPlanCard: View {
             .foregroundStyle(status.distance == 0 || (status.distance ?? 1) < 0.035 ? color : .white)
             .lineLimit(1)
             .fixedSize()
-          Text(status.distance == 0 ? "now" : "away")
-            .font(.system(size: 10, weight: .medium))
-            .foregroundStyle(.white.opacity(0.55))
+          Text(status.distance == 0 ? "now" : "to go")
+            .font(.system(size: 11, weight: .medium))
+            .foregroundStyle(.white.opacity(0.65))
         }
       }
       WidgetTrack(progress: status.progress, color: color)
@@ -145,7 +145,7 @@ struct WatchPlanCard: View {
             .foregroundStyle(.white.opacity(0.55))
         }
       }
-      .font(.system(size: 11, weight: .semibold))
+      .font(.system(size: 12, weight: .semibold))
       .foregroundStyle(color)
     }
     .padding(10)
@@ -167,10 +167,10 @@ struct WatchMoverRow: View {
           .lineLimit(1)
           .minimumScaleFactor(0.6)
         Text(compactPrice(quote.price, currency: quote.currency))
-          .font(.system(size: 11, weight: .medium).monospacedDigit())
-          .foregroundStyle(.white.opacity(0.6))
+          .font(.system(size: 12, weight: .medium).monospacedDigit())
+          .foregroundStyle(.white.opacity(0.7))
           .lineLimit(1)
-          .minimumScaleFactor(0.6)
+          .minimumScaleFactor(0.7)
       }
       .layoutPriority(1)
       Spacer(minLength: 2)
@@ -212,8 +212,8 @@ struct WatchMarketStatus: View {
           .fixedSize()
       }
     }
-    .font(.system(size: 11, weight: .semibold).monospacedDigit())
-    .foregroundStyle(.white.opacity(0.75))
+    .font(.system(size: 12, weight: .semibold).monospacedDigit())
+    .foregroundStyle(.white.opacity(0.8))
     .accessibilityElement(children: .combine)
   }
 }
