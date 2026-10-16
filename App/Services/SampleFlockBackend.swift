@@ -51,6 +51,56 @@ struct SampleFlockBackend: FlockBackend {
   func withdraw(recordName: String) async throws {}
   func markTriggered(recordName: String, price: Double) async throws {}
   func vote(symbol: String, bullish: Bool, week: String, installID: String) async throws {}
+  func publish(portfolio: FlockPortfolio) async throws {}
+  func publish(move: FlockMove) async throws {}
+  func withdrawPortfolio(installID: String) async throws {}
+
+  /// A flock of about 500 members with realistic, overlapping portfolios.
+  func portfolios() async throws -> [FlockPortfolio] {
+    Self.members.map(\.portfolio)
+  }
+
+  func moves(days: Int) async throws -> [FlockMove] {
+    let since = Date.now.addingTimeInterval(-Double(days) * 24 * 3600)
+    return Self.members.flatMap(\.moves).filter { $0.date >= since }
+  }
+
+  private static let members: [(portfolio: FlockPortfolio, moves: [FlockMove])] = {
+    var generator = SeededGenerator(seed: "flock-portfolios")
+    // How likely each stock is to be in a portfolio: the big names more often.
+    let popularity: [String: Double] = [
+      "NVDA": 0.62, "AAPL": 0.55, "MSFT": 0.5, "VOO": 0.46, "AMZN": 0.42, "GOOGL": 0.38, "TSLA": 0.36, "META": 0.33,
+      "PLTR": 0.24, "AMD": 0.22, "ASML": 0.12, "NFLX": 0.14, "COIN": 0.1, "O": 0.16, "KO": 0.15, "BTC-USD": 0.18,
+      "SHOP": 0.08, "UBER": 0.1,
+    ]
+    let symbols = universe.map(\.0)
+    return (0..<520).map { member in
+      let installID = "sample-member-\(member)"
+      var picked = symbols.filter { Double.random(in: 0...1, using: &generator) < (popularity[$0] ?? 0.1) }
+      if picked.count < 2 { picked += ["VOO", "AAPL"].filter { !picked.contains($0) } }
+      let raw = picked.map { _ in pow(Double.random(in: 0.05...1, using: &generator), 1.6) }
+      let total = raw.reduce(0, +)
+      let positions = zip(picked, raw).map { FlockPortfolio.Position(symbol: $0, weight: $1 / total) }.sorted { $0.weight > $1.weight }
+      let concentration = positions.first?.weight ?? 0.3
+      let skill = Double.random(in: -1...1, using: &generator) + Double.random(in: -1...1, using: &generator)
+      let portfolio = FlockPortfolio(
+        installID: installID,
+        positions: positions,
+        yearReturn: 0.11 + skill * 0.13 + concentration * Double.random(in: -0.1...0.35, using: &generator),
+        volatility: 0.12 + concentration * 0.35 + Double.random(in: 0...0.12, using: &generator),
+        updatedAt: .now.addingTimeInterval(-Double.random(in: 0...5, using: &generator) * 24 * 3600)
+      )
+      // About two moves a month, a little more often buying than selling, as long-term investors do.
+      let moveCount = Int.random(in: 4...30, using: &generator)
+      let moves = (0..<moveCount).map { _ in
+        let symbol = picked.randomElement(using: &generator) ?? "VOO"
+        let age = pow(Double.random(in: 0...1, using: &generator), 1.3) * 365 * 24 * 3600
+        return FlockMove(installID: installID, symbol: symbol, isBuy: Double.random(in: 0...1, using: &generator) < 0.64,
+                         date: .now.addingTimeInterval(-age))
+      }
+      return (portfolio, moves)
+    }
+  }()
 
   private static func makeEntries(price: Double, generator: inout SeededGenerator) -> [FlockEntry] {
     let count = Int.random(in: 60...420, using: &generator)

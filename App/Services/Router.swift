@@ -15,7 +15,24 @@ enum AppTab: Hashable {
 final class Router {
   static let shared = Router()
 
-  var selectedTab: AppTab = .home
+  var selectedTab: AppTab = Router.startTab
+
+  /// Development only: `-startTab flock` opens the app on that tab, for checking screens.
+  private static var startTab: AppTab {
+    #if DEBUG
+    let arguments = ProcessInfo.processInfo.arguments
+    if let index = arguments.firstIndex(of: "-startTab"), arguments.indices.contains(index + 1) {
+      switch arguments[index + 1] {
+      case "watchlist": return .watchlist
+      case "alerts": return .alerts
+      case "flock": return .flock
+      case "settings": return .settings
+      default: break
+      }
+    }
+    #endif
+    return .home
+  }
   var homePath: [String] = []
   var showsBrief = false
 

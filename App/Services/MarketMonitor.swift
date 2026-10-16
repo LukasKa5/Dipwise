@@ -21,6 +21,9 @@ enum MarketMonitor {
         await flock.markTriggered(event.alert, price: event.quote.price)
       }
     }
+    if let flock {
+      await flock.syncPortfolio(holdings: holdings.map { ($0.symbol, $0.shares) }, quotes: quotes.quotes)
+    }
     SnapshotPublisher.publish(context: context)
   }
 }

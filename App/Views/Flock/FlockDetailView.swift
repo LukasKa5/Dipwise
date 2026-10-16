@@ -35,6 +35,11 @@ struct FlockDetailView: View {
         if !flock.isAvailable {
           EmptyHint(systemImage: "person.3", text: "Crowd statistics are coming soon.")
         } else if let report {
+          ownershipSection
+          if let quote, let dips = flock.dipBehavior(for: quote), dips.dips > 0 {
+            dipSection(dips)
+          }
+          leadersSection
           if report.hasEnoughData {
             conviction(report)
             VoteCard(symbol: symbol, votes: report.votes, userVote: flock.userVote(for: symbol)) { bullish in
@@ -401,6 +406,94 @@ struct FlockDetailView: View {
       .cardStyle()
     }
     .buttonStyle(.plain)
+  }
+
+  // MARK: Holdings and moves
+
+  @ViewBuilder
+  private var ownershipSection: some View {
+    if let stat = flock.ownership(of: symbol) {
+      let flow = flock.flow(of: symbol)
+      ReportSection(title: "Who Owns It", systemImage: "chart.pie.fill", isLocked: false, message: "") {
+        VStack(alignment: .leading, spacing: 12) {
+          HStack(spacing: 10) {
+            MiniStat(title: "of the flock own it", value: stat.share.formatted(.percent.precision(.fractionLength(0))))
+            MiniStat(title: "typical portfolio share", value: stat.averageWeight.formatted(.percent.precision(.fractionLength(0))))
+          }
+          if let flow {
+            VStack(alignment: .leading, spacing: 6) {
+              Text("This week")
+                .font(.subheadline.weight(.semibold))
+              BuySellBar(buyShare: flow.buyShare)
+              HStack {
+                Text("\(flow.buyers) added").foregroundStyle(Palette.buy)
+                Spacer()
+                Text("\(flow.sellers) trimmed").foregroundStyle(Palette.sell)
+              }
+              .font(.caption.weight(.semibold).monospacedDigit())
+            }
+            .proLocked(!isPro, message: "See who's adding and trimming with Pro")
+          }
+        }
+      }
+    }
+  }
+
+  /// What the flock did the last times this stock dipped, and how those dips played out.
+  private func dipSection(_ dips: DipBehavior) -> some View {
+    ReportSection(title: "When It Dips", systemImage: "arrow.down.right.circle.fill", isLocked: !isPro,
+                  message: "See how the flock handles dips with Pro") {
+      VStack(alignment: .leading, spacing: 12) {
+        Text("\(symbol) dropped 8% or more from a recent high \(dips.dips) \(dips.dips == 1 ? "time" : "times") in the past year.")
+          .font(.subheadline)
+          .foregroundStyle(.secondary)
+          .fixedSize(horizontal: false, vertical: true)
+        HStack(spacing: 10) {
+          MiniStat(title: "bought the dip", value: dips.boughtShare.formatted(.percent.precision(.fractionLength(0))), color: Palette.buy)
+          if let rebound = dips.averageRebound {
+            MiniStat(title: "a month later", value: rebound.formatted(.percent.precision(.fractionLength(1)).sign(strategy: .always())),
+                     color: rebound >= 0 ? Palette.gain : Palette.loss)
+          }
+        }
+      }
+    }
+  }
+
+  @ViewBuilder
+  private var leadersSection: some View {
+    let leaders = flock.leaders(holding: symbol)
+    if !leaders.isEmpty {
+      ReportSection(title: "Top Investors Holding It", systemImage: "trophy.fill", isLocked: false, message: "") {
+        VStack(spacing: 12) {
+          ForEach(Array(leaders.prefix(4).enumerated()), id: \.element.id) { index, investor in
+            NavigationLink {
+              InvestorView(id: investor.id)
+            } label: {
+              HStack(spacing: 12) {
+                InvestorAvatar(investor: investor, size: 36)
+                VStack(alignment: .leading, spacing: 1) {
+                  Text(investor.nickname)
+                    .font(.subheadline.weight(.semibold))
+                  Text("\((investor.portfolio.weight(of: symbol) ?? 0).formatted(.percent.precision(.fractionLength(0)))) of their portfolio")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Text(investor.yearReturn, format: .percent.precision(.fractionLength(0)).sign(strategy: .always()))
+                  .font(.subheadline.weight(.bold).monospacedDigit())
+                  .foregroundStyle(investor.yearReturn >= 0 ? Palette.gain : Palette.loss)
+                Image(systemName: "chevron.forward")
+                  .font(.footnote.weight(.semibold))
+                  .foregroundStyle(.tertiary)
+              }
+              .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .proLocked(!isPro && index >= 1, message: "See every top investor holding \(symbol)")
+          }
+        }
+      }
+    }
   }
 
   // MARK: Actions

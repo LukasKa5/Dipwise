@@ -12,6 +12,16 @@ protocol FlockBackend: Sendable {
   func withdraw(recordName: String) async throws
   func markTriggered(recordName: String, price: Double) async throws
   func vote(symbol: String, bullish: Bool, week: String, installID: String) async throws
+
+  /// Every member's latest shared portfolio mix.
+  func portfolios() async throws -> [FlockPortfolio]
+  /// Members adding to or trimming positions over the last `days` days.
+  func moves(days: Int) async throws -> [FlockMove]
+  /// Shares or updates the user's own portfolio mix.
+  func publish(portfolio: FlockPortfolio) async throws
+  func publish(move: FlockMove) async throws
+  /// Takes the user's portfolio and moves out of the flock.
+  func withdrawPortfolio(installID: String) async throws
 }
 
 enum FlockConfiguration {
@@ -41,10 +51,12 @@ enum FlockConfiguration {
   }
 }
 
-/// Stores shared alerts and votes as anonymous records in the CloudKit public database.
+/// Stores shared alerts, votes, portfolio mixes, and moves as anonymous records in the CloudKit public database.
 struct CloudKitFlockBackend: FlockBackend {
   private static let alertType = "FlockAlert"
   private static let voteType = "FlockVote"
+  private static let portfolioType = "FlockPortfolio"
+  private static let moveType = "FlockMove"
   let containerID: String
 
   var isSample: Bool { false }
@@ -141,5 +153,56 @@ struct CloudKitFlockBackend: FlockBackend {
     record["bullish"] = bullish ? 1 : 0
     record["installID"] = installID
     _ = try await database.save(record)
+  }
+
+  func portfolios() async throws -> [FlockPortfolio] {
+    let since = Date.now.addingTimeInterval(-30 * 24 * 3600) as NSDate
+    return try await records(NSPredicate(format: "updatedAt > %@", since), type: Self.portfolioType).compactMap { record in
+      guard let installID = record["installID"] as? String,
+            let symbols = record["symbols"] as? [String],
+            let weights = record["weights"] as? [Double], symbols.count == weights.count else { return nil }
+      return FlockPortfolio(
+        installID: installID,
+        positions: zip(symbols, weights).map { FlockPortfolio.Position(symbol: $0, weight: $1) },
+        yearReturn: record["yearReturn"] as? Double,
+        volatility: record["volatility"] as? Double,
+        updatedAt: record["updatedAt"] as? Date ?? .now
+      )
+    }
+  }
+
+  func moves(days: Int) async throws -> [FlockMove] {
+    let since = Date.now.addingTimeInterval(-Double(days) * 24 * 3600) as NSDate
+    return try await records(NSPredicate(format: "date > %@", since), type: Self.moveType).compactMap { record in
+      guard let installID = record["installID"] as? String, let symbol = record["symbol"] as? String else { return nil }
+      return FlockMove(installID: installID, symbol: symbol, isBuy: (record["buy"] as? Int ?? 1) == 1, date: record["date"] as? Date ?? .now)
+    }
+  }
+
+  func publish(portfolio: FlockPortfolio) async throws {
+    let id = CKRecord.ID(recordName: "portfolio-\(portfolio.installID)")
+    let record = (try? await database.record(for: id)) ?? CKRecord(recordType: Self.portfolioType, recordID: id)
+    record["installID"] = portfolio.installID
+    record["symbols"] = portfolio.positions.map(\.symbol)
+    record["weights"] = portfolio.positions.map(\.weight)
+    record["yearReturn"] = portfolio.yearReturn
+    record["volatility"] = portfolio.volatility
+    record["updatedAt"] = portfolio.updatedAt
+    _ = try await database.save(record)
+  }
+
+  func publish(move: FlockMove) async throws {
+    let record = CKRecord(recordType: Self.moveType)
+    record["installID"] = move.installID
+    record["symbol"] = move.symbol
+    record["buy"] = move.isBuy ? 1 : 0
+    record["date"] = move.date
+    _ = try await database.save(record)
+  }
+
+  func withdrawPortfolio(installID: String) async throws {
+    _ = try? await database.deleteRecord(withID: CKRecord.ID(recordName: "portfolio-\(installID)"))
+    let moves = try await records(NSPredicate(format: "installID == %@", installID), type: Self.moveType)
+    for record in moves { _ = try? await database.deleteRecord(withID: record.recordID) }
   }
 }

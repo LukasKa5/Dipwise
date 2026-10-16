@@ -9,6 +9,7 @@ struct SettingsView: View {
   @AppStorage(AlertSettings.headsUpEnabledKey) private var headsUpEnabled = true
   @AppStorage(AlertSettings.headsUpThresholdKey) private var headsUpThreshold = 0.03
   @AppStorage(AlertSettings.shareWithFlockKey) private var shareWithFlock = true
+  @AppStorage(AlertSettings.sharePortfolioKey) private var sharePortfolio = false
   @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = true
   @AppStorage(AlertSettings.baseCurrencyKey) private var baseCurrency = AlertSettings.defaultBaseCurrency
   @AppStorage(AlertSettings.cashBalanceKey) private var cash = 0.0
@@ -270,10 +271,16 @@ struct SettingsView: View {
       .onChange(of: shareWithFlock) { _, isOn in
         if !isOn { withdrawAllFromFlock() }
       }
+      Toggle(isOn: $sharePortfolio) {
+        Label("Share my portfolio mix anonymously", systemImage: "chart.pie")
+      }
+      .onChange(of: sharePortfolio) { _, isOn in
+        if !isOn { Task { await flock.withdrawPortfolio() } }
+      }
     } header: {
       Text("The Flock")
     } footer: {
-      Text("Only the ticker, alert type, and target price are shared. Never your name, holdings, or notes. Turning this off removes your alerts from the flock.")
+      Text("Alerts share only the ticker, alert type, and target price. Your portfolio mix shares only what percentage each stock is, plus when you add or trim. Never amounts, prices paid, your name, or notes. Turning either off removes that data from the flock.")
     }
   }
 

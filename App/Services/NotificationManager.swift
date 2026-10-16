@@ -74,6 +74,20 @@ enum NotificationManager {
     }
   }
 
+  /// Tells the user a flock investor they follow added to or trimmed a position.
+  static func post(followed moves: [FlockMove]) async {
+    for move in moves.prefix(5) {
+      let content = UNMutableNotificationContent()
+      let name = FlockInvestor.nickname(for: move.installID)
+      content.title = move.isBuy ? "\(name) bought \(move.symbol)" : "\(name) trimmed \(move.symbol)"
+      content.body = move.isBuy ? "An investor you follow added to \(move.symbol). Tap to see their portfolio." : "An investor you follow sold some \(move.symbol). Tap to see their portfolio."
+      content.threadIdentifier = "flock-\(move.installID)"
+      content.userInfo = ["symbol": move.symbol]
+      let request = UNNotificationRequest(identifier: "flock-\(move.id)", content: content, trigger: nil)
+      try? await UNUserNotificationCenter.current().add(request)
+    }
+  }
+
   /// Schedules the daily brief reminder for the next week, skipping today once the brief is done.
   static func scheduleBriefReminders(streak: Int, skipToday: Bool) async {
     let center = UNUserNotificationCenter.current()

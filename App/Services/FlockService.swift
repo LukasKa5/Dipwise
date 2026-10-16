@@ -14,6 +14,15 @@ final class FlockService {
   private(set) var isLoadingOverview = false
   private var loading: Set<String> = []
 
+  /// Every sharing member's portfolio mix, and a year of their moves.
+  private(set) var portfolios: [FlockPortfolio] = []
+  private(set) var moves: [FlockMove] = []
+  private(set) var ownership: [OwnershipStat] = []
+  private(set) var flows: [FlowStat] = []
+  private(set) var leaders: [FlockInvestor] = []
+  /// Investors the user follows, by anonymous ID.
+  private(set) var following: Set<String> = Set(UserDefaults.standard.stringArray(forKey: "flock.following") ?? [])
+
   var isAvailable: Bool { backend != nil }
   var isSample: Bool { backend?.isSample ?? false }
 
@@ -66,7 +75,99 @@ final class FlockService {
       alertsThisWeek: thisWeek.count,
       isSample: backend.isSample
     )
+    await loadPortfolios()
     await loadRadar()
+  }
+
+  // MARK: Portfolios
+
+  /// Loads what the flock owns and does, and works out ownership, this week's buying and selling, and the leaders.
+  func loadPortfolios() async {
+    guard let backend else { return }
+    guard let portfolios = try? await backend.portfolios() else { return }
+    let moves = (try? await backend.moves(days: 365)) ?? []
+    self.portfolios = portfolios
+    self.moves = moves
+    ownership = FlockInsights.ownership(portfolios)
+    flows = FlockInsights.flows(moves)
+    leaders = FlockInsights.leaders(portfolios, moves: moves)
+    await notifyFollowedMoves()
+  }
+
+  func investor(_ id: String) -> FlockInvestor? {
+    leaders.first { $0.id == id } ?? portfolios.first { $0.installID == id }.map { portfolio in
+      FlockInvestor(portfolio: portfolio, moves: moves.filter { $0.installID == id }.sorted { $0.date > $1.date })
+    }
+  }
+
+  func ownership(of symbol: String) -> OwnershipStat? {
+    ownership.first { $0.symbol == symbol }
+  }
+
+  func flow(of symbol: String) -> FlowStat? {
+    flows.first { $0.symbol == symbol }
+  }
+
+  /// The leaders who own this stock, best first.
+  func leaders(holding symbol: String) -> [FlockInvestor] {
+    leaders.filter { $0.portfolio.weight(of: symbol) != nil }
+  }
+
+  func dipBehavior(for quote: Quote) -> DipBehavior? {
+    FlockInsights.dipBehavior(symbol: quote.symbol, closes: quote.closes, dates: quote.dates, moves: moves)
+  }
+
+  // MARK: Following
+
+  func isFollowing(_ id: String) -> Bool { following.contains(id) }
+
+  func toggleFollow(_ id: String) {
+    if following.contains(id) { following.remove(id) } else { following.insert(id) }
+    UserDefaults.standard.set(Array(following), forKey: "flock.following")
+    // Only moves made from now on are news.
+    UserDefaults.standard.set(Date.now, forKey: "flock.followSeen")
+  }
+
+  /// Notifies Pro members about new moves by the investors they follow.
+  private func notifyFollowedMoves() async {
+    guard AlertSettings.isPro, !following.isEmpty else { return }
+    let key = "flock.followSeen"
+    let seen = UserDefaults.standard.object(forKey: key) as? Date ?? .now
+    let fresh = moves.filter { following.contains($0.installID) && $0.date > seen && $0.date <= .now }
+    UserDefaults.standard.set(Date.now, forKey: key)
+    if !fresh.isEmpty { await NotificationManager.post(followed: fresh) }
+  }
+
+  // MARK: Sharing the portfolio mix
+
+  /// Shares the user's portfolio mix (weights only) and any adds or trims since last time, if they opted in.
+  func syncPortfolio(holdings: [(symbol: String, shares: Double)], quotes: [String: Quote]) async {
+    guard let backend, AlertSettings.sharePortfolio else { return }
+    let installID = FlockConfiguration.installID
+    let current = Dictionary(holdings.filter { $0.shares > 0 }.map { ($0.symbol, $0.shares) }, uniquingKeysWith: +)
+    let previous = UserDefaults.standard.dictionary(forKey: "flock.sharedShares") as? [String: Double]
+    // The first share is a snapshot, not a burst of moves.
+    if let previous {
+      for symbol in Set(current.keys).union(previous.keys) {
+        let now = current[symbol] ?? 0
+        let before = previous[symbol] ?? 0
+        guard abs(now - before) > max(0.0001, before * 0.001) else { continue }
+        try? await backend.publish(move: FlockMove(installID: installID, symbol: symbol, isBuy: now > before, date: .now))
+      }
+    }
+    let lastPublish = UserDefaults.standard.object(forKey: "flock.portfolioPublished") as? Date ?? .distantPast
+    guard previous != current || Date.now.timeIntervalSince(lastPublish) > 24 * 3600,
+          let snapshot = FlockInsights.snapshot(installID: installID, holdings: holdings, quotes: quotes) else { return }
+    try? await backend.publish(portfolio: snapshot)
+    UserDefaults.standard.set(current, forKey: "flock.sharedShares")
+    UserDefaults.standard.set(Date.now, forKey: "flock.portfolioPublished")
+  }
+
+  /// Removes the user's portfolio mix and moves from the flock.
+  func withdrawPortfolio() async {
+    UserDefaults.standard.removeObject(forKey: "flock.sharedShares")
+    UserDefaults.standard.removeObject(forKey: "flock.portfolioPublished")
+    try? await backend?.withdrawPortfolio(installID: FlockConfiguration.installID)
   }
 
   /// Finds trending stocks that are trading inside the flock's buy zone right now.

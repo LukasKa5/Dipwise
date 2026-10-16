@@ -5,6 +5,7 @@ enum AlertSettings {
   static let headsUpEnabledKey = "headsUpEnabled"
   static let headsUpThresholdKey = "headsUpThreshold"
   static let shareWithFlockKey = "shareWithFlock"
+  static let sharePortfolioKey = "sharePortfolioWithFlock"
   static let isProKey = "isProCached"
   static let baseCurrencyKey = "baseCurrency"
   static let cashBalanceKey = "cashBalance"
@@ -36,6 +37,11 @@ enum AlertSettings {
 
   static var shareWithFlock: Bool {
     UserDefaults.standard.object(forKey: shareWithFlockKey) as? Bool ?? true
+  }
+
+  /// Sharing the portfolio mix (weights only) is a separate choice, off until the user turns it on.
+  static var sharePortfolio: Bool {
+    UserDefaults.standard.bool(forKey: sharePortfolioKey)
   }
 
   static var isPro: Bool {

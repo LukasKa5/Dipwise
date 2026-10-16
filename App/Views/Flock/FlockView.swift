@@ -18,6 +18,8 @@ struct FlockView: View {
   @State private var query = ""
   @State private var results: [SymbolMatch] = []
   @State private var showsPaywall = false
+  @AppStorage(AlertSettings.sharePortfolioKey) private var sharesPortfolio = false
+  @Environment(\.modelContext) private var modelContext
 
   var body: some View {
     NavigationStack {
@@ -29,6 +31,15 @@ struct FlockView: View {
             ContentUnavailableView("The Flock Is Gathering", systemImage: "person.3", description: Text("Anonymous statistics from other Dipwise investors will appear here soon."))
           } else {
             hero
+            if !sharesPortfolio {
+              SharePortfolioCard {
+                sharesPortfolio = true
+                Task { await MarketMonitor.refresh(context: modelContext, quotes: quotes, flock: flock) }
+              }
+            }
+            topInvestors
+            owned
+            buyingAndSelling
             boards
             yourStocks
             if flock.overview.isSample {
@@ -104,6 +115,79 @@ struct FlockView: View {
     .padding(20)
     .cardStyle(cornerRadius: 28)
     .padding(.top, 8)
+  }
+
+  // MARK: Investors and holdings
+
+  @ViewBuilder
+  private var topInvestors: some View {
+    if !flock.leaders.isEmpty {
+      VStack(alignment: .leading, spacing: 12) {
+        SectionHeader(title: "Top Investors", subtitle: "The flock's best 12 months, anonymous") {
+          if !subscription.isPro { ProBadge() }
+        }
+        ScrollView(.horizontal) {
+          HStack(spacing: 12) {
+            ForEach(Array(flock.leaders.prefix(10).enumerated()), id: \.element.id) { index, investor in
+              NavigationLink {
+                InvestorView(id: investor.id)
+              } label: {
+                InvestorCard(investor: investor, rank: index + 1)
+              }
+              .buttonStyle(.plain)
+            }
+          }
+          .padding(.vertical, 4)
+        }
+        .scrollIndicators(.hidden)
+        .scrollClipDisabled()
+      }
+    }
+  }
+
+  @ViewBuilder
+  private var owned: some View {
+    if !flock.ownership.isEmpty {
+      VStack(alignment: .leading, spacing: 12) {
+        SectionHeader(title: "What the Flock Owns", subtitle: "Share of members holding each stock")
+        VStack(spacing: 0) {
+          ForEach(Array(flock.ownership.prefix(8).enumerated()), id: \.element.id) { index, stat in
+            NavigationLink(value: stat.symbol) {
+              OwnershipRow(rank: index + 1, stat: stat)
+            }
+            .buttonStyle(.plain)
+            if index < min(flock.ownership.count, 8) - 1 {
+              Divider().padding(.leading, 84)
+            }
+          }
+        }
+        .cardStyle()
+      }
+    }
+  }
+
+  @ViewBuilder
+  private var buyingAndSelling: some View {
+    if !flock.flows.isEmpty {
+      VStack(alignment: .leading, spacing: 12) {
+        SectionHeader(title: "Buying and Selling", subtitle: "What members added and trimmed this week") {
+          if !subscription.isPro { ProBadge() }
+        }
+        VStack(spacing: 0) {
+          ForEach(Array(flock.flows.prefix(6).enumerated()), id: \.element.id) { index, stat in
+            NavigationLink(value: stat.symbol) {
+              FlowRow(stat: stat)
+            }
+            .buttonStyle(.plain)
+            .proLocked(!subscription.isPro && index >= 1, message: "See what the flock is buying and selling")
+            if index < min(flock.flows.count, 6) - 1 {
+              Divider().padding(.leading, 62)
+            }
+          }
+        }
+        .cardStyle()
+      }
+    }
   }
 
   // MARK: Boards
