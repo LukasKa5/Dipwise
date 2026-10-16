@@ -231,7 +231,7 @@ struct PaywallView: View {
     ZStack {
       Brand.nightMiddle.opacity(0.92).ignoresSafeArea()
       VStack(spacing: 16) {
-        LivelyOwl(mood: .celebrating)
+        LivelyOwl(mood: .celebrating, greeting: .flap, greetingDelay: 0.9)
           .frame(width: 140, height: 160)
           .owlFlight(trigger: flaps, height: 50)
         Text("Welcome to Pro!")

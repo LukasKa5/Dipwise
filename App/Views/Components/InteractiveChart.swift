@@ -157,7 +157,7 @@ struct InteractiveChart: View {
            let plotFrame = proxy.plotFrame,
            let position = proxy.position(for: (x: index, y: values[index])) {
           let origin = geometry[plotFrame].origin
-          LivelyOwl(lookOffset: gaze, hopsOnTap: false, mood: owlMood)
+          LivelyOwl(lookOffset: gaze, mood: owlMood, greeting: .wave, greetingID: "chart", greetingDelay: 1)
             .frame(width: owlSize, height: owlSize * 1.15)
             .offset(landed || reduceMotion ? .zero : CGSize(width: owlSize * 2, height: -owlSize * 3))
             .opacity(landed || reduceMotion ? 1 : 0)

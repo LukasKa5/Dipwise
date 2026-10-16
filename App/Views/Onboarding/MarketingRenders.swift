@@ -176,6 +176,9 @@ struct MarketingRenders: View {
       ("wink", OwlMark(blink: 1, rightEyeOpen: 1)),
       ("sleep", OwlMark(blink: 1)),
       ("wings", OwlMark(wingSpread: 1)),
+      ("wave", OwlMark(lookOffset: CGSize(width: 0.2, height: -0.2), rightWing: 1.05)),
+      ("surprise", OwlMark(leftWing: 0.35, rightWing: 0.35, eyeScale: 1.24)),
+      ("hoot", OwlMark(lookOffset: CGSize(width: 0, height: -0.3), beakOpen: 1)),
     ]
     for pose in poses {
       let renderer = ImageRenderer(content:

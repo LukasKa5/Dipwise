@@ -9,7 +9,7 @@ struct ToastOverlay: View {
     VStack {
       if let toast = center.current {
         HStack(spacing: 12) {
-          LivelyOwl(hopsOnTap: false)
+          LivelyOwl(hopsOnTap: false, greeting: .flap, greetingDelay: 0.3)
             .frame(width: 38, height: 44)
             .owlFlight(trigger: flights, height: 26)
           Label(toast.message, systemImage: toast.systemImage)

@@ -223,7 +223,7 @@ private struct WelcomeStep: View {
       MissionChip(text: "Tap Dippy 4 times", isDone: model.completedMissions.contains("welcome"))
       SpeechBubble(text: lines[min(taps, lines.count - 1)])
         .animation(.snappy, value: taps)
-      LivelyOwl(mood: .calm)
+      LivelyOwl(mood: .calm, greeting: .wave, greetingDelay: 1.5)
         .frame(width: 180, height: 206)
         .simultaneousGesture(TapGesture().onEnded {
           taps += 1

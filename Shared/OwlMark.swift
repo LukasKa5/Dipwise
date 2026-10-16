@@ -1,21 +1,36 @@
 import SwiftUI
 
 /// The Dipwise owl, drawn with the same geometry as the app icon.
-/// `wingSpread` (0–1) opens the wings for flight; `blink` (0–1) closes the eyes.
+/// `wingSpread` (0–1) opens both wings for flight; `leftWing` and `rightWing` lift one wing on its own, for a wave.
+/// `blink` (0–1) closes the eyes, `eyeScale` widens them in surprise, and `beakOpen` (0–1) opens the beak for a hoot.
 struct OwlMark: View, Animatable {
   var wingSpread: Double = 0
   var blink: Double = 0
   var lookOffset: CGSize = .zero
-  /// Opens just the right eye, for a sleepy peek.
+  /// Opens just the right eye, for a sleepy peek or a wink.
   var rightEyeOpen: Double = 0
+  /// Extra lift for the wing on the viewer's left, on top of `wingSpread`.
+  var leftWing: Double = 0
+  /// Extra lift for the wing on the viewer's right, on top of `wingSpread`.
+  var rightWing: Double = 0
+  var eyeScale: Double = 1
+  var beakOpen: Double = 0
 
-  var animatableData: AnimatablePair<AnimatablePair<Double, Double>, AnimatablePair<AnimatablePair<CGFloat, CGFloat>, Double>> {
-    get { AnimatablePair(AnimatablePair(wingSpread, blink), AnimatablePair(AnimatablePair(lookOffset.width, lookOffset.height), rightEyeOpen)) }
+  var animatableData: OwlPoseVector {
+    get {
+      OwlPoseVector(values: [wingSpread, blink, lookOffset.width, lookOffset.height, rightEyeOpen, leftWing, rightWing, eyeScale, beakOpen])
+    }
     set {
-      wingSpread = newValue.first.first
-      blink = newValue.first.second
-      lookOffset = CGSize(width: newValue.second.first.first, height: newValue.second.first.second)
-      rightEyeOpen = newValue.second.second
+      let v = newValue.values
+      guard v.count == 9 else { return }
+      wingSpread = v[0]
+      blink = v[1]
+      lookOffset = CGSize(width: v[2], height: v[3])
+      rightEyeOpen = v[4]
+      leftWing = v[5]
+      rightWing = v[6]
+      eyeScale = v[7]
+      beakOpen = v[8]
     }
   }
 
@@ -59,47 +74,47 @@ struct OwlMark: View, Animatable {
     }
 
     // Open wings sit behind the body: broad, rounded, with a scalloped feather edge.
-    if wingSpread > 0.02 {
-      for side in [CGFloat(-1), 1] {
-        var wingContext = context
-        let shoulder = CGPoint(x: 512 + side * 168, y: 500)
-        wingContext.translateBy(x: shoulder.x, y: shoulder.y)
-        wingContext.rotate(by: .degrees(-Double(side) * (15 + 100 * wingSpread)))
-        let length: CGFloat = 250
-        let width: CGFloat = 150
-        let tip = CGPoint(x: side * width * 0.45, y: length)
-        let trailingEnd = CGPoint(x: side * -width * 0.25, y: length * 0.28)
-        let wing = Path { path in
-          path.move(to: CGPoint(x: side * -20, y: -10))
-          path.addQuadCurve(to: CGPoint(x: side * width * 0.95, y: length * 0.55), control: CGPoint(x: side * width * 1.15, y: length * 0.05))
-          path.addQuadCurve(to: tip, control: CGPoint(x: side * width * 0.95, y: length * 0.9))
-          // Scalloped trailing edge from the tip back toward the body.
-          let scallops = 5
-          var previous = tip
-          for index in 1...scallops {
-            let t = CGFloat(index) / CGFloat(scallops)
-            let point = CGPoint(x: tip.x + (trailingEnd.x - tip.x) * t, y: tip.y + (trailingEnd.y - tip.y) * t)
-            let middle = CGPoint(x: (previous.x + point.x) / 2, y: (previous.y + point.y) / 2)
-            let control = CGPoint(x: middle.x - side * 18, y: middle.y + 26)
-            path.addQuadCurve(to: point, control: control)
-            previous = point
-          }
-          path.addQuadCurve(to: CGPoint(x: side * -20, y: -10), control: CGPoint(x: side * -width * 0.35, y: length * 0.08))
-          path.closeSubpath()
+    let spreads = [min(1.15, wingSpread + leftWing), min(1.15, wingSpread + rightWing)]
+    for (index, side) in [CGFloat(-1), 1].enumerated() where spreads[index] > 0.02 {
+      let spread = spreads[index]
+      var wingContext = context
+      let shoulder = CGPoint(x: 512 + side * 168, y: 500)
+      wingContext.translateBy(x: shoulder.x, y: shoulder.y)
+      wingContext.rotate(by: .degrees(-Double(side) * (15 + 100 * spread)))
+      let length: CGFloat = 250
+      let width: CGFloat = 150
+      let tip = CGPoint(x: side * width * 0.45, y: length)
+      let trailingEnd = CGPoint(x: side * -width * 0.25, y: length * 0.28)
+      let wing = Path { path in
+        path.move(to: CGPoint(x: side * -20, y: -10))
+        path.addQuadCurve(to: CGPoint(x: side * width * 0.95, y: length * 0.55), control: CGPoint(x: side * width * 1.15, y: length * 0.05))
+        path.addQuadCurve(to: tip, control: CGPoint(x: side * width * 0.95, y: length * 0.9))
+        // Scalloped trailing edge from the tip back toward the body.
+        let scallops = 5
+        var previous = tip
+        for index in 1...scallops {
+          let t = CGFloat(index) / CGFloat(scallops)
+          let point = CGPoint(x: tip.x + (trailingEnd.x - tip.x) * t, y: tip.y + (trailingEnd.y - tip.y) * t)
+          let middle = CGPoint(x: (previous.x + point.x) / 2, y: (previous.y + point.y) / 2)
+          let control = CGPoint(x: middle.x - side * 18, y: middle.y + 26)
+          path.addQuadCurve(to: point, control: control)
+          previous = point
         }
-        wingContext.fill(wing, with: .color(Brand.owlWing))
-        // Feather lines fanning toward the scallops.
-        let feathers = Path { path in
-          for index in 1..<5 {
-            let t = CGFloat(index) / 5
-            let edge = CGPoint(x: tip.x + (trailingEnd.x - tip.x) * t, y: tip.y + (trailingEnd.y - tip.y) * t)
-            path.move(to: CGPoint(x: side * width * 0.3, y: length * 0.25))
-            path.addQuadCurve(to: CGPoint(x: edge.x + side * 6, y: edge.y - 18), control: CGPoint(x: side * width * 0.45, y: (length * 0.25 + edge.y) / 2))
-          }
-        }
-        wingContext.stroke(feathers, with: .color(Brand.owlFeather.opacity(0.8)), style: StrokeStyle(lineWidth: 6, lineCap: .round))
-        wingContext.stroke(wing, with: .color(Brand.owlFeather), style: StrokeStyle(lineWidth: 6, lineJoin: .round))
+        path.addQuadCurve(to: CGPoint(x: side * -20, y: -10), control: CGPoint(x: side * -width * 0.35, y: length * 0.08))
+        path.closeSubpath()
       }
+      wingContext.fill(wing, with: .color(Brand.owlWing))
+      // Feather lines fanning toward the scallops.
+      let feathers = Path { path in
+        for index in 1..<5 {
+          let t = CGFloat(index) / 5
+          let edge = CGPoint(x: tip.x + (trailingEnd.x - tip.x) * t, y: tip.y + (trailingEnd.y - tip.y) * t)
+          path.move(to: CGPoint(x: side * width * 0.3, y: length * 0.25))
+          path.addQuadCurve(to: CGPoint(x: edge.x + side * 6, y: edge.y - 18), control: CGPoint(x: side * width * 0.45, y: (length * 0.25 + edge.y) / 2))
+        }
+      }
+      wingContext.stroke(feathers, with: .color(Brand.owlFeather.opacity(0.8)), style: StrokeStyle(lineWidth: 6, lineCap: .round))
+      wingContext.stroke(wing, with: .color(Brand.owlFeather), style: StrokeStyle(lineWidth: 6, lineJoin: .round))
     }
 
     // Feet emerge from under the body.
@@ -118,30 +133,27 @@ struct OwlMark: View, Animatable {
 
     var inner = context
     inner.clip(to: body)
-    let foldedWings = Path { path in
-      path.move(to: CGPoint(x: 306, y: 520))
-      path.addCurve(to: CGPoint(x: 440, y: 756), control1: CGPoint(x: 392, y: 548), control2: CGPoint(x: 444, y: 670))
-      path.addLine(to: CGPoint(x: 240, y: 780))
-      path.addLine(to: CGPoint(x: 240, y: 520))
-      path.closeSubpath()
-      path.move(to: CGPoint(x: 718, y: 520))
-      path.addCurve(to: CGPoint(x: 584, y: 756), control1: CGPoint(x: 632, y: 548), control2: CGPoint(x: 580, y: 670))
-      path.addLine(to: CGPoint(x: 784, y: 780))
-      path.addLine(to: CGPoint(x: 784, y: 520))
-      path.closeSubpath()
+    // Each folded wing fades as that wing opens.
+    for (index, side) in [CGFloat(-1), 1].enumerated() {
+      let x: (CGFloat) -> CGFloat = { 512 + side * ($0 - 512) }
+      let folded = Path { path in
+        path.move(to: CGPoint(x: x(306), y: 520))
+        path.addCurve(to: CGPoint(x: x(440), y: 756), control1: CGPoint(x: x(392), y: 548), control2: CGPoint(x: x(444), y: 670))
+        path.addLine(to: CGPoint(x: x(240), y: 780))
+        path.addLine(to: CGPoint(x: x(240), y: 520))
+        path.closeSubpath()
+      }
+      let line = Path { path in
+        path.move(to: CGPoint(x: x(330), y: 600))
+        path.addQuadCurve(to: CGPoint(x: x(392), y: 700), control: CGPoint(x: x(372), y: 640))
+      }
+      inner.opacity = 1 - min(1, spreads[index] * 1.5)
+      inner.fill(folded, with: .color(Brand.owlWing))
+      inner.stroke(line, with: .color(Brand.owlFeather), style: StrokeStyle(lineWidth: 9, lineCap: .round))
     }
-    inner.opacity = 1 - min(1, wingSpread * 1.5)
-    inner.fill(foldedWings, with: .color(Brand.owlWing))
-    let wingLines = Path { path in
-      path.move(to: CGPoint(x: 330, y: 600))
-      path.addQuadCurve(to: CGPoint(x: 392, y: 700), control: CGPoint(x: 372, y: 640))
-      path.move(to: CGPoint(x: 694, y: 600))
-      path.addQuadCurve(to: CGPoint(x: 632, y: 700), control: CGPoint(x: 652, y: 640))
-    }
-    inner.stroke(wingLines, with: .color(Brand.owlFeather), style: StrokeStyle(lineWidth: 9, lineCap: .round))
     inner.opacity = 1
-    inner.fill(Path(ellipseIn: circle(at: CGPoint(x: 446, y: 468), radius: 84)), with: .color(.white))
-    inner.fill(Path(ellipseIn: circle(at: CGPoint(x: 578, y: 468), radius: 84)), with: .color(.white))
+    inner.fill(Path(ellipseIn: circle(at: CGPoint(x: 446, y: 468), radius: 84 * min(eyeScale, 1.12))), with: .color(.white))
+    inner.fill(Path(ellipseIn: circle(at: CGPoint(x: 578, y: 468), radius: 84 * min(eyeScale, 1.12))), with: .color(.white))
 
     let chest = Path { path in
       let rows: [(CGFloat, [CGFloat])] = [(624, [486, 538]), (666, [460, 512, 564]), (708, [486, 538])]
@@ -160,7 +172,7 @@ struct OwlMark: View, Animatable {
       let center = CGPoint(x: x, y: 468)
       var eye = context
       eye.translateBy(x: center.x, y: center.y)
-      eye.scaleBy(x: 1, y: openness)
+      eye.scaleBy(x: eyeScale, y: openness * eyeScale)
       eye.fill(Path(ellipseIn: circle(at: .zero, radius: 56)), with: .color(Brand.owlInk))
       if openness > 0.3 {
         let look = CGPoint(x: lookOffset.width * 14, y: lookOffset.height * 14)
@@ -170,6 +182,19 @@ struct OwlMark: View, Animatable {
       }
     }
 
+    // An open beak: the lower half drops below the upper one for a hoot.
+    if beakOpen > 0.02 {
+      let drop = 44 * beakOpen
+      let lower = Path { path in
+        path.move(to: CGPoint(x: 500, y: 560 + drop * 0.5))
+        path.addLine(to: CGPoint(x: 524, y: 560 + drop * 0.5))
+        path.addLine(to: CGPoint(x: 512, y: 574 + drop))
+        path.closeSubpath()
+      }
+      context.fill(Path(ellipseIn: CGRect(x: 494, y: 546, width: 36, height: 18 + drop * 0.85)), with: .color(Brand.owlInk))
+      context.fill(lower, with: .color(Brand.amber))
+      context.stroke(lower, with: .color(Brand.amber), style: StrokeStyle(lineWidth: 10, lineJoin: .round))
+    }
     let beak = Path { path in
       path.move(to: CGPoint(x: 495, y: 540))
       path.addLine(to: CGPoint(x: 529, y: 540))
@@ -183,4 +208,27 @@ struct OwlMark: View, Animatable {
   private func circle(at center: CGPoint, radius: CGFloat) -> CGRect {
     CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2)
   }
+}
+
+/// Every animatable part of Dippy's pose in one vector, so SwiftUI can blend any combination of them.
+struct OwlPoseVector: VectorArithmetic {
+  var values: [Double]
+
+  static var zero: OwlPoseVector { OwlPoseVector(values: []) }
+
+  private static func combine(_ lhs: OwlPoseVector, _ rhs: OwlPoseVector, _ operation: (Double, Double) -> Double) -> OwlPoseVector {
+    let count = max(lhs.values.count, rhs.values.count)
+    return OwlPoseVector(values: (0..<count).map { index in
+      operation(index < lhs.values.count ? lhs.values[index] : 0, index < rhs.values.count ? rhs.values[index] : 0)
+    })
+  }
+
+  static func + (lhs: OwlPoseVector, rhs: OwlPoseVector) -> OwlPoseVector { combine(lhs, rhs, +) }
+  static func - (lhs: OwlPoseVector, rhs: OwlPoseVector) -> OwlPoseVector { combine(lhs, rhs, -) }
+
+  mutating func scale(by rhs: Double) {
+    values = values.map { $0 * rhs }
+  }
+
+  var magnitudeSquared: Double { values.reduce(0) { $0 + $1 * $1 } }
 }
