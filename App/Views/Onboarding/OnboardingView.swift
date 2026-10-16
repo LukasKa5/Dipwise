@@ -9,17 +9,32 @@ struct OnboardingView: View {
 
   @Environment(\.modelContext) private var modelContext
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @Environment(\.horizontalSizeClass) private var sizeClass
+  @Environment(\.dynamicTypeSize) private var dynamicTypeSize
   @Environment(QuoteStore.self) private var quoteStore
   @Environment(FlockService.self) private var flock
   @Environment(ProgressStore.self) private var progress
   @Environment(SubscriptionManager.self) private var subscription
   @Environment(AccountStore.self) private var account
   @State private var model = OnboardingModel()
-  @State private var page = 0
+  @State private var page = Self.startPage
   @State private var showsPaywall = false
   @State private var celebration = 0
 
   private let pageCount = 11
+
+  private var isRegular: Bool { sizeClass == .regular }
+
+  /// Development only: `-onboardingPage 4` opens the tour at that step, for checking layouts on every device.
+  private static var startPage: Int {
+    #if DEBUG
+    let arguments = ProcessInfo.processInfo.arguments
+    if let index = arguments.firstIndex(of: "-onboardingPage"), arguments.indices.contains(index + 1), let page = Int(arguments[index + 1]) {
+      return page
+    }
+    #endif
+    return 0
+  }
 
   private var canContinue: Bool {
     switch page {
@@ -63,7 +78,9 @@ struct OnboardingView: View {
         }
         .id(page)
         .transition(.asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity), removal: .move(edge: .leading).combined(with: .opacity)))
-        .frame(maxWidth: 560, maxHeight: .infinity)
+        .frame(maxWidth: isRegular ? 680 : 560, maxHeight: .infinity)
+        // iPad has room to spare, so the whole tour reads a size larger there.
+        .dynamicTypeSize(isRegular ? max(dynamicTypeSize, .xxLarge) : dynamicTypeSize)
 
         Button(action: advance) {
           Text(buttonTitle)
@@ -315,13 +332,15 @@ private struct StyleStep: View {
 
 private struct PickStep: View {
   var model: OnboardingModel
+  /// Tiles widen with the text size, so tickers and moves never get cut off.
+  @ScaledMetric(relativeTo: .headline) private var tileWidth: CGFloat = 150
 
   var body: some View {
     ScrollView {
       VStack(spacing: 18) {
         StepTitle(title: "Pick stocks to watch", message: "Choose up to five. You can add any stock later.")
           .padding(.top, 16)
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 12)], spacing: 12) {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: tileWidth), spacing: 12)], spacing: 12) {
           ForEach(OnboardingModel.suggestions, id: \.self) { symbol in
             let isSelected = model.selected.contains(symbol)
             let quote = model.quotes[symbol]
@@ -331,10 +350,14 @@ private struct PickStep: View {
               HStack(spacing: 10) {
                 TickerBadge(symbol: symbol, size: 38)
                 VStack(alignment: .leading, spacing: 2) {
-                  Text(symbol).font(.headline)
+                  Text(symbol)
+                    .font(.headline)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
                   if let quote {
                     Text(quote.change, format: .percent.precision(.fractionLength(1)).sign(strategy: .always()))
                       .font(.caption.weight(.semibold).monospacedDigit())
+                      .lineLimit(1)
                       .foregroundStyle(quote.change >= 0 ? Brand.buy : Brand.sell)
                   } else {
                     Text("—").font(.caption).foregroundStyle(.white.opacity(0.5))

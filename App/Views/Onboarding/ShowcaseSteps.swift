@@ -178,7 +178,8 @@ private struct LivingClock {
 /// Scales a phone to the width available, never past a size that keeps the chapter on one screen.
 private func phoneScale(for width: CGFloat) -> CGFloat {
   guard width > 0 else { return 0.7 }
-  return min(0.74, (width - 56) / PhoneSize.totalWidth)
+  // Bigger on iPad, where there's room.
+  return min(width > 600 ? 0.92 : 0.74, (width - 56) / PhoneSize.totalWidth)
 }
 
 // MARK: - Home Screen
