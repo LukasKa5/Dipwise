@@ -11,7 +11,7 @@ struct PlansWidget: Widget {
       PlansWidgetView(entry: entry)
     }
     .configurationDisplayName("Your Plans")
-    .description("Your plans, closest first. It flips through them on its own, or tap the arrow.")
+    .description("Every buy and sell zone, closest first, with the zone and today's price spelled out.")
     .supportedFamilies([.systemSmall, .systemMedium, .systemLarge, .accessoryRectangular, .accessoryCircular, .accessoryInline])
   }
 }
@@ -83,8 +83,8 @@ struct PlansWidgetView: View {
       case .accessoryRectangular: rectangular
       case .accessoryCircular: circular
       case .accessoryInline: inline
-      case .systemMedium: list(perPage: 4)
-      case .systemLarge: list(perPage: 7)
+      case .systemMedium: list(perPage: 3)
+      case .systemLarge: list(perPage: 4)
       default: small
       }
     }
@@ -126,7 +126,7 @@ struct PlansWidgetView: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Next plan")
           } else {
-            LivingDippy(size: 22, date: entry.date, isPreview: isPreview)
+            WidgetOwl(size: 22, isAsleep: isPreview ? false : nil)
           }
         }
         Spacer(minLength: 2)
@@ -141,8 +141,13 @@ struct PlansWidgetView: View {
           .foregroundStyle(color)
           .lineLimit(1)
           .minimumScaleFactor(0.7)
+        Text(compactSummary(status))
+          .font(.caption2.weight(.medium))
+          .foregroundStyle(.white.opacity(0.6))
+          .lineLimit(1)
+          .minimumScaleFactor(0.6)
         Spacer(minLength: 4)
-        WidgetTrack(progress: status.progress, color: color)
+        ZoneRuler(status: status)
         HStack(spacing: 4) {
           if let quote = status.quote {
             Text(compactPrice(quote.price, currency: quote.currency))
@@ -154,7 +159,6 @@ struct PlansWidgetView: View {
           Spacer(minLength: 2)
           if entry.statuses.count > 1 {
             WidgetPageDots(count: entry.statuses.count, index: entry.index)
-            LivingDippy(size: 18, date: entry.date, seed: 2, showsBubble: false, isPreview: isPreview)
           }
         }
         .padding(.top, 6)
@@ -183,7 +187,12 @@ struct PlansWidgetView: View {
       let rows = Array(entry.statuses.dropFirst(page * perPage).prefix(perPage))
       VStack(alignment: .leading, spacing: 0) {
         HStack(spacing: 6) {
-          WidgetDippyLine(text: dippSays(entry.statuses), date: entry.date, isPreview: isPreview)
+          WidgetOwl(size: 20, isAsleep: isPreview ? false : nil)
+          Text("Closest to your zones")
+            .font(.caption.weight(.bold))
+            .foregroundStyle(.white.opacity(0.75))
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
           Spacer(minLength: 4)
           if pages > 1 {
             WidgetPageDots(count: pages, index: page)
@@ -204,7 +213,7 @@ struct PlansWidgetView: View {
             Link(destination: URL(string: "dipwise://stock/\(status.target.symbol)")!) {
               if family == .systemLarge { largeRow(status) } else { compactRow(status) }
             }
-            .frame(maxHeight: .infinity)
+            .frame(maxHeight: family == .systemLarge ? 82 : .infinity)
           }
           // With several pages, empty slots keep rows the same height on the last one.
           ForEach(0..<(pages > 1 ? perPage - rows.count : 0), id: \.self) { _ in
@@ -219,70 +228,64 @@ struct PlansWidgetView: View {
     }
   }
 
-  /// One line per plan, for the medium widget.
+  /// One plan in words, for the medium widget: the stock, its zone, and how far the price has to go.
   private func compactRow(_ status: TargetStatus) -> some View {
-    let color = status.target.rule.kind.side.brandColor
-    return HStack(spacing: 8) {
-      WidgetBadge(symbol: status.target.symbol, size: 20)
-      Text(status.target.symbol)
-        .font(.caption.bold())
-        .lineLimit(1)
-        .minimumScaleFactor(0.6)
-        .frame(width: 46, alignment: .leading)
-      Image(systemName: status.target.rule.kind.side == .sell ? "arrow.up.to.line.compact" : "arrow.down.to.line.compact")
-        .font(.system(size: 9, weight: .bold))
-        .foregroundStyle(color)
-      WidgetTrack(progress: status.progress, color: color)
-      Text(distanceText(status.distance))
-        .font(.caption.weight(.bold).monospacedDigit())
-        .foregroundStyle(status.distance == 0 || (status.distance ?? 1) < 0.035 ? color : .white)
-        .lineLimit(1)
-        .frame(width: 44, alignment: .trailing)
-    }
-    .padding(.horizontal, 8)
-    .frame(maxHeight: .infinity)
-    .background(.white.opacity(0.08), in: .rect(cornerRadius: 9, style: .continuous))
-  }
-
-  /// Two lines per plan, with the zone spelled out, for the large widget.
-  private func largeRow(_ status: TargetStatus) -> some View {
-    let color = status.target.rule.kind.side.brandColor
-    return HStack(spacing: 10) {
-      WidgetBadge(symbol: status.target.symbol, size: 30)
-      VStack(alignment: .leading, spacing: 4) {
-        HStack(spacing: 6) {
-          Text(status.target.symbol)
-            .font(.subheadline.bold())
-            .lineLimit(1)
-          if let quote = status.quote {
-            Text(compactPrice(quote.price, currency: quote.currency))
-              .font(.caption.monospacedDigit())
-              .foregroundStyle(.white.opacity(0.65))
-              .lineLimit(1)
-          }
-          Spacer(minLength: 2)
-          Text(compactSummary(status))
-            .font(.caption2.weight(.semibold))
-            .foregroundStyle(color)
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
-        }
-        WidgetTrack(progress: status.progress, color: color)
+    HStack(spacing: 8) {
+      WidgetBadge(symbol: status.target.symbol, size: 24)
+      VStack(alignment: .leading, spacing: 1) {
+        Text(status.target.symbol)
+          .font(.caption.bold())
+          .lineLimit(1)
+        Text(compactSummary(status))
+          .font(.caption2.weight(.semibold))
+          .foregroundStyle(status.target.rule.kind.side.brandColor)
+          .lineLimit(1)
+          .minimumScaleFactor(0.7)
       }
-      Text(distanceText(status.distance))
-        .font(.system(.subheadline, design: .rounded).weight(.bold).monospacedDigit())
-        .foregroundStyle(status.distance == 0 || (status.distance ?? 1) < 0.035 ? color : .white)
-        .lineLimit(1)
-        .frame(width: 52, alignment: .trailing)
+      Spacer(minLength: 4)
+      DistanceLabel(status: status)
     }
     .padding(.horizontal, 10)
     .frame(maxHeight: .infinity)
-    .background(.white.opacity(0.08), in: .rect(cornerRadius: 12, style: .continuous))
+    .background(.white.opacity(0.08), in: .rect(cornerRadius: 11, style: .continuous))
+  }
+
+  /// One plan in full, for the large widget: also today's price and where it sits against the zone.
+  private func largeRow(_ status: TargetStatus) -> some View {
+    VStack(alignment: .leading, spacing: 6) {
+      HStack(spacing: 9) {
+        WidgetBadge(symbol: status.target.symbol, size: 28)
+        VStack(alignment: .leading, spacing: 1) {
+          HStack(spacing: 6) {
+            Text(status.target.symbol)
+              .font(.subheadline.bold())
+              .lineLimit(1)
+            if let quote = status.quote {
+              Text("Now \(compactPrice(quote.price, currency: quote.currency))")
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(.white.opacity(0.65))
+                .lineLimit(1)
+            }
+          }
+          Text(compactSummary(status))
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(status.target.rule.kind.side.brandColor)
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+        }
+        Spacer(minLength: 4)
+        DistanceLabel(status: status)
+      }
+      ZoneRuler(status: status)
+    }
+    .padding(.horizontal, 12)
+    .frame(maxHeight: 82)
+    .background(.white.opacity(0.08), in: .rect(cornerRadius: 13, style: .continuous))
   }
 
   private var empty: some View {
     VStack(spacing: 8) {
-      LivingDippy(size: 44, date: entry.date, isPreview: isPreview)
+      WidgetOwl(size: 44, isAsleep: isPreview ? false : nil)
       Text("Set a buy zone in Dipwise and Dippy will watch it.")
         .font(.caption.weight(.semibold))
         .multilineTextAlignment(.center)

@@ -77,6 +77,9 @@
           "path": "Widget Extension/PlansWidget.swift"
         },
         {
+          "path": "Widget Extension/PortfolioWidget.swift"
+        },
+        {
           "path": "Widget Extension/StockPlanWidget.swift"
         },
         {

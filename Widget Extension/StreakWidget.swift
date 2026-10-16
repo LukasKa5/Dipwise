@@ -80,7 +80,6 @@ struct StreakWidgetView: View {
 
   private var small: some View {
     let done = progress.briefDoneToday
-    let reaction = isPreview ? nil : WidgetState.recentReaction
     return VStack(spacing: 0) {
       HStack(alignment: .firstTextBaseline, spacing: 3) {
         Image(systemName: "flame.fill")
@@ -95,29 +94,7 @@ struct StreakWidgetView: View {
         Spacer(minLength: 0)
       }
       Spacer(minLength: 0)
-      Group {
-        if isPreview {
-          WidgetOwl(size: 58, isAsleep: false, pose: done ? .cheer : DippyPose.at(entry.date))
-        } else {
-          Button(intent: PetDippyIntent()) {
-            WidgetOwl(size: 58, isAsleep: isNight && reaction == nil, pose: reaction != nil || done ? .cheer : DippyPose.at(entry.date))
-          }
-          .buttonStyle(.plain)
-          .accessibilityLabel("Say hi to Dippy")
-        }
-      }
-      .overlay(alignment: .topTrailing) {
-        if let reaction {
-          Text(reaction)
-            .font(.system(size: 9, weight: .heavy, design: .rounded))
-            .foregroundStyle(Brand.owlInk)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 3)
-            .background(.white, in: .capsule)
-            .fixedSize()
-            .offset(x: 18, y: -10)
-        }
-      }
+      WidgetOwl(size: 58, isAsleep: isPreview ? false : isNight && !done, pose: done ? .cheer : DippyPose.at(entry.date))
       Spacer(minLength: 4)
       weekDots
         .padding(.bottom, 5)

@@ -75,6 +75,15 @@ final class OnboardingModel {
   var previewSymbols: [String] { selected.isEmpty ? ["NVDA", "AAPL", "MSFT"] : selected }
 
   /// Sample plans built from the stocks the user picked, for the widget and watch previews.
+  /// A sample portfolio of the stocks the user just picked, so the intro's widgets and watch look like their own.
+  var samplePortfolio: WatchPortfolio? {
+    let stocks = previewSymbols.compactMap { symbol -> WatchedStock? in
+      guard let quote = quotes[symbol] else { return nil }
+      return WatchedStock(symbol: symbol, name: quote.name, shares: max(5, (4_000 / quote.price).rounded()), averageCost: quote.price * 0.8)
+    }
+    return WatchPortfolio.make(stocks: stocks, quotes: quotes, currency: focusQuote?.currency ?? "USD", rates: [:])
+  }
+
   var sampleStatuses: [TargetStatus] {
     previewSymbols.enumerated().compactMap { offset, symbol in
       guard let quote = quotes[symbol] else { return nil }

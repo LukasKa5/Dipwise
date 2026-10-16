@@ -19,6 +19,44 @@ struct WidgetTrack: View {
   }
 }
 
+/// Where the price sits against a plan's zone: the zone as a band on a short ruler, with a dot for today's price.
+/// It reads at a glance whether the price is above the zone, inside it, or below it.
+struct ZoneRuler: View {
+  var status: TargetStatus
+
+  var body: some View {
+    let rule = status.target.rule
+    let color = rule.kind.side.brandColor
+    let low = rule.lower
+    let high = rule.kind.isZone ? max(rule.upper, rule.lower) : rule.lower
+    let price = status.quote?.price ?? high
+    let minimum = min(low, price)
+    let maximum = max(high, price)
+    let pad = max((maximum - minimum) * 0.18, maximum * 0.005)
+    let start = minimum - pad
+    let span = max(maximum + pad - start, 0.0001)
+    GeometryReader { geometry in
+      let width = geometry.size.width
+      let x = { (value: Double) in CGFloat((value - start) / span) * width }
+      ZStack(alignment: .leading) {
+        Capsule().fill(.white.opacity(0.14)).frame(height: 4)
+        Capsule()
+          .fill(color.opacity(0.85))
+          .frame(width: max(6, x(high) - x(low)), height: 8)
+          .offset(x: x(low))
+        Circle()
+          .fill(.white)
+          .overlay { Circle().strokeBorder(color, lineWidth: 2) }
+          .frame(width: 11, height: 11)
+          .offset(x: min(max(0, x(price) - 5.5), width - 11))
+      }
+      .frame(height: 11)
+    }
+    .frame(height: 11)
+    .accessibilityHidden(true)
+  }
+}
+
 struct WidgetBadge: View {
   var symbol: String
   var size: CGFloat = 26

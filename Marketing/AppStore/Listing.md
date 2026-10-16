@@ -46,7 +46,7 @@ YOUR PORTFOLIO, IN ONE CALM PLACE
 
 LIVING WIDGETS AND APPLE WATCH
 • Home Screen widgets for your plans, a stock's chart and zones, today's movers, and your streak
-• Tap Dippy on a widget and he says hello
+• A Portfolio widget with your value, today's move, and your closest buy zone in plain words
 • On Apple Watch: your portfolio, closest plans, and charts you scrub with the Digital Crown, plus complications for your portfolio and market hours
 
 A ONE-MINUTE DAILY HABIT

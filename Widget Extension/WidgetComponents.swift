@@ -22,41 +22,18 @@ struct WidgetTile<Content: View>: View {
   }
 }
 
-/// Dippy on a widget: his pose changes with every update, and tapping him gets a reaction.
+/// Dippy on a widget: a calm companion that keeps the widget feeling like Dipwise. Widgets are for reading at a
+/// glance, so he isn't a button; tapping anywhere opens the app.
 struct LivingDippy: View {
   var size: CGFloat
   var date: Date
   /// Offsets the pose so several widgets don't all look the same way at once.
   var seed = 0
-  var showsBubble = true
-  /// Lets the app's previews skip the intent and its stored reaction.
+  /// In the app's previews Dippy is always awake, so new users meet him at his best.
   var isPreview = false
 
   var body: some View {
-    let reaction = isPreview ? nil : WidgetState.recentReaction
-    // In the app's previews Dippy is always awake, so new users meet him at his best.
-    let owl = WidgetOwl(size: size, isAsleep: isPreview ? false : nil, pose: reaction == nil ? DippyPose.at(date, seed: seed) : .cheer)
-    Group {
-      if isPreview {
-        owl
-      } else {
-        Button(intent: PetDippyIntent()) { owl }
-          .buttonStyle(.plain)
-          .accessibilityLabel("Say hi to Dippy")
-      }
-    }
-    .overlay(alignment: .topTrailing) {
-      if showsBubble, let reaction {
-        Text(reaction)
-          .font(.system(size: 9, weight: .heavy, design: .rounded))
-          .foregroundStyle(Brand.owlInk)
-          .padding(.horizontal, 6)
-          .padding(.vertical, 3)
-          .background(.white, in: .capsule)
-          .fixedSize()
-          .offset(x: -size * 0.5, y: -size * 0.45)
-      }
-    }
+    WidgetOwl(size: size, isAsleep: isPreview ? false : nil, pose: DippyPose.at(date, seed: seed))
   }
 }
 
@@ -69,7 +46,7 @@ struct WidgetDippyLine: View {
 
   var body: some View {
     HStack(spacing: 6) {
-      LivingDippy(size: owlSize, date: date, showsBubble: false, isPreview: isPreview)
+      LivingDippy(size: owlSize, date: date, isPreview: isPreview)
       Text(text)
         .font(.caption.weight(.semibold))
         .foregroundStyle(.white.opacity(0.85))
@@ -135,14 +112,6 @@ struct WidgetSparkline: View {
     .chartYAxis(.hidden)
     .chartYScale(domain: (bounds.min() ?? 0) * 0.995...max((bounds.max() ?? 1) * 1.005, (bounds.min() ?? 0) + 0.0001))
   }
-}
-
-/// A one-line, Dippy-voiced summary of what matters most right now.
-func dippSays(_ statuses: [TargetStatus]) -> String {
-  guard let first = statuses.first else { return "Set a buy zone and I'll watch it." }
-  if first.distance == 0 { return "\(first.target.symbol) is in your plan right now!" }
-  if !MarketClock.isOpen() { return "Markets closed. \(statuses.count) plans on watch." }
-  return "\(first.target.symbol) is \(distanceText(first.distance)) away."
 }
 
 /// Loads cached quotes, refreshes them from the network, and saves them back for the app.

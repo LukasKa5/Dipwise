@@ -44,7 +44,22 @@ struct MarketingSceneView: View {
       if scene == "owls" {
         owls
       } else if isReady {
-        if scene == "watch" {
+        if scene == "widget-large" {
+          ZStack {
+            DeviceFinish.wallpaper
+            VStack(spacing: 30) {
+              PortfolioWidgetView(entry: PortfolioEntry(date: .now, portfolio: model.samplePortfolio, closest: model.sampleStatuses.first,
+                                                        movers: MoversProvider.sorted(model.previewSymbols.compactMap { model.quotes[$0] })), previewFamily: .systemLarge)
+                .padding(16)
+                .frame(width: 364, height: 382)
+                .background(Brand.nightMiddle, in: .rect(cornerRadius: 24, style: .continuous))
+              PlansWidgetView(entry: PlansEntry(date: .now, statuses: model.sampleStatuses), previewFamily: .systemLarge)
+                .padding(16)
+                .frame(width: 364, height: 382)
+                .background(Brand.nightMiddle, in: .rect(cornerRadius: 24, style: .continuous))
+            }
+          }
+        } else if scene == "watch" {
           MarketingRenders(model: model)
         } else if scene == "lock" {
           NotifyStep(model: model, showsScreenOnly: true)

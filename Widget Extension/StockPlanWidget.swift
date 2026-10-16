@@ -170,7 +170,7 @@ struct StockPlanWidgetView: View {
             .lineLimit(1)
             .minimumScaleFactor(0.5)
           Spacer(minLength: 0)
-          LivingDippy(size: 18, date: entry.date, seed: 1, showsBubble: false, isPreview: previewFamily != nil)
+          LivingDippy(size: 18, date: entry.date, seed: 1, isPreview: previewFamily != nil)
         }
         HStack(alignment: .firstTextBaseline, spacing: 4) {
           Text(compactPrice(quote.price, currency: quote.currency))
@@ -191,7 +191,7 @@ struct StockPlanWidgetView: View {
   private func footer(quote: Quote) -> some View {
     HStack(spacing: 6) {
       if family == .systemMedium {
-        LivingDippy(size: 18, date: entry.date, seed: 1, showsBubble: false, isPreview: previewFamily != nil)
+        LivingDippy(size: 18, date: entry.date, seed: 1, isPreview: previewFamily != nil)
       }
       if let nearest {
         Text("\(distanceText(nearest.rule.distance(for: quote))) · \(nearest.rule.kind.title.lowercased())")

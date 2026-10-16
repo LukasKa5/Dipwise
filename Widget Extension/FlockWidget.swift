@@ -178,7 +178,7 @@ private struct FlockOwls: View {
   var body: some View {
     HStack(alignment: .bottom, spacing: -size * 0.25) {
       WidgetOwl(size: size * 0.8, isAsleep: isPreview ? false : nil, pose: DippyPose.at(date, seed: 4))
-      LivingDippy(size: size, date: date, seed: 0, showsBubble: false, isPreview: isPreview)
+      LivingDippy(size: size, date: date, seed: 0, isPreview: isPreview)
         .zIndex(1)
       WidgetOwl(size: size * 0.8, isAsleep: isPreview ? false : nil, pose: DippyPose.at(date, seed: 6))
     }

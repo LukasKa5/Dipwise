@@ -32,6 +32,9 @@ final class Router {
       selectedTab = .alerts
     } else if url.host() == "flock" {
       selectedTab = .flock
+    } else if url.host() == "portfolio" {
+      selectedTab = .home
+      homePath = []
     } else if url.host() == "brief" {
       selectedTab = .home
       showsBrief = true

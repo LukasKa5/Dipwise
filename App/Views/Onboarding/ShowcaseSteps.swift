@@ -213,7 +213,7 @@ struct WidgetShowcaseStep: View {
     ShowcaseLayout(
       eyebrow: "Home Screen",
       title: "Your plans, always in sight",
-      message: "Widgets that live on your Home Screen. Plans turn the page, Dippy looks around, and one tap says hello.",
+      message: "Your portfolio and every buy zone on your Home Screen, spelled out so a glance is enough.",
       mission: "Tap a widget",
       isMissionDone: model.completedMissions.contains("widget")
     ) {
@@ -239,6 +239,12 @@ struct WidgetShowcaseStep: View {
       VStack(spacing: 0) {
         PhoneStatusBar()
         VStack(spacing: 14) {
+          labeled {
+            widget(width: Metrics.medium) {
+              PortfolioWidgetView(entry: PortfolioEntry(date: LivingClock.tick(step), portfolio: model.samplePortfolio,
+                                                        closest: model.sampleStatuses.first, movers: []), previewFamily: .systemMedium)
+            }
+          }
           labeled {
             widget(width: Metrics.medium) {
               PlansWidgetView(entry: PlansEntry(date: LivingClock.tick(step), statuses: model.sampleStatuses, index: step), previewFamily: .systemMedium)
@@ -492,14 +498,7 @@ struct WatchShowcaseStep: View {
       .accessibilityHidden(true)
   }
 
-  /// A sample portfolio of the stocks the user just picked, so the screen looks like their own watch will.
-  private var portfolio: WatchPortfolio? {
-    let stocks = model.previewSymbols.compactMap { symbol -> WatchedStock? in
-      guard let quote = model.quotes[symbol] else { return nil }
-      return WatchedStock(symbol: symbol, name: quote.name, shares: max(5, (4_000 / quote.price).rounded()), averageCost: quote.price * 0.8)
-    }
-    return WatchPortfolio.make(stocks: stocks, quotes: model.quotes, currency: model.focusQuote?.currency ?? "USD", rates: [:])
-  }
+  private var portfolio: WatchPortfolio? { model.samplePortfolio }
 
   /// The real watch app's Today page, in the same order: Dippy, portfolio, closest plans, movers, and market hours.
   private var content: some View {
