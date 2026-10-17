@@ -35,6 +35,16 @@ final class Router {
   }
   var homePath: [String] = []
   var showsBrief = false
+  /// Development only: `-startTab portfolio` opens straight onto the Portfolio screen.
+  var showsPortfolio = ProcessInfo.processInfo.arguments.contains("portfolio") && Router.isDebug
+
+  private static var isDebug: Bool {
+    #if DEBUG
+    true
+    #else
+    false
+    #endif
+  }
 
   func open(symbol: String) {
     selectedTab = .home
@@ -52,6 +62,7 @@ final class Router {
     } else if url.host() == "portfolio" {
       selectedTab = .home
       homePath = []
+      showsPortfolio = true
     } else if url.host() == "brief" {
       selectedTab = .home
       showsBrief = true

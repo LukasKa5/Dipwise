@@ -13,7 +13,6 @@ struct HomeView: View {
   @AppStorage(AlertSettings.showsBriefKey) private var showsBrief = true
   @AppStorage(AlertSettings.briefHiddenDayKey) private var briefHiddenDay = ""
   @State private var showsAddStock = false
-  @State private var showsPortfolio = false
   @State private var showsAddPosition = false
   @State private var showsImport = false
   @State private var period: ChartPeriod = .preset(.month)
@@ -76,7 +75,7 @@ struct HomeView: View {
       .navigationDestination(for: String.self) { symbol in
         StockDetailView(symbol: symbol)
       }
-      .navigationDestination(isPresented: $showsPortfolio) {
+      .navigationDestination(isPresented: $router.showsPortfolio) {
         PortfolioView()
       }
       .sheet(isPresented: $showsAddStock) {
@@ -125,7 +124,7 @@ struct HomeView: View {
         format: format,
         period: $period,
         earliest: summary.earliestDate,
-        openDetails: { showsPortfolio = true },
+        openDetails: { router.showsPortfolio = true },
         mood: OwlMood.current(dayChange: summary.dayChange, isAwake: OwlWake.shared.isAwake)
       )
     } else {

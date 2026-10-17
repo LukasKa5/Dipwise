@@ -52,7 +52,15 @@
             "UIInterfaceOrientationLandscapeLeft",
             "UIInterfaceOrientationLandscapeRight"
           ],
-          "LSApplicationCategoryType": "public.app-category.finance"
+          "LSApplicationCategoryType": "public.app-category.finance",
+          "CFBundleURLTypes": [
+            {
+              "CFBundleURLName": "app.dipwise",
+              "CFBundleURLSchemes": [
+                "dipwise"
+              ]
+            }
+          ]
         }
       },
       "platform": "iOS",
