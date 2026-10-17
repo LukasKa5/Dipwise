@@ -97,10 +97,26 @@ struct PortfolioView: View {
         InteractiveChart(values: history.values, dates: history.dates, showsOwl: true, owlSize: 40, selectedIndex: $selectedIndex)
           .frame(height: 200)
         PeriodPicker(period: $period, presets: [.day, .week, .month, .threeMonths, .year], earliest: summary.earliestDate)
+        if let comparison = marketComparison(history) {
+          MarketComparisonRow(comparison: comparison)
+            .proLocked(!subscription.isPro, message: "See if you're beating the market with Pro")
+        }
       }
       .padding(18)
       .heroCardStyle()
     }
+  }
+
+  /// The portfolio's change over the shown period next to the S&P 500's over the same days.
+  private func marketComparison(_ history: (values: [Double], dates: [Date])) -> MarketComparison? {
+    guard let first = history.values.first, first > 0, let last = history.values.last,
+          let start = history.dates.first, let end = history.dates.last,
+          let market = quotes[Benchmark.symbol], market.closes.count == market.dates.count else { return nil }
+    let calendar = Calendar.current
+    guard let from = market.dates.firstIndex(where: { calendar.startOfDay(for: $0) >= calendar.startOfDay(for: start) }),
+          let to = market.dates.lastIndex(where: { calendar.startOfDay(for: $0) <= calendar.startOfDay(for: end) }),
+          to > from, market.closes[from] > 0 else { return nil }
+    return MarketComparison(portfolio: last / first - 1, market: market.closes[to] / market.closes[from] - 1)
   }
 
   // MARK: Allocation
@@ -460,5 +476,43 @@ private struct CashEditorView: View {
       }
       .onAppear { draft = cash > 0 ? cash : nil }
     }
+  }
+}
+
+/// How the portfolio did against the S&P 500 over the same days.
+struct MarketComparison {
+  var portfolio: Double
+  var market: Double
+
+  var difference: Double { portfolio - market }
+}
+
+/// "You +8.2% · S&P 500 +5.1%", and whether the portfolio is ahead.
+private struct MarketComparisonRow: View {
+  var comparison: MarketComparison
+
+  var body: some View {
+    let isAhead = comparison.difference >= 0
+    HStack(spacing: 12) {
+      Image(systemName: isAhead ? "trophy.fill" : "tortoise.fill")
+        .font(.headline)
+        .foregroundStyle(isAhead ? Brand.amber : .white.opacity(0.7))
+        .frame(width: 36, height: 36)
+        .background(.white.opacity(0.1), in: .circle)
+      VStack(alignment: .leading, spacing: 2) {
+        Text(isAhead ? "Beating the market" : "Behind the market")
+          .font(.subheadline.weight(.semibold))
+        Text("You \(comparison.portfolio.formatted(.percent.precision(.fractionLength(1)).sign(strategy: .always()))) · S&P 500 \(comparison.market.formatted(.percent.precision(.fractionLength(1)).sign(strategy: .always())))")
+          .font(.caption.monospacedDigit())
+          .foregroundStyle(.white.opacity(0.7))
+      }
+      Spacer(minLength: 4)
+      Text(comparison.difference.formatted(.percent.precision(.fractionLength(1)).sign(strategy: .always())))
+        .font(.headline.monospacedDigit())
+        .foregroundStyle(isAhead ? Brand.buy : Brand.sell)
+    }
+    .padding(12)
+    .background(.white.opacity(0.08), in: .rect(cornerRadius: 16, style: .continuous))
+    .accessibilityElement(children: .combine)
   }
 }

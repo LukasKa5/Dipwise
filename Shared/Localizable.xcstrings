@@ -6599,6 +6599,52 @@
         }
       }
     },
+    "Beating the market": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du schlägst den Markt"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Superas al mercado"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu bats le marché"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Batti il mercato"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "市場に勝っています"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "시장을 이기는 중"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Batendo o mercado"
+          }
+        }
+      }
+    },
     "Beats the S&P 500 by %@ over %lld days": {
       "localizations": {
         "de": {
@@ -6733,6 +6779,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Antes de ter algo, saiba onde compraria mais e onde realizaria lucro. Isso é um plano completo."
+          }
+        }
+      }
+    },
+    "Behind the market": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hinter dem Markt"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Por detrás del mercado"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En retard sur le marché"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sotto il mercato"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "市場に負けています"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "시장보다 뒤처짐"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atrás do mercado"
           }
         }
       }
@@ -14830,6 +14922,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Seguir"
+          }
+        }
+      }
+    },
+    "Follow investors and get their moves": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anlegern folgen und ihre Bewegungen erhalten"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sigue a inversores y recibe sus movimientos"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suis des investisseurs et reçois leurs mouvements"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Segui gli investitori e ricevi le loro mosse"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "投資家をフォローして売買を受け取る"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "투자자를 팔로우하고 매매 소식 받기"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Siga investidores e receba os movimentos deles"
           }
         }
       }
@@ -29601,6 +29739,52 @@
         }
       }
     },
+    "See if you're beating the market with Pro": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sieh mit Pro, ob du den Markt schlägst"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comprueba con Pro si superas al mercado"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vois avec Pro si tu bats le marché"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scopri con Pro se batti il mercato"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proで市場に勝っているか確認"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro로 시장을 이기고 있는지 확인"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Veja com o Pro se você está batendo o mercado"
+          }
+        }
+      }
+    },
     "See the dips you didn't act on": {
       "localizations": {
         "de": {
@@ -36869,6 +37053,52 @@
         }
       }
     },
+    "Top investors' portfolios and moves": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Portfolios und Bewegungen der Top-Anleger"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carteras y movimientos de los mejores inversores"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Portefeuilles et mouvements des meilleurs investisseurs"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Portafogli e mosse dei migliori investitori"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "トップ投資家のポートフォリオと売買"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "상위 투자자의 포트폴리오와 매매"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carteiras e movimentos dos melhores investidores"
+          }
+        }
+      }
+    },
     "Top mover": {
       "localizations": {
         "de": {
@@ -39813,6 +40043,52 @@
         }
       }
     },
+    "What the flock is buying and selling": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Was der Schwarm kauft und verkauft"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lo que compra y vende la bandada"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce que la volée achète et vend"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cosa compra e vende lo stormo"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "群れが売買しているもの"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "무리가 사고파는 종목"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O que o bando está comprando e vendendo"
+          }
+        }
+      }
+    },
     "What the indicators say about your stocks today": {
       "localizations": {
         "de": {
@@ -40729,6 +41005,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Você: %@"
+          }
+        }
+      }
+    },
+    "You %@ · S&P 500 %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du %@ · S&P 500 %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tú %@ · S&P 500 %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toi %@ · S&P 500 %@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu %@ · S&P 500 %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "あなた %@ · S&P 500 %@"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "나 %@ · S&P 500 %@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Você %@ · S&P 500 %@"
           }
         }
       }
@@ -42109,6 +42431,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "O valor da sua carteira e a variação de hoje."
+          }
+        }
+      }
+    },
+    "Your portfolio vs the S&P 500": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Portfolio vs. S&P 500"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu cartera frente al S&P 500"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ton portefeuille face au S&P 500"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il tuo portafoglio vs S&P 500"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ポートフォリオ vs S&P 500"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "내 포트폴리오 vs S&P 500"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sua carteira vs. S&P 500"
           }
         }
       }
