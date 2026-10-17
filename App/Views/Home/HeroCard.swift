@@ -144,7 +144,7 @@ struct HeroStatTile: View {
         .lineLimit(1)
         .minimumScaleFactor(0.6)
         .contentTransition(.numericText())
-      Text(stat.label)
+      Text(LocalizedStringKey(stat.label))
         .font(.caption.weight(.semibold))
         .lineLimit(1)
         .minimumScaleFactor(0.8)

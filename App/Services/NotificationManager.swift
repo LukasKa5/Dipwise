@@ -80,7 +80,7 @@ enum NotificationManager {
       let content = UNMutableNotificationContent()
       let name = FlockInvestor.nickname(for: move.installID)
       content.title = move.isBuy ? "\(name) bought \(move.symbol)" : "\(name) trimmed \(move.symbol)"
-      content.body = move.isBuy ? "An investor you follow added to \(move.symbol). Tap to see their portfolio." : "An investor you follow sold some \(move.symbol). Tap to see their portfolio."
+      content.body = move.isBuy ? String(localized: "An investor you follow added to \(move.symbol). Tap to see their portfolio.") : String(localized: "An investor you follow sold some \(move.symbol). Tap to see their portfolio.")
       content.threadIdentifier = "flock-\(move.installID)"
       content.userInfo = ["symbol": move.symbol]
       let request = UNNotificationRequest(identifier: "flock-\(move.id)", content: content, trigger: nil)

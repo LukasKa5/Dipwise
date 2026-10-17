@@ -3,7 +3,7 @@ import SwiftUI
 /// Blurs Pro-only content and invites the user to upgrade.
 struct ProLockedModifier: ViewModifier {
   var isLocked: Bool
-  var message: String
+  var message: LocalizedStringKey
   @State private var showsPaywall = false
 
   func body(content: Content) -> some View {
@@ -33,7 +33,7 @@ struct ProLockedModifier: ViewModifier {
 }
 
 extension View {
-  func proLocked(_ isLocked: Bool, message: String) -> some View {
+  func proLocked(_ isLocked: Bool, message: LocalizedStringKey) -> some View {
     modifier(ProLockedModifier(isLocked: isLocked, message: message))
   }
 }

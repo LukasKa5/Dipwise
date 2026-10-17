@@ -343,7 +343,7 @@ struct PortfolioView: View {
 }
 
 private struct DividendFigure: View {
-  var title: String
+  var title: LocalizedStringKey
   var value: String
 
   var body: some View {
@@ -405,7 +405,7 @@ private struct PositionRow: View {
 }
 
 private struct MoverTile: View {
-  var title: String
+  var title: LocalizedStringKey
   var position: PortfolioSummary.Position
 
   var body: some View {

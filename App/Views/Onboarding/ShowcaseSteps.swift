@@ -6,10 +6,10 @@ import WidgetKit
 
 /// The shared layout of every showcase chapter.
 struct ShowcaseLayout<Hero: View>: View {
-  var eyebrow: String
-  var title: String
-  var message: String
-  var mission: String
+  var eyebrow: LocalizedStringKey
+  var title: LocalizedStringKey
+  var message: LocalizedStringKey
+  var mission: LocalizedStringKey
   var isMissionDone: Bool
   @ViewBuilder var hero: Hero
 
@@ -540,8 +540,8 @@ struct NotifyStep: View {
 
   private struct Alert: Identifiable, Equatable {
     var id: String
-    var title: String
-    var message: String
+    var title: LocalizedStringKey
+    var message: LocalizedStringKey
     var symbol: String
     var values: [Double]
     var color: Color

@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct StatTile: View {
-  var title: String
+  var title: LocalizedStringKey
   var value: String
   var systemImage: String
   var tint: Color

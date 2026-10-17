@@ -27,32 +27,32 @@ enum SignalScanner {
     }
 
     if let rsi = quote.rsi() {
-      if rsi <= 30 { add(.rsiOversold, "Oversold", "RSI is \(Int(rsi)). Selling may be overdone.") }
-      if rsi >= 70 { add(.rsiOverbought, "Overbought", "RSI is \(Int(rsi)). Buying may be overheated.") }
+      if rsi <= 30 { add(.rsiOversold, String(localized: "Oversold"), String(localized: "RSI is \(Int(rsi)). Selling may be overdone.")) }
+      if rsi >= 70 { add(.rsiOverbought, String(localized: "Overbought"), String(localized: "RSI is \(Int(rsi)). Buying may be overheated.")) }
     }
     if let cross = recentCross(quote) {
-      add(cross ? .goldenCross : .deathCross, cross ? "Golden cross" : "Death cross",
-          "The 50-day average crossed \(cross ? "above" : "below") the 200-day recently.")
+      add(cross ? .goldenCross : .deathCross, cross ? String(localized: "Golden cross") : String(localized: "Death cross"),
+          cross ? String(localized: "The 50-day average crossed above the 200-day recently.") : String(localized: "The 50-day average crossed below the 200-day recently."))
     }
     if let bands = quote.bollinger {
-      if quote.price <= bands.lower { add(.bollingerLow, "At the lower band", "Price is at the bottom of its normal range.") }
-      if quote.price >= bands.upper { add(.bollingerHigh, "At the upper band", "Price is at the top of its normal range.") }
+      if quote.price <= bands.lower { add(.bollingerLow, String(localized: "At the lower band"), String(localized: "Price is at the bottom of its normal range.")) }
+      if quote.price >= bands.upper { add(.bollingerHigh, String(localized: "At the upper band"), String(localized: "Price is at the top of its normal range.")) }
     }
     if quote.closes.count > 30 {
-      if quote.price <= quote.previousLow { add(.newLow, "New 52-week low", "The lowest price in a year.") }
-      if quote.price >= quote.previousHigh { add(.newHigh, "New 52-week high", "The highest price in a year.") }
+      if quote.price <= quote.previousLow { add(.newLow, String(localized: "New 52-week low"), String(localized: "The lowest price in a year.")) }
+      if quote.price >= quote.previousHigh { add(.newHigh, String(localized: "New 52-week high"), String(localized: "The highest price in a year.")) }
     }
     if let ratio = quote.volumeRatio, ratio >= 2 {
-      add(.volumeSpike, "Volume spike", "\(ratio.formatted(.number.precision(.fractionLength(1))))× the usual number of shares traded.")
+      add(.volumeSpike, String(localized: "Volume spike"), "\(ratio.formatted(.number.precision(.fractionLength(1))))× the usual number of shares traded.")
     }
     if abs(quote.change) >= 0.04 {
-      add(.dailyMove, quote.change > 0 ? "Big jump" : "Big drop", "Moved \(quote.change.formatted(.percent.precision(.fractionLength(1)).sign(strategy: .always()))) today.")
+      add(.dailyMove, quote.change > 0 ? String(localized: "Big jump") : String(localized: "Big drop"), String(localized: "Moved \(quote.change.formatted(.percent.precision(.fractionLength(1)).sign(strategy: .always()))) today."))
     }
     if quote.drawdownFromHigh <= -0.2 {
-      add(.dropFromHigh, "Deep dip", "\(abs(quote.drawdownFromHigh).formatted(.percent.precision(.fractionLength(0)))) below its 52-week high.")
+      add(.dropFromHigh, String(localized: "Deep dip"), "\(abs(quote.drawdownFromHigh).formatted(.percent.precision(.fractionLength(0)))) below its 52-week high.")
     }
     if let macd = recentMACDFlip(quote) {
-      add(macd ? .macdBullish : .macdBearish, macd ? "Momentum turning up" : "Momentum turning down", "MACD crossed its signal line in the last few days.")
+      add(macd ? .macdBullish : .macdBearish, macd ? String(localized: "Momentum turning up") : String(localized: "Momentum turning down"), String(localized: "MACD crossed its signal line in the last few days."))
     }
     return signals
   }

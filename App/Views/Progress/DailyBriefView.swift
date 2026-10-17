@@ -238,7 +238,7 @@ struct DailyBriefView: View {
 
 /// The owl with a speech bubble, used to narrate.
 struct OwlSays: View {
-  var text: String
+  var text: LocalizedStringKey
 
   var body: some View {
     HStack(alignment: .top, spacing: 12) {

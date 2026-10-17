@@ -14,11 +14,11 @@ enum InvestorStyle: String, CaseIterable, Identifiable {
 
   var title: String {
     switch self {
-    case .dips: "Buy dips smartly"
-    case .income: "Grow dividend income"
-    case .protect: "Protect my gains"
-    case .calm: "Invest calmly, without stress"
-    case .other: "Something else"
+    case .dips: String(localized: "Buy dips smartly")
+    case .income: String(localized: "Grow dividend income")
+    case .protect: String(localized: "Protect my gains")
+    case .calm: String(localized: "Invest calmly, without stress")
+    case .other: String(localized: "Something else")
     }
   }
 
@@ -34,11 +34,11 @@ enum InvestorStyle: String, CaseIterable, Identifiable {
 
   var owlReply: String {
     switch self {
-    case .dips: "A dip hunter! I'll watch for bargains."
-    case .income: "Slow and steady. I love it."
-    case .protect: "Smart. I'll guard your gains."
-    case .calm: "Hoo! That's exactly what I'm for."
-    case .other: "Tell me more! I'm all ears. Well, tufts."
+    case .dips: String(localized: "A dip hunter! I'll watch for bargains.")
+    case .income: String(localized: "Slow and steady. I love it.")
+    case .protect: String(localized: "Smart. I'll guard your gains.")
+    case .calm: String(localized: "Hoo! That's exactly what I'm for.")
+    case .other: String(localized: "Tell me more! I'm all ears. Well, tufts.")
     }
   }
 }

@@ -143,7 +143,7 @@ func compactPrice(_ value: Double, currency: String) -> String {
 
 func distanceText(_ distance: Double?) -> String {
   guard let distance else { return "—" }
-  return distance == 0 ? "Now" : distance.formatted(.percent.precision(.fractionLength(1)))
+  return distance == 0 ? String(localized: "Now") : distance.formatted(.percent.precision(.fractionLength(1)))
 }
 
 func changeText(_ change: Double) -> String {
@@ -156,10 +156,10 @@ func compactSummary(_ status: TargetStatus) -> String {
   let currency = status.quote?.currency ?? "USD"
   let format: (Double) -> String = { compactPrice($0, currency: currency) }
   switch rule.kind {
-  case .buyZone: return "Buy \(format(rule.lower))–\(format(rule.upper))"
-  case .sellZone: return "Sell \(format(rule.lower))–\(format(rule.upper))"
-  case .priceBelow: return "Buy below \(format(rule.lower))"
-  case .priceAbove: return "Sell above \(format(rule.lower))"
+  case .buyZone: return String(localized: "Buy \(format(rule.lower))–\(format(rule.upper))")
+  case .sellZone: return String(localized: "Sell \(format(rule.lower))–\(format(rule.upper))")
+  case .priceBelow: return String(localized: "Buy below \(format(rule.lower))")
+  case .priceAbove: return String(localized: "Sell above \(format(rule.lower))")
   default: return rule.kind.title
   }
 }

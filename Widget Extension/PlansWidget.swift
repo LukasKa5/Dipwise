@@ -136,7 +136,7 @@ struct PlansWidgetView: View {
           .lineLimit(1)
           .minimumScaleFactor(0.6)
           .contentTransition(.numericText())
-        Text(status.distance == 0 ? "In your \(sideWord(status)) zone" : "to your \(sideWord(status)) zone")
+        Text(zoneLabel(status))
           .font(.caption.weight(.semibold))
           .foregroundStyle(color)
           .lineLimit(1)
@@ -170,8 +170,11 @@ struct PlansWidgetView: View {
     }
   }
 
-  private func sideWord(_ status: TargetStatus) -> String {
-    status.target.rule.kind.side == .sell ? "sell" : "buy"
+  /// Whole phrases per side, so each language can word them naturally.
+  private func zoneLabel(_ status: TargetStatus) -> LocalizedStringKey {
+    let isSell = status.target.rule.kind.side == .sell
+    if status.distance == 0 { return isSell ? "In your sell zone" : "In your buy zone" }
+    return isSell ? "to your sell zone" : "to your buy zone"
   }
 
   // MARK: Medium and large

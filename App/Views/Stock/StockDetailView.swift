@@ -383,7 +383,7 @@ struct StockDetailView: View {
 }
 
 struct DetailRow: View {
-  var title: String
+  var title: LocalizedStringKey
   var value: String
 
   var body: some View {

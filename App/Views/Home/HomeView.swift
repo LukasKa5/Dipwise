@@ -272,7 +272,7 @@ private struct WelcomeCard: View {
 
 struct EmptyHint: View {
   var systemImage: String
-  var text: String
+  var text: LocalizedStringKey
 
   var body: some View {
     Label(text, systemImage: systemImage)

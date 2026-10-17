@@ -39,7 +39,7 @@ struct LivingDippy: View {
 
 /// Dippy with a short line, the way he talks on the app's Home card.
 struct WidgetDippyLine: View {
-  var text: String
+  var text: LocalizedStringKey
   var owlSize: CGFloat = 22
   var date: Date = .now
   var isPreview = false

@@ -335,11 +335,11 @@ struct AlertInsightsView: View {
 }
 
 private struct InsightSection<Content: View>: View {
-  var title: String
-  var subtitle: String
+  var title: LocalizedStringKey
+  var subtitle: LocalizedStringKey
   var systemImage: String
   var isLocked: Bool
-  var message: String
+  var message: LocalizedStringKey
   @ViewBuilder var content: Content
 
   var body: some View {

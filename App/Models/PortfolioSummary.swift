@@ -107,7 +107,7 @@ struct PortfolioSummary {
     positions.map { Slice(label: $0.holding.symbol, value: $0.value, share: $0.weight) }
   }
 
-  var allocationByType: [Slice] { group { $0.quote.assetType.isEmpty ? "Other" : Self.typeName($0.quote.assetType) } }
+  var allocationByType: [Slice] { group { $0.quote.assetType.isEmpty ? String(localized: "Other") : Self.typeName($0.quote.assetType) } }
   var allocationByCurrency: [Slice] { group { $0.quote.currency } }
 
   private func group(by key: (Position) -> String) -> [Slice] {
@@ -122,11 +122,11 @@ struct PortfolioSummary {
 
   private static func typeName(_ raw: String) -> String {
     switch raw.uppercased() {
-    case "EQUITY": "Stocks"
+    case "EQUITY": String(localized: "Stocks")
     case "ETF": "ETFs"
-    case "CRYPTOCURRENCY": "Crypto"
-    case "MUTUALFUND": "Funds"
-    case "INDEX": "Indexes"
+    case "CRYPTOCURRENCY": String(localized: "Crypto")
+    case "MUTUALFUND": String(localized: "Funds")
+    case "INDEX": String(localized: "Indexes")
     default: raw.capitalized
     }
   }

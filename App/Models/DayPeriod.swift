@@ -15,9 +15,9 @@ enum DayPeriod {
 
   var greeting: String {
     switch self {
-    case .morning: "Good morning"
-    case .afternoon: "Good afternoon"
-    case .evening: "Good evening"
+    case .morning: String(localized: "Good morning")
+    case .afternoon: String(localized: "Good afternoon")
+    case .evening: String(localized: "Good evening")
     }
   }
 }

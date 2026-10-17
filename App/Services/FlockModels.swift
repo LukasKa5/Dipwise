@@ -49,19 +49,19 @@ struct FlockEvent: Identifiable, Hashable {
       switch entry.kind.side {
       case .buy: return "\(entry.kind.title) hit at \(price)"
       case .sell: return "\(entry.kind.title) reached at \(price)"
-      case .watch: return "Big move alert fired at \(price)"
+      case .watch: return String(localized: "Big move alert fired at \(price)")
       }
     }
     switch entry.kind {
-    case .buyZone: return "Set a buy zone at \(format(rule.lower))–\(format(rule.upper))"
-    case .sellZone: return "Set a sell zone at \(format(rule.lower))–\(format(rule.upper))"
-    case .priceBelow: return "Waiting to buy below \(format(rule.lower))"
-    case .priceAbove: return "Plans to sell above \(format(rule.lower))"
-    case .dropFromHigh: return "Watching for a \(percent) dip from the high"
-    case .dailyMove: return "Watching for \(percent) daily moves"
-    case .trailingStop: return "Protecting gains with a \(percent) trailing stop"
-    case .belowAverage, .aboveAverage: return "Watching the long-term average"
-    default: return "Set a \(entry.kind.title.lowercased()) alert"
+    case .buyZone: return String(localized: "Set a buy zone at \(format(rule.lower))–\(format(rule.upper))")
+    case .sellZone: return String(localized: "Set a sell zone at \(format(rule.lower))–\(format(rule.upper))")
+    case .priceBelow: return String(localized: "Waiting to buy below \(format(rule.lower))")
+    case .priceAbove: return String(localized: "Plans to sell above \(format(rule.lower))")
+    case .dropFromHigh: return String(localized: "Watching for a \(percent) dip from the high")
+    case .dailyMove: return String(localized: "Watching for \(percent) daily moves")
+    case .trailingStop: return String(localized: "Protecting gains with a \(percent) trailing stop")
+    case .belowAverage, .aboveAverage: return String(localized: "Watching the long-term average")
+    default: return String(localized: "Set a \(entry.kind.title.lowercased()) alert")
     }
   }
 }

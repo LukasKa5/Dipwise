@@ -125,7 +125,7 @@ struct WatchlistView: View {
 
 private struct SummaryPill: View {
   var value: String
-  var label: String
+  var label: LocalizedStringKey
   var color: Color
 
   var body: some View {

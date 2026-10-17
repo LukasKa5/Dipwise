@@ -6,10 +6,13 @@
   "name": "Project",
   "options": {
     "groupSortPosition": "bottom",
-    "transitivelyLinkDependencies": false
+    "transitivelyLinkDependencies": false,
+    "developmentLanguage": "en"
   },
   "settings": {
-    "CODE_SIGN_IDENTITY": "-"
+    "CODE_SIGN_IDENTITY": "-",
+    "SWIFT_EMIT_LOC_STRINGS": "YES",
+    "LOCALIZATION_PREFERS_STRING_CATALOGS": "YES"
   },
   "targets": {
     "Dipwise": {

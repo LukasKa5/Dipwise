@@ -58,9 +58,9 @@ struct AlertOdds {
   }
 
   var lastTriggeredText: String {
-    guard let lastTriggered else { return "Not reached in the past year" }
-    if Calendar.current.isDateInToday(lastTriggered) { return "Reached today" }
-    return "Last reached \(lastTriggered.formatted(.relative(presentation: .named)))"
+    guard let lastTriggered else { return String(localized: "Not reached in the past year") }
+    if Calendar.current.isDateInToday(lastTriggered) { return String(localized: "Reached today") }
+    return String(localized: "Last reached \(lastTriggered.formatted(.relative(presentation: .named)))")
   }
 
   private static func normalCDF(_ x: Double) -> Double {

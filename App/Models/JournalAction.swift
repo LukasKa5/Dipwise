@@ -11,10 +11,10 @@ enum JournalAction: String, CaseIterable, Identifiable {
 
   var title: String {
     switch self {
-    case .bought: "Bought"
-    case .sold: "Sold"
-    case .held: "Held"
-    case .skipped: "Skipped"
+    case .bought: String(localized: "Bought")
+    case .sold: String(localized: "Sold")
+    case .held: String(localized: "Held")
+    case .skipped: String(localized: "Skipped")
     }
   }
 

@@ -74,10 +74,10 @@ struct WatchPortfolioHero: View {
         let high = portfolio.history.max() ?? 1
         let pad = max((high - low) * 0.1, high * 0.001)
         Chart(Array(portfolio.history.enumerated()), id: \.offset) { index, value in
-          AreaMark(x: .value("Day", index), yStart: .value("Floor", low - pad), yEnd: .value("Value", value))
+          AreaMark(x: .value(String(localized: "Day"), index), yStart: .value(String(localized: "Floor"), low - pad), yEnd: .value(String(localized: "Value"), value))
             .foregroundStyle(LinearGradient(colors: [color.opacity(0.25), color.opacity(0)], startPoint: .top, endPoint: .bottom))
             .interpolationMethod(.monotone)
-          LineMark(x: .value("Day", index), y: .value("Value", value))
+          LineMark(x: .value(String(localized: "Day"), index), y: .value(String(localized: "Value"), value))
             .foregroundStyle(color)
             .lineStyle(StrokeStyle(lineWidth: 2.5, lineCap: .round))
             .interpolationMethod(.monotone)
@@ -201,7 +201,7 @@ struct WatchMarketStatus: View {
       Circle()
         .fill(isOpen ? Brand.buy : .white.opacity(0.4))
         .frame(width: 6, height: 6)
-      Text(isOpen ? "Open until \(nextChange.formatted(date: .omitted, time: .shortened))" : "Opens \(nextChange.formatted(.dateTime.weekday(.abbreviated).hour().minute()))")
+      Text(isOpen ? String(localized: "Open until \(nextChange.formatted(date: .omitted, time: .shortened))") : String(localized: "Opens \(nextChange.formatted(.dateTime.weekday(.abbreviated).hour().minute()))"))
         .lineLimit(1)
         .minimumScaleFactor(0.7)
       Spacer(minLength: 2)
@@ -220,7 +220,7 @@ struct WatchMarketStatus: View {
 
 /// A small header above a group, like the app's section titles.
 struct WatchSectionTitle: View {
-  var title: String
+  var title: LocalizedStringKey
 
   var body: some View {
     Text(title)
@@ -235,10 +235,10 @@ extension OwlMood {
   /// A short line for Apple Watch, where every word counts.
   var watchMessage: String {
     switch self {
-    case .sleeping: "Markets closed. Your alerts stay on."
-    case .celebrating: "A green day. I'm on watch."
-    case .reassuring: "A red day. Plans pay off in dips."
-    case .calm: "All quiet. I'm watching your zones."
+    case .sleeping: String(localized: "Markets closed. Your alerts stay on.")
+    case .celebrating: String(localized: "A green day. I'm on watch.")
+    case .reassuring: String(localized: "A red day. Plans pay off in dips.")
+    case .calm: String(localized: "All quiet. I'm watching your zones.")
     }
   }
 }
@@ -247,9 +247,9 @@ extension OwlMood {
 enum WatchGreeting {
   static func text(at date: Date = .now) -> String {
     switch Calendar.current.component(.hour, from: date) {
-    case 5..<12: "Good morning"
-    case 12..<18: "Good afternoon"
-    default: "Good evening"
+    case 5..<12: String(localized: "Good morning")
+    case 12..<18: String(localized: "Good afternoon")
+    default: String(localized: "Good evening")
     }
   }
 }

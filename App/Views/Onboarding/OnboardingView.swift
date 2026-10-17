@@ -45,9 +45,9 @@ struct OnboardingView: View {
     }
   }
 
-  private var buttonTitle: String {
+  private var buttonTitle: LocalizedStringKey {
     switch page {
-    case 2: model.selected.isEmpty ? "Pick at least one" : "Watch \(model.selected.count) \(model.selected.count == 1 ? "stock" : "stocks")"
+    case 2: model.selected.isEmpty ? "Pick at least one" : (model.selected.count == 1 ? "Watch 1 stock" : "Watch \(model.selected.count) stocks")
     case 5: model.vote == nil ? "Cast your vote" : "Continue"
     case 8: "Allow Notifications"
     case 9: account.isSignedIn ? "Continue" : "Continue without an account"
@@ -202,8 +202,8 @@ private struct FitsScreen: ViewModifier {
 }
 
 struct StepTitle: View {
-  var title: String
-  var message: String?
+  var title: LocalizedStringKey
+  var message: LocalizedStringKey?
 
   var body: some View {
     VStack(spacing: 8) {
@@ -225,7 +225,7 @@ private struct WelcomeStep: View {
   var model: OnboardingModel
   @State private var taps = 0
   @State private var arrived = false
-  private let lines = [
+  private let lines: [LocalizedStringKey] = [
     "Hoo! Tap me four times.",
     "That tickles! Keep going…",
     "I'm Dippy, your stock-watching owl.",
@@ -271,7 +271,7 @@ private struct StyleStep: View {
           LivelyOwl(hopsOnTap: false, mood: .calm)
             .frame(width: 74, height: 86)
             .owlFlight(trigger: hops, height: 18)
-          SpeechBubble(text: model.lastStyle?.owlReply ?? "What brings you here?")
+          SpeechBubble(text: model.lastStyle.map { LocalizedStringKey($0.owlReply) } ?? "What brings you here?")
             .animation(.snappy, value: model.lastStyle)
           Text("Choose all that apply")
             .font(.subheadline)
@@ -546,18 +546,22 @@ private struct FlockStep: View {
 
 /// A gentle hint that teaches a feature by doing it; it turns green with a check when done.
 struct MissionChip: View {
-  var text: String
+  var text: LocalizedStringKey
   var isDone: Bool
 
   var body: some View {
-    Label(isDone ? "Nice! \(text)" : "Try it: \(text)", systemImage: isDone ? "checkmark.circle.fill" : "hand.tap.fill")
+    Label {
+      Text(isDone ? "Nice! \(Text(text))" : "Try it: \(Text(text))")
+    } icon: {
+      Image(systemName: isDone ? "checkmark.circle.fill" : "hand.tap.fill")
+    }
       .font(.subheadline.weight(.bold))
       .foregroundStyle(isDone ? Brand.owlInk : Brand.amber)
       .padding(.horizontal, 14)
       .padding(.vertical, 8)
       .background(isDone ? AnyShapeStyle(Brand.buy) : AnyShapeStyle(Brand.amber.opacity(0.15)), in: .capsule)
       .animation(.bouncy, value: isDone)
-      .accessibilityLabel(isDone ? "Done: \(text)" : "Try it: \(text)")
+      .accessibilityLabel(isDone ? Text("Done: \(Text(text))") : Text("Try it: \(Text(text))"))
   }
 }
 
@@ -639,7 +643,7 @@ private struct RevealStep: View {
 }
 
 private struct SpeechBubble: View {
-  var text: String
+  var text: LocalizedStringKey
 
   var body: some View {
     Text(text)
@@ -648,7 +652,7 @@ private struct SpeechBubble: View {
       .padding(.horizontal, 18)
       .padding(.vertical, 12)
       .background(.white, in: .rect(cornerRadius: 18))
-      .id(text)
+      .id("\(text)")
       .transition(.scale(scale: 0.8).combined(with: .opacity))
   }
 }

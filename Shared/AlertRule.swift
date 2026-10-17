@@ -20,12 +20,12 @@ enum AlertCategory: String, CaseIterable, Identifiable {
 
   var title: String {
     switch self {
-    case .zones: "Buy & sell"
-    case .moves: "Price moves"
-    case .trend: "Trend"
-    case .momentum: "Momentum"
-    case .position: "Your position"
-    case .income: "Income"
+    case .zones: String(localized: "Buy & sell")
+    case .moves: String(localized: "Price moves")
+    case .trend: String(localized: "Trend")
+    case .momentum: String(localized: "Momentum")
+    case .position: String(localized: "Your position")
+    case .income: String(localized: "Income")
     }
   }
 }
@@ -53,73 +53,73 @@ enum AlertKind: String, Codable, CaseIterable, Identifiable {
 
   var title: String {
     switch self {
-    case .buyZone: "Buy zone"
-    case .sellZone: "Sell zone"
-    case .priceBelow: "Price below"
-    case .priceAbove: "Price above"
-    case .dropFromHigh: "Dip from high"
-    case .weeklyDrop: "Fast drop"
-    case .losingStreak: "Losing streak"
-    case .beatsMarket: "Beats the market"
-    case .lagsMarket: "Lags the market"
-    case .yieldAbove: "Dividend yield"
-    case .dailyMove: "Big daily move"
-    case .gapMove: "Opening gap"
-    case .newLow: "New 52-week low"
-    case .newHigh: "New 52-week high"
-    case .reboundFromLow: "Rebound from low"
-    case .bollingerLow: "Lower band touch"
-    case .bollingerHigh: "Upper band touch"
-    case .belowAverage: "Falls below average"
-    case .aboveAverage: "Rises above average"
-    case .goldenCross: "Golden cross"
-    case .deathCross: "Death cross"
-    case .rsiOversold: "Oversold (RSI)"
-    case .rsiOverbought: "Overbought (RSI)"
-    case .macdBullish: "MACD turns up"
-    case .macdBearish: "MACD turns down"
-    case .volumeSpike: "Volume spike"
-    case .trailingStop: "Trailing stop"
-    case .stopLoss: "Stop loss"
-    case .profitTarget: "Profit target"
-    case .breakEven: "Back to break-even"
-    case .dividendSoon: "Dividend coming"
+    case .buyZone: String(localized: "Buy zone")
+    case .sellZone: String(localized: "Sell zone")
+    case .priceBelow: String(localized: "Price below")
+    case .priceAbove: String(localized: "Price above")
+    case .dropFromHigh: String(localized: "Dip from high")
+    case .weeklyDrop: String(localized: "Fast drop")
+    case .losingStreak: String(localized: "Losing streak")
+    case .beatsMarket: String(localized: "Beats the market")
+    case .lagsMarket: String(localized: "Lags the market")
+    case .yieldAbove: String(localized: "Dividend yield")
+    case .dailyMove: String(localized: "Big daily move")
+    case .gapMove: String(localized: "Opening gap")
+    case .newLow: String(localized: "New 52-week low")
+    case .newHigh: String(localized: "New 52-week high")
+    case .reboundFromLow: String(localized: "Rebound from low")
+    case .bollingerLow: String(localized: "Lower band touch")
+    case .bollingerHigh: String(localized: "Upper band touch")
+    case .belowAverage: String(localized: "Falls below average")
+    case .aboveAverage: String(localized: "Rises above average")
+    case .goldenCross: String(localized: "Golden cross")
+    case .deathCross: String(localized: "Death cross")
+    case .rsiOversold: String(localized: "Oversold (RSI)")
+    case .rsiOverbought: String(localized: "Overbought (RSI)")
+    case .macdBullish: String(localized: "MACD turns up")
+    case .macdBearish: String(localized: "MACD turns down")
+    case .volumeSpike: String(localized: "Volume spike")
+    case .trailingStop: String(localized: "Trailing stop")
+    case .stopLoss: String(localized: "Stop loss")
+    case .profitTarget: String(localized: "Profit target")
+    case .breakEven: String(localized: "Back to break-even")
+    case .dividendSoon: String(localized: "Dividend coming")
     }
   }
 
   var explanation: String {
     switch self {
-    case .buyZone: "The range where you'd happily buy."
-    case .sellZone: "The range where you'd take profit."
-    case .priceBelow: "One exact price to buy at."
-    case .priceAbove: "One exact price to sell at."
-    case .dropFromHigh: "The stock falls a set amount below its 52-week high."
-    case .weeklyDrop: "The stock falls sharply over a few days."
-    case .losingStreak: "The stock closes lower several days in a row. Long streaks often end with a bounce."
-    case .beatsMarket: "The stock outperforms the S&P 500 by a set amount. Leaders often keep leading."
-    case .lagsMarket: "The stock trails the S&P 500 by a set amount. A sign something may be wrong."
-    case .yieldAbove: "The dividend yield rises above your target, so you buy more income for your money."
-    case .dailyMove: "The stock jumps or slides a lot in one day."
-    case .gapMove: "The stock opens far above or below yesterday's close."
-    case .newLow: "The price hits its lowest level in a year."
-    case .newHigh: "The price hits its highest level in a year."
-    case .reboundFromLow: "The stock bounces a set amount off its 52-week low. A sign the bottom may be in."
-    case .bollingerLow: "The price drops to the bottom of its normal range (Bollinger Band). Often a short-term dip."
-    case .bollingerHigh: "The price stretches to the top of its normal range (Bollinger Band). Often a short-term peak."
-    case .belowAverage: "The price drops under its long-term average, a common warning sign."
-    case .aboveAverage: "The price climbs back over its long-term average."
-    case .goldenCross: "The 50-day average crosses above the 200-day, a classic bullish signal."
-    case .deathCross: "The 50-day average crosses below the 200-day, a classic bearish signal."
-    case .rsiOversold: "Selling looks overdone. Popular with dip buyers."
-    case .rsiOverbought: "Buying looks overheated. A moment to consider profits."
-    case .macdBullish: "Momentum turns positive."
-    case .macdBearish: "Momentum turns negative."
-    case .volumeSpike: "Far more shares trade than usual. Something is happening."
-    case .trailingStop: "Follows the price up and alerts you if it falls from the peak."
-    case .stopLoss: "Your position falls a set amount below what you paid."
-    case .profitTarget: "Your position rises a set amount above what you paid."
-    case .breakEven: "The price climbs back to what you paid."
-    case .dividendSoon: "A dividend is expected within a week."
+    case .buyZone: String(localized: "The range where you'd happily buy.")
+    case .sellZone: String(localized: "The range where you'd take profit.")
+    case .priceBelow: String(localized: "One exact price to buy at.")
+    case .priceAbove: String(localized: "One exact price to sell at.")
+    case .dropFromHigh: String(localized: "The stock falls a set amount below its 52-week high.")
+    case .weeklyDrop: String(localized: "The stock falls sharply over a few days.")
+    case .losingStreak: String(localized: "The stock closes lower several days in a row. Long streaks often end with a bounce.")
+    case .beatsMarket: String(localized: "The stock outperforms the S&P 500 by a set amount. Leaders often keep leading.")
+    case .lagsMarket: String(localized: "The stock trails the S&P 500 by a set amount. A sign something may be wrong.")
+    case .yieldAbove: String(localized: "The dividend yield rises above your target, so you buy more income for your money.")
+    case .dailyMove: String(localized: "The stock jumps or slides a lot in one day.")
+    case .gapMove: String(localized: "The stock opens far above or below yesterday's close.")
+    case .newLow: String(localized: "The price hits its lowest level in a year.")
+    case .newHigh: String(localized: "The price hits its highest level in a year.")
+    case .reboundFromLow: String(localized: "The stock bounces a set amount off its 52-week low. A sign the bottom may be in.")
+    case .bollingerLow: String(localized: "The price drops to the bottom of its normal range (Bollinger Band). Often a short-term dip.")
+    case .bollingerHigh: String(localized: "The price stretches to the top of its normal range (Bollinger Band). Often a short-term peak.")
+    case .belowAverage: String(localized: "The price drops under its long-term average, a common warning sign.")
+    case .aboveAverage: String(localized: "The price climbs back over its long-term average.")
+    case .goldenCross: String(localized: "The 50-day average crosses above the 200-day, a classic bullish signal.")
+    case .deathCross: String(localized: "The 50-day average crosses below the 200-day, a classic bearish signal.")
+    case .rsiOversold: String(localized: "Selling looks overdone. Popular with dip buyers.")
+    case .rsiOverbought: String(localized: "Buying looks overheated. A moment to consider profits.")
+    case .macdBullish: String(localized: "Momentum turns positive.")
+    case .macdBearish: String(localized: "Momentum turns negative.")
+    case .volumeSpike: String(localized: "Far more shares trade than usual. Something is happening.")
+    case .trailingStop: String(localized: "Follows the price up and alerts you if it falls from the peak.")
+    case .stopLoss: String(localized: "Your position falls a set amount below what you paid.")
+    case .profitTarget: String(localized: "Your position rises a set amount above what you paid.")
+    case .breakEven: String(localized: "The price climbs back to what you paid.")
+    case .dividendSoon: String(localized: "A dividend is expected within a week.")
     }
   }
 
@@ -316,37 +316,37 @@ struct AlertRule: Codable, Hashable {
   func summary(format: (Double) -> String) -> String {
     let p = percent.formatted(.percent.precision(.fractionLength(0)))
     switch kind {
-    case .buyZone: return "Buy between \(format(lower)) and \(format(upper))"
-    case .sellZone: return "Sell between \(format(lower)) and \(format(upper))"
-    case .priceBelow: return "Buy below \(format(lower))"
-    case .priceAbove: return "Sell above \(format(lower))"
-    case .dropFromHigh: return "Buy after a \(p) dip from the high"
-    case .weeklyDrop: return "Falls \(p) in \(days) days"
-    case .losingStreak: return "Down \(days) days in a row"
-    case .beatsMarket: return "Beats the S&P 500 by \(p) over \(days) days"
-    case .lagsMarket: return "Trails the S&P 500 by \(p) over \(days) days"
-    case .yieldAbove: return "Dividend yield rises above \(percent.formatted(.percent.precision(.fractionLength(1))))"
-    case .dailyMove: return "Moves \(p) in one day"
-    case .gapMove: return "Opens \(p) higher or lower"
-    case .newLow: return "Hits a new 52-week low"
-    case .newHigh: return "Hits a new 52-week high"
-    case .reboundFromLow: return "Bounces \(p) off its 52-week low"
-    case .bollingerLow: return "Touches its lower Bollinger Band"
-    case .bollingerHigh: return "Touches its upper Bollinger Band"
-    case .belowAverage: return "Falls below its \(averageDays)-day average"
-    case .aboveAverage: return "Rises above its \(averageDays)-day average"
+    case .buyZone: return String(localized: "Buy between \(format(lower)) and \(format(upper))")
+    case .sellZone: return String(localized: "Sell between \(format(lower)) and \(format(upper))")
+    case .priceBelow: return String(localized: "Buy below \(format(lower))")
+    case .priceAbove: return String(localized: "Sell above \(format(lower))")
+    case .dropFromHigh: return String(localized: "Buy after a \(p) dip from the high")
+    case .weeklyDrop: return String(localized: "Falls \(p) in \(days) days")
+    case .losingStreak: return String(localized: "Down \(days) days in a row")
+    case .beatsMarket: return String(localized: "Beats the S&P 500 by \(p) over \(days) days")
+    case .lagsMarket: return String(localized: "Trails the S&P 500 by \(p) over \(days) days")
+    case .yieldAbove: return String(localized: "Dividend yield rises above \(percent.formatted(.percent.precision(.fractionLength(1))))")
+    case .dailyMove: return String(localized: "Moves \(p) in one day")
+    case .gapMove: return String(localized: "Opens \(p) higher or lower")
+    case .newLow: return String(localized: "Hits a new 52-week low")
+    case .newHigh: return String(localized: "Hits a new 52-week high")
+    case .reboundFromLow: return String(localized: "Bounces \(p) off its 52-week low")
+    case .bollingerLow: return String(localized: "Touches its lower Bollinger Band")
+    case .bollingerHigh: return String(localized: "Touches its upper Bollinger Band")
+    case .belowAverage: return String(localized: "Falls below its \(averageDays)-day average")
+    case .aboveAverage: return String(localized: "Rises above its \(averageDays)-day average")
     case .goldenCross: return "50-day crosses above 200-day"
     case .deathCross: return "50-day crosses below 200-day"
-    case .rsiOversold: return "RSI drops to \(Int(level)) (oversold)"
-    case .rsiOverbought: return "RSI climbs to \(Int(level)) (overbought)"
-    case .macdBullish: return "MACD crosses above its signal"
-    case .macdBearish: return "MACD crosses below its signal"
-    case .volumeSpike: return "Volume hits \(level.formatted(.number.precision(.fractionLength(0...1))))× normal"
-    case .trailingStop: return "Sell if it falls \(p) from its peak"
-    case .stopLoss: return "Sell if it falls \(p) below \(format(lower))"
-    case .profitTarget: return "Take profit at +\(p) (\(format(lower * (1 + percent))))"
-    case .breakEven: return "Back to your cost of \(format(lower))"
-    case .dividendSoon: return "Dividend expected within a week"
+    case .rsiOversold: return String(localized: "RSI drops to \(Int(level)) (oversold)")
+    case .rsiOverbought: return String(localized: "RSI climbs to \(Int(level)) (overbought)")
+    case .macdBullish: return String(localized: "MACD crosses above its signal")
+    case .macdBearish: return String(localized: "MACD crosses below its signal")
+    case .volumeSpike: return String(localized: "Volume hits \(level.formatted(.number.precision(.fractionLength(0...1))))× normal")
+    case .trailingStop: return String(localized: "Sell if it falls \(p) from its peak")
+    case .stopLoss: return String(localized: "Sell if it falls \(p) below \(format(lower))")
+    case .profitTarget: return String(localized: "Take profit at +\(p) (\(format(lower * (1 + percent))))")
+    case .breakEven: return String(localized: "Back to your cost of \(format(lower))")
+    case .dividendSoon: return String(localized: "Dividend expected within a week")
     }
   }
 

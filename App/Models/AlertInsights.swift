@@ -55,10 +55,10 @@ struct AlertInsights {
 
   var healthLabel: String {
     switch planHealth {
-    case 85...: "Excellent"
-    case 60..<85: "Solid"
-    case 35..<60: "Getting there"
-    default: "Needs a plan"
+    case 85...: String(localized: "Excellent")
+    case 60..<85: String(localized: "Solid")
+    case 35..<60: String(localized: "Getting there")
+    default: String(localized: "Needs a plan")
     }
   }
 

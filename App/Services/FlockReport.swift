@@ -148,11 +148,11 @@ struct FlockReport {
 
   var convictionLabel: String {
     switch conviction {
-    case 70...: "Strong dip demand"
-    case 55..<70: "Leaning buy"
-    case 45..<55: "Balanced"
-    case 30..<45: "Leaning sell"
-    default: "Taking profit"
+    case 70...: String(localized: "Strong dip demand")
+    case 55..<70: String(localized: "Leaning buy")
+    case 45..<55: String(localized: "Balanced")
+    case 30..<45: String(localized: "Leaning sell")
+    default: String(localized: "Taking profit")
     }
   }
 

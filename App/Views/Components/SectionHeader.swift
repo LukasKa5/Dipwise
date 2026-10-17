@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct SectionHeader<Trailing: View>: View {
-  var title: String
-  var subtitle: String?
+  var title: LocalizedStringKey
+  var subtitle: LocalizedStringKey?
   @ViewBuilder var trailing: Trailing
 
   var body: some View {
@@ -24,7 +24,7 @@ struct SectionHeader<Trailing: View>: View {
 }
 
 extension SectionHeader where Trailing == EmptyView {
-  init(title: String, subtitle: String? = nil) {
+  init(title: LocalizedStringKey, subtitle: LocalizedStringKey? = nil) {
     self.init(title: title, subtitle: subtitle) { EmptyView() }
   }
 }

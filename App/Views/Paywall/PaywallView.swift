@@ -155,7 +155,7 @@ struct PaywallView: View {
           .padding(.vertical, 10)
           .background(Brand.buy.opacity(0.14), in: UnevenRoundedRectangle(topLeadingRadius: 14, topTrailingRadius: 14))
       }
-      ForEach(Array(rows.enumerated()), id: \.element.title) { index, row in
+      ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
         HStack(spacing: 0) {
           HStack(spacing: 10) {
             Image(systemName: row.systemImage)
@@ -266,7 +266,7 @@ struct PaywallView: View {
     } else {
       VStack(spacing: 12) {
         ForEach(products) { product in
-          PlanCard(product: product, isSelected: product.id == selectedID, badge: badge(for: product), detail: detail(for: product)) {
+          PlanCard(product: product, isSelected: product.id == selectedID, badge: badge(for: product), detail: LocalizedStringKey(detail(for: product))) {
             withAnimation(.snappy) { selectedID = product.id }
           }
         }
@@ -300,21 +300,21 @@ struct PaywallView: View {
   private func trialText(_ offer: Product.SubscriptionOffer) -> String {
     let period = offer.period
     switch period.unit {
-    case .day: return "\(period.value)-day"
-    case .week: return period.value == 1 ? "7-day" : "\(period.value)-week"
-    case .month: return "\(period.value)-month"
-    default: return "Free trial"
+    case .day: return String(localized: "\(period.value)-day")
+    case .week: return period.value == 1 ? String(localized: "7-day") : String(localized: "\(period.value)-week")
+    case .month: return String(localized: "\(period.value)-month")
+    default: return String(localized: "Free trial")
     }
   }
 
-  private var ctaTitle: String {
+  private var ctaTitle: LocalizedStringKey {
     if let offer = selected?.subscription?.introductoryOffer, offer.paymentMode == .freeTrial {
       return "Start \(trialText(offer)) Free Trial"
     }
     return selected?.id == SubscriptionManager.lifetimeID ? "Unlock Forever" : "Continue"
   }
 
-  private var finePrint: String {
+  private var finePrint: LocalizedStringKey {
     if selected?.id == SubscriptionManager.lifetimeID {
       return "One-time purchase. No subscription."
     }
@@ -371,7 +371,7 @@ private struct PlanCard: View {
   var product: Product
   var isSelected: Bool
   var badge: String?
-  var detail: String
+  var detail: LocalizedStringKey
   var action: () -> Void
 
   var body: some View {
@@ -427,7 +427,7 @@ private struct ProFeature {
     }
   }
 
-  var title: String
+  var title: LocalizedStringKey
   var systemImage: String
   var free: Value
   var pro: Value

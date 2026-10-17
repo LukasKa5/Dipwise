@@ -512,10 +512,10 @@ struct FlockDetailView: View {
 }
 
 private struct ReportSection<Content: View>: View {
-  var title: String
+  var title: LocalizedStringKey
   var systemImage: String
   var isLocked: Bool
-  var message: String
+  var message: LocalizedStringKey
   @ViewBuilder var content: Content
 
   var body: some View {
@@ -535,7 +535,7 @@ private struct ReportSection<Content: View>: View {
 }
 
 struct MiniStat: View {
-  var title: String
+  var title: LocalizedStringKey
   var value: String
   var color: Color = .primary
 
