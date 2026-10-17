@@ -18,6 +18,8 @@ struct PaywallView: View {
 
   private var selected: Product? { products.first { $0.id == selectedID } }
 
+  @State private var showsPrivacy = false
+
   var body: some View {
     ScrollView {
       VStack(spacing: 26) {
@@ -35,10 +37,13 @@ struct PaywallView: View {
             }
           }
           Link("Terms", destination: AppLinks.termsOfUse)
-          Link("Privacy", destination: AppLinks.privacyPolicy)
+          Button("Privacy") { showsPrivacy = true }
         }
         .font(.footnote.weight(.semibold))
         .foregroundStyle(.white.opacity(0.75))
+        .sheet(isPresented: $showsPrivacy) {
+          NavigationStack { PrivacyPolicyView() }
+        }
       }
       .padding(.horizontal, 22)
       .padding(.bottom, 24)

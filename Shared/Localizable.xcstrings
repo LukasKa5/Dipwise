@@ -11890,6 +11890,144 @@
         }
       }
     },
+    "Dipwise does not track you across apps or websites, does not use advertising identifiers, and does not include third-party analytics.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dipwise verfolgt dich nicht über Apps oder Websites hinweg, nutzt keine Werbe-IDs und enthält keine Analyse-Tools von Drittanbietern."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dipwise no te rastrea entre apps ni webs, no usa identificadores publicitarios ni incluye analíticas de terceros."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dipwise ne te suit pas d'une app ou d'un site à l'autre, n'utilise pas d'identifiant publicitaire et n'inclut aucune analyse tierce."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dipwise non ti traccia tra app o siti, non usa identificatori pubblicitari e non include analisi di terze parti."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dipwiseはアプリやサイトをまたいだトラッキングをせず、広告IDやサードパーティの解析も使いません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dipwise는 앱이나 웹사이트를 넘나들며 추적하지 않고, 광고 식별자나 제3자 분석 도구도 쓰지 않아요."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Dipwise não rastreia você entre apps ou sites, não usa identificadores de publicidade e não inclui análises de terceiros."
+          }
+        }
+      }
+    },
+    "Dipwise is built so your money stays your business. There are no ads, no trackers, and no data sales.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dipwise ist so gebaut, dass dein Geld deine Sache bleibt. Keine Werbung, keine Tracker, kein Datenverkauf."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dipwise está hecho para que tu dinero siga siendo cosa tuya. Sin anuncios, sin rastreadores y sin venta de datos."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dipwise est conçu pour que ton argent reste ton affaire. Pas de pub, pas de traceurs, aucune vente de données."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dipwise è fatto perché i tuoi soldi restino affari tuoi. Niente pubblicità, niente tracker, nessuna vendita di dati."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dipwiseは、あなたのお金があなただけのものであるように作られています。広告、トラッカー、データ販売は一切ありません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dipwise는 내 돈이 나만의 일로 남도록 만들어졌어요. 광고, 추적기, 데이터 판매가 없어요."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Dipwise foi feito para que seu dinheiro continue sendo assunto seu. Sem anúncios, sem rastreadores e sem venda de dados."
+          }
+        }
+      }
+    },
+    "Dipwise is not a broker and does not give investment advice. Odds, crowd statistics, and signals are information, not recommendations.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dipwise ist kein Broker und gibt keine Anlageberatung. Chancen, Schwarm-Statistiken und Signale sind Informationen, keine Empfehlungen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dipwise no es un bróker ni da asesoramiento de inversión. Las probabilidades, estadísticas de la multitud y señales son información, no recomendaciones."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dipwise n'est pas un courtier et ne donne pas de conseil en investissement. Probabilités, statistiques de la foule et signaux sont des informations, pas des recommandations."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dipwise non è un broker e non fornisce consulenza. Probabilità, statistiche della folla e segnali sono informazioni, non raccomandazioni."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dipwiseは証券会社ではなく、投資助言は行いません。確率、みんなの統計、シグナルは情報であり、推奨ではありません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dipwise는 증권사가 아니며 투자 조언을 하지 않아요. 확률, 대중 통계, 시그널은 정보일 뿐 추천이 아니에요."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Dipwise não é corretora e não dá recomendação de investimento. Chances, estatísticas da multidão e sinais são informação, não recomendação."
+          }
+        }
+      }
+    },
     "Dipwise is not a broker, does not execute trades, and does not provide investment advice. Market data may be delayed and is provided for information only.": {
       "localizations": {
         "de": {
@@ -20446,6 +20584,52 @@
         }
       }
     },
+    "Market data": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marktdaten"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Datos de mercado"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Données de marché"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dati di mercato"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "市場データ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "시장 데이터"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dados de mercado"
+          }
+        }
+      }
+    },
     "Market data may be delayed. Dipwise is not a broker and doesn't give investment advice.": {
       "localizations": {
         "de": {
@@ -23068,6 +23252,52 @@
         }
       }
     },
+    "No tracking": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kein Tracking"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin rastreo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucun suivi"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessun tracciamento"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "トラッキングなし"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "추적 없음"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sem rastreamento"
+          }
+        }
+      }
+    },
     "Nobody catches the exact bottom. A buy zone lets you act anywhere in a range you're happy with, instead of missing out by a few cents.": {
       "localizations": {
         "de": {
@@ -23248,6 +23478,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Você não acompanha %@"
+          }
+        }
+      }
+    },
+    "Not advice": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine Beratung"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No es asesoramiento"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pas un conseil"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non è un consiglio"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "助言ではありません"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "투자 조언 아님"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não é recomendação"
           }
         }
       }
@@ -27151,7 +27427,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "개인정보 보호"
+            "value": "개인정보"
           }
         },
         "pt-BR": {
@@ -27392,6 +27668,52 @@
         }
       }
     },
+    "Purchases": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Käufe"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compras"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Achats"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acquisti"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "購入"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "구매"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compras"
+          }
+        }
+      }
+    },
     "Question of the day. What do you think?": {
       "localizations": {
         "de": {
@@ -27434,6 +27756,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pergunta do dia. O que você acha?"
+          }
+        }
+      }
+    },
+    "Questions? Contact us from Settings → Contact Support.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fragen? Schreib uns über Einstellungen → Support kontaktieren."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Dudas? Escríbenos desde Ajustes → Contactar con soporte."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Des questions ? Écris-nous depuis Réglages → Contacter l'assistance."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Domande? Scrivici da Impostazioni → Contatta l'assistenza."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ご質問は「設定」→「サポートに連絡」からどうぞ。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "궁금한 점은 설정 → 지원팀에 문의로 보내 주세요."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dúvidas? Fale com a gente em Ajustes → Falar com o suporte."
           }
         }
       }
@@ -33465,6 +33833,52 @@
         }
       }
     },
+    "Subscriptions are handled by Apple. Dipwise never sees your payment details.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abos werden von Apple abgewickelt. Dipwise sieht deine Zahlungsdaten nie."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las suscripciones las gestiona Apple. Dipwise nunca ve tus datos de pago."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les abonnements sont gérés par Apple. Dipwise ne voit jamais tes données de paiement."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gli abbonamenti sono gestiti da Apple. Dipwise non vede mai i tuoi dati di pagamento."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "サブスクリプションはAppleが処理します。Dipwiseが支払い情報を見ることはありません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "구독은 Apple이 처리해요. Dipwise는 결제 정보를 보지 않아요."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "As assinaturas são feitas pela Apple. O Dipwise nunca vê seus dados de pagamento."
+          }
+        }
+      }
+    },
     "Support": {
       "localizations": {
         "de": {
@@ -36681,6 +37095,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Até"
+          }
+        }
+      }
+    },
+    "To show prices, Dipwise requests quotes for the tickers you follow from a market data provider. Those requests contain ticker symbols only.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Um Kurse anzuzeigen, fragt Dipwise bei einem Marktdatenanbieter die Ticker ab, denen du folgst. Diese Anfragen enthalten nur Tickersymbole."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Para mostrar precios, Dipwise pide a un proveedor de datos las cotizaciones de los tickers que sigues. Esas peticiones solo contienen tickers."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pour afficher les cours, Dipwise demande à un fournisseur de données les cotations des tickers que tu suis. Ces requêtes ne contiennent que des tickers."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Per mostrare i prezzi, Dipwise chiede a un fornitore di dati le quotazioni dei ticker che segui. Le richieste contengono solo i ticker."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "株価を表示するため、Dipwiseはフォロー中のティッカーの相場を市場データ提供元に問い合わせます。送るのはティッカーだけです。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "가격을 보여 주기 위해 Dipwise는 시장 데이터 제공처에 내가 보는 티커의 시세를 요청해요. 요청에는 티커만 들어가요."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Para mostrar preços, o Dipwise pede a um provedor de dados as cotações dos tickers que você acompanha. Essas solicitações contêm apenas tickers."
           }
         }
       }
@@ -39997,6 +40457,52 @@
         }
       }
     },
+    "What stays on your device": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Was auf deinem Gerät bleibt"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lo que se queda en tu dispositivo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce qui reste sur ton appareil"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cosa resta sul tuo dispositivo"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "デバイスに残るもの"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "기기에 남는 것"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O que fica no seu aparelho"
+          }
+        }
+      }
+    },
     "What the Flock Owns": {
       "localizations": {
         "de": {
@@ -40039,6 +40545,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "O que o bando tem"
+          }
+        }
+      }
+    },
+    "What the Flock shares, if you allow it": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Was der Schwarm teilt, wenn du es erlaubst"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lo que comparte la bandada, si lo permites"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce que la volée partage, si tu l'autorises"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cosa condivide lo stormo, se lo consenti"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "許可した場合に群れで共有されるもの"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "허용하면 무리에 공유되는 것"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O que o bando compartilha, se você permitir"
           }
         }
       }
@@ -40779,6 +41331,52 @@
         }
       }
     },
+    "With \"Share my alerts anonymously\" on, Dipwise shares each alert's ticker, type, and price levels. With \"Share my portfolio mix anonymously\" on, it shares the percentage each stock makes up of your portfolio, and when you add to or trim a position. Both are stored in Apple's CloudKit public database under a random identifier created on your device. They never include your name, email, amounts, share counts, prices you paid, or notes. Turn either off in Settings to remove that data.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mit „Meine Alarme anonym teilen“ teilt Dipwise Ticker, Typ und Preismarken jedes Alarms. Mit „Meine Portfolio-Mischung anonym teilen“ teilt es den prozentualen Anteil jeder Aktie und wann du aufstockst oder reduzierst. Beides liegt in Apples öffentlicher CloudKit-Datenbank unter einer zufälligen Kennung, die auf deinem Gerät erzeugt wird. Nie enthalten: Name, E-Mail, Beträge, Stückzahlen, Einstandspreise oder Notizen. Schalte eines davon in den Einstellungen aus, um die Daten zu entfernen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Con «Compartir mis alertas de forma anónima», Dipwise comparte el ticker, el tipo y los niveles de precio de cada alerta. Con «Compartir mi mezcla de cartera de forma anónima», comparte el porcentaje de cada acción y cuándo compras más o vendes parte. Ambos se guardan en la base de datos pública de CloudKit de Apple con un identificador aleatorio creado en tu dispositivo. Nunca incluyen tu nombre, correo, importes, número de acciones, precios pagados ni notas. Desactiva cualquiera en Ajustes para eliminar esos datos."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avec « Partager mes alertes anonymement », Dipwise partage le ticker, le type et les niveaux de prix de chaque alerte. Avec « Partager ma répartition anonymement », il partage le pourcentage de chaque action et le moment où tu renforces ou allèges. Les deux sont stockés dans la base publique CloudKit d'Apple sous un identifiant aléatoire créé sur ton appareil. Jamais de nom, d'e-mail, de montants, de quantités, de prix d'achat ni de notes. Désactive l'un ou l'autre dans Réglages pour supprimer ces données."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Con «Condividi i miei avvisi in forma anonima», Dipwise condivide ticker, tipo e livelli di prezzo di ogni avviso. Con «Condividi il mix del portafoglio in forma anonima», condivide la percentuale di ogni azione e quando aumenti o riduci. Entrambi sono salvati nel database pubblico CloudKit di Apple con un identificatore casuale creato sul dispositivo. Mai nome, email, importi, quantità, prezzi pagati o note. Disattivane uno in Impostazioni per rimuovere quei dati."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「アラートを匿名で共有」をオンにすると、各アラートのティッカー・種類・価格水準を共有します。「ポートフォリオ構成を匿名で共有」をオンにすると、各銘柄の比率と、買い増し・売却のタイミングを共有します。どちらもデバイスで作られたランダムなIDでAppleのCloudKit公開データベースに保存され、名前・メール・金額・株数・取得価格・メモは含まれません。設定でオフにすると、そのデータは削除されます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“내 알림 익명 공유”를 켜면 각 알림의 티커, 종류, 가격대를 공유해요. “내 포트폴리오 구성 익명 공유”를 켜면 종목별 비중과 추가 매수·일부 매도 시점을 공유해요. 둘 다 기기에서 만든 무작위 ID로 Apple CloudKit 공개 데이터베이스에 저장되며, 이름·이메일·금액·수량·매입가·메모는 절대 포함되지 않아요. 설정에서 끄면 해당 데이터가 삭제돼요."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Com “Compartilhar meus alertas anonimamente”, o Dipwise compartilha o ticker, o tipo e os níveis de preço de cada alerta. Com “Compartilhar meu mix de carteira anonimamente”, compartilha o percentual de cada ação e quando você aumenta ou reduz. Ambos ficam no banco de dados público do CloudKit da Apple com um identificador aleatório criado no seu aparelho. Nunca incluem nome, e-mail, valores, quantidade de ações, preços pagos ou notas. Desative qualquer um em Ajustes para remover esses dados."
+          }
+        }
+      }
+    },
     "Worst today": {
       "localizations": {
         "de": {
@@ -41097,6 +41695,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Você pode adicioná-las depois em Adicionar ação."
+          }
+        }
+      }
+    },
+    "You can stop sharing with the Flock at any time in Settings, which removes your shared data. Deleting the app deletes everything stored on your device.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du kannst das Teilen mit dem Schwarm jederzeit in den Einstellungen beenden, wodurch deine geteilten Daten entfernt werden. Löschst du die App, wird alles auf deinem Gerät gelöscht."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puedes dejar de compartir con la bandada cuando quieras en Ajustes, lo que elimina tus datos compartidos. Borrar la app borra todo lo guardado en tu dispositivo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu peux arrêter de partager avec la volée à tout moment dans Réglages, ce qui supprime tes données partagées. Supprimer l'app efface tout ce qui est stocké sur ton appareil."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puoi smettere di condividere con lo stormo in qualsiasi momento in Impostazioni, rimuovendo i dati condivisi. Eliminare l'app cancella tutto ciò che è sul dispositivo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定からいつでも群れとの共有をやめられ、共有したデータは削除されます。アプリを削除すると、デバイスのデータもすべて消えます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "설정에서 언제든 무리와의 공유를 멈출 수 있고, 공유한 데이터는 삭제돼요. 앱을 지우면 기기에 저장된 모든 것이 삭제돼요."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Você pode parar de compartilhar com o bando a qualquer momento em Ajustes, o que remove seus dados compartilhados. Apagar o app apaga tudo o que está no aparelho."
           }
         }
       }
@@ -41833,6 +42477,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Seu plano de compra e venda para uma ação."
+          }
+        }
+      }
+    },
+    "Your choices": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deine Wahl"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tus opciones"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tes choix"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le tue scelte"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "あなたの選択"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "나의 선택"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suas escolhas"
           }
         }
       }
@@ -42753,6 +43443,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Suas ações que mais se moveram hoje, para cima e para baixo."
+          }
+        }
+      }
+    },
+    "Your stocks, shares, average costs, cash, alerts, notes, journal, streaks, and settings are stored on your iPhone and shared only with your own Apple Watch and widgets. If you sign in with Apple, your name and email stay on your device and are used only to greet you.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deine Aktien, Anteile, Einstandspreise, dein Bargeld, Alarme, Notizen, Tagebuch, Serien und Einstellungen werden auf deinem iPhone gespeichert und nur mit deiner eigenen Apple Watch und deinen Widgets geteilt. Meldest du dich mit Apple an, bleiben Name und E-Mail auf deinem Gerät und dienen nur der Begrüßung."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tus acciones, cantidades, precios medios, efectivo, alertas, notas, diario, rachas y ajustes se guardan en tu iPhone y solo se comparten con tu Apple Watch y tus widgets. Si inicias sesión con Apple, tu nombre y correo se quedan en tu dispositivo y solo se usan para saludarte."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tes actions, quantités, prix moyens, liquidités, alertes, notes, journal, séries et réglages sont stockés sur ton iPhone et partagés uniquement avec ta propre Apple Watch et tes widgets. Si tu te connectes avec Apple, ton nom et ton e-mail restent sur ton appareil et servent seulement à t'accueillir."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Azioni, quantità, prezzi medi, liquidità, avvisi, note, diario, serie e impostazioni sono salvati sul tuo iPhone e condivisi solo con il tuo Apple Watch e i tuoi widget. Se accedi con Apple, nome ed email restano sul dispositivo e servono solo a salutarti."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "銘柄、株数、平均取得価格、現金、アラート、メモ、ジャーナル、連続記録、設定はiPhoneに保存され、あなたのApple Watchとウィジェットとだけ共有されます。Appleでサインインした場合も、名前とメールはデバイスに残り、あいさつにだけ使われます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "종목, 수량, 평균 단가, 현금, 알림, 메모, 일지, 연속 기록, 설정은 iPhone에 저장되고 내 Apple Watch와 위젯하고만 공유돼요. Apple로 로그인하면 이름과 이메일은 기기에 남고 인사에만 쓰여요."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suas ações, quantidades, preços médios, dinheiro, alertas, notas, diário, sequências e ajustes ficam no seu iPhone e só são compartilhados com seu Apple Watch e seus widgets. Se você entrar com a Apple, seu nome e e-mail ficam no aparelho e servem só para cumprimentar você."
           }
         }
       }

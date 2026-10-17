@@ -101,6 +101,12 @@ struct DipBehavior: Hashable {
 /// Turns anonymous portfolios and moves into the flock's insights. Pure functions, so they're easy to trust.
 enum FlockInsights {
   static let minimumHoldings = 3
+  /// Sharing members needed before ownership and buying-and-selling appear.
+  static let minimumMembers = 20
+  /// Members behind any single number, so no one can be singled out.
+  static let minimumGroup = 5
+  /// Sharing members needed before Top Investors appears, so a top ten means something.
+  static let minimumMembersForLeaders = 50
 
   static func ownership(_ portfolios: [FlockPortfolio]) -> [OwnershipStat] {
     guard !portfolios.isEmpty else { return [] }

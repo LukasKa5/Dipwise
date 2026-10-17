@@ -312,7 +312,9 @@ struct SettingsView: View {
 
   private var aboutSection: some View {
     Section {
-      Link(destination: AppLinks.privacyPolicy) {
+      NavigationLink {
+        PrivacyPolicyView()
+      } label: {
         Label("Privacy Policy", systemImage: "hand.raised")
       }
       Link(destination: AppLinks.termsOfUse) {

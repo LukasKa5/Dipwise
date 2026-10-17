@@ -88,9 +88,11 @@ final class FlockService {
     let moves = (try? await backend.moves(days: 365)) ?? []
     self.portfolios = portfolios
     self.moves = moves
-    ownership = FlockInsights.ownership(portfolios)
-    flows = FlockInsights.flows(moves)
-    leaders = FlockInsights.leaders(portfolios, moves: moves)
+    // Crowd views need a real crowd: it keeps everyone anonymous and the numbers meaningful.
+    let enoughMembers = portfolios.count >= FlockInsights.minimumMembers
+    ownership = enoughMembers ? FlockInsights.ownership(portfolios).filter { $0.holders >= FlockInsights.minimumGroup } : []
+    flows = enoughMembers ? FlockInsights.flows(moves).filter { $0.total >= FlockInsights.minimumGroup } : []
+    leaders = portfolios.count >= FlockInsights.minimumMembersForLeaders ? FlockInsights.leaders(portfolios, moves: moves) : []
     await notifyFollowedMoves()
   }
 
