@@ -116,17 +116,10 @@ struct OnboardingView: View {
       .opacity(page > 0 && page < pageCount - 1 ? 1 : 0)
       .disabled(page == 0 || page == pageCount - 1)
       .accessibilityHidden(page == 0 || page == pageCount - 1)
-      GeometryReader { geometry in
-        ZStack(alignment: .leading) {
-          Capsule().fill(.white.opacity(0.15))
-          Capsule().fill(Brand.buy)
-            .frame(width: geometry.size.width * Double(page + 1) / Double(pageCount))
-        }
-      }
-      .frame(height: 6)
-      .animation(.snappy, value: page)
-      .accessibilityElement()
-      .accessibilityLabel("Step \(page + 1) of \(pageCount)")
+      JourneyLine(progress: Double(page + 1) / Double(pageCount), step: page)
+        .frame(height: 46)
+        .accessibilityElement()
+        .accessibilityLabel("Step \(page + 1) of \(pageCount)")
       Button("Skip") { showsPaywall = true }
         .font(.subheadline.weight(.semibold))
         .foregroundStyle(.white.opacity(0.7))
@@ -613,5 +606,56 @@ private struct SpeechBubble: View {
       .background(.white, in: .rect(cornerRadius: 18))
       .id("\(text)")
       .transition(.scale(scale: 0.8).combined(with: .opacity))
+  }
+}
+
+/// The tour's progress as Dippy's journey: a little price line in the icon's style that fills in mint as you go,
+/// with Dippy hopping along it to each new step.
+private struct JourneyLine: View {
+  var progress: Double
+  var step: Int
+
+  var body: some View {
+    GeometryReader { geometry in
+      let size = geometry.size
+      ZStack(alignment: .topLeading) {
+        JourneyPath(end: 1)
+          .stroke(.white.opacity(0.14), style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
+        JourneyPath(end: progress)
+          .stroke(Brand.mint, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
+          .shadow(color: Brand.mint.opacity(0.6), radius: 4)
+        LivelyOwl(hopsOnTap: false, mood: .calm)
+          .frame(width: 24, height: 28)
+          .owlFlight(trigger: step, direction: 1, height: 14)
+          .position(x: progress * size.width, y: JourneyPath.curve(progress) * size.height - 14)
+      }
+      .animation(.spring(duration: 0.7, bounce: 0.2), value: progress)
+    }
+  }
+}
+
+/// The journey's curve, drawn up to `end` (0–1) so the mint part always ends right under Dippy.
+private struct JourneyPath: Shape {
+  var end: Double
+
+  var animatableData: Double {
+    get { end }
+    set { end = newValue }
+  }
+
+  /// The line's height at a fraction along it: a gentle dip, then a rise, like the icon.
+  static func curve(_ t: Double) -> Double {
+    0.62 + 0.22 * sin(t * .pi * 2 - .pi / 2) * (1 - t * 0.4)
+  }
+
+  func path(in rect: CGRect) -> Path {
+    Path { path in
+      let steps = 80
+      for index in 0...steps {
+        let t = Double(index) / Double(steps) * end
+        let point = CGPoint(x: rect.minX + t * rect.width, y: rect.minY + Self.curve(t) * rect.height)
+        if index == 0 { path.move(to: point) } else { path.addLine(to: point) }
+      }
+    }
   }
 }
