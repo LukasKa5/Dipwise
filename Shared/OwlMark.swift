@@ -135,7 +135,7 @@ struct OwlMark: View, Animatable {
     inner.clip(to: body)
     // Each folded wing fades as that wing opens.
     for (index, side) in [CGFloat(-1), 1].enumerated() {
-      let x: (CGFloat) -> CGFloat = { 512 + side * ($0 - 512) }
+      let x: (CGFloat) -> CGFloat = { 512 - side * ($0 - 512) }
       let folded = Path { path in
         path.move(to: CGPoint(x: x(306), y: 520))
         path.addCurve(to: CGPoint(x: x(440), y: 756), control1: CGPoint(x: x(392), y: 548), control2: CGPoint(x: x(444), y: 670))

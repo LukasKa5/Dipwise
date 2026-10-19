@@ -17,6 +17,7 @@ final class ToastCenter {
   func show(_ message: String, systemImage: String = "sparkles") {
     let toast = Toast(message: message, systemImage: systemImage)
     current = toast
+    OwlCue.shared.play(systemImage == "bell.badge.fill" ? .surprise : .dance)
     Task {
       try? await Task.sleep(for: .seconds(2.6))
       if current?.id == toast.id { current = nil }

@@ -118,6 +118,10 @@ struct LivelyOwl: View {
   @State private var tilt = 0.0
   @State private var isReacting = false
   @State private var lastReaction: OwlReaction?
+  @State private var sway = 0.0
+  @State private var nodOffset = 0.0
+  @State private var particles: [OwlParticle] = []
+  @State private var cue = OwlCue.shared
 
   private var effectiveMood: OwlMood {
     if let mood { return mood }
@@ -137,7 +141,16 @@ struct LivelyOwl: View {
       beakOpen: beakOpen
     )
     .scaleEffect(x: 1, y: breathing ? (isAsleep ? 1.04 : 1.025) : 1, anchor: .bottom)
-    .rotationEffect(.degrees(tilt), anchor: .bottom)
+    .rotationEffect(.degrees(tilt + sway), anchor: .bottom)
+    .offset(y: nodOffset)
+    .overlay(alignment: .top) {
+      ZStack {
+        ForEach(particles) { particle in
+          FloatingSymbol(particle: particle)
+        }
+      }
+      .allowsHitTesting(false)
+    }
     .keyframeAnimator(initialValue: 0.0, trigger: ruffle) { view, angle in
       view.rotationEffect(.degrees(angle), anchor: .bottom)
     } keyframes: { _ in
@@ -194,6 +207,10 @@ struct LivelyOwl: View {
     .contentShape(.rect)
     .onTapGesture { handleTap(isAsleep: isAsleep) }
     .onLongPressGesture(minimumDuration: 0.45) { hoot() }
+    .onChange(of: cue.count) {
+      guard let reaction = cue.reaction, !reduceMotion, effectiveMood != .sleeping else { return }
+      Task { await perform(reaction) }
+    }
     .owlFlight(trigger: hops, direction: hops.isMultiple(of: 2) ? 1 : -1, height: 22, isEnabled: !reduceMotion)
     .sensoryFeedback(.impact(weight: .light), trigger: taps)
     .sensoryFeedback(.impact(weight: .medium), trigger: ruffle)
@@ -238,7 +255,7 @@ struct LivelyOwl: View {
       recentTaps = []
       withAnimation(.spring(duration: 0.9, bounce: 0.3)) { spin += 360 }
       Task { await perform(.flap) }
-      say("Wheee!")
+      say(String(localized: "Wheee!"))
       return
     }
     guard !isReacting else {
@@ -269,12 +286,17 @@ struct LivelyOwl: View {
     case .tilt: await tiltHead()
     case .surprise: await startle()
     case .hoot: await hootOut()
+    case .peekaboo: await peekaboo()
+    case .dance: await dance()
+    case .nod: await nod()
+    case .hearts: await hearts()
+    case .yawn: await yawn()
     }
   }
 
   /// Lifts the wing on the right and waves it a few times, leaning in a little.
   private func wave() async {
-    say(["Hi!", "Hoo hi!", "Hello!"].randomElement() ?? "Hi!", for: 1.6)
+    say([String(localized: "Hi!"), String(localized: "Hoo hi!"), String(localized: "Hello!")].randomElement() ?? "Hi!", for: 1.6)
     withAnimation(.snappy(duration: 0.28)) {
       rightWing = 1.05
       tilt = -5
@@ -339,7 +361,7 @@ struct LivelyOwl: View {
       tilt = 13 * direction
       look = CGSize(width: -0.6 * direction, height: -0.5)
     }
-    say(["Hmm?", "Ooh?"].randomElement() ?? "Hmm?", for: 1.1)
+    say([String(localized: "Hmm?"), String(localized: "Ooh?")].randomElement() ?? "Hmm?", for: 1.1)
     try? await Task.sleep(for: .seconds(0.95))
     withAnimation(.spring(duration: 0.45, bounce: 0.3)) {
       tilt = 0
@@ -356,7 +378,7 @@ struct LivelyOwl: View {
       rightWing = 0.35
     }
     hops += 1
-    say("Oh!", for: 1)
+    say(String(localized: "Oh!"), for: 1)
     try? await Task.sleep(for: .seconds(0.55))
     withAnimation(.smooth(duration: 0.45)) {
       eyeScale = 1
@@ -366,10 +388,125 @@ struct LivelyOwl: View {
     try? await Task.sleep(for: .seconds(0.4))
   }
 
+  /// Wings up and eyes shut, a pause, then out he pops with wide eyes.
+  private func peekaboo() async {
+    withAnimation(.snappy(duration: 0.25)) {
+      leftWing = 1.12
+      rightWing = 1.12
+      blink = 1
+    }
+    try? await Task.sleep(for: .seconds(0.75))
+    say(String(localized: "Boo!"), for: 1.1)
+    hops += 1
+    withAnimation(.spring(duration: 0.3, bounce: 0.55)) {
+      leftWing = 0.2
+      rightWing = 0.2
+      blink = 0
+      eyeScale = 1.2
+    }
+    try? await Task.sleep(for: .seconds(0.5))
+    withAnimation(.smooth(duration: 0.4)) {
+      leftWing = 0
+      rightWing = 0
+      eyeScale = 1
+    }
+    try? await Task.sleep(for: .seconds(0.4))
+  }
+
+  /// A little happy dance: sway left and right, a wing up on each beat, music notes rising.
+  private func dance() async {
+    emit("music.note", count: 3, color: Brand.mint)
+    for beat in 0..<4 {
+      let left = beat.isMultiple(of: 2)
+      withAnimation(.spring(duration: 0.24, bounce: 0.4)) {
+        sway = left ? -9 : 9
+        leftWing = left ? 0.7 : 0.1
+        rightWing = left ? 0.1 : 0.7
+        look = CGSize(width: left ? -0.6 : 0.6, height: -0.3)
+      }
+      if beat == 1 || beat == 3 { hops += 1 }
+      try? await Task.sleep(for: .seconds(0.26))
+    }
+    withAnimation(.spring(duration: 0.4, bounce: 0.3)) {
+      sway = 0
+      leftWing = 0
+      rightWing = 0
+      look = .zero
+    }
+    try? await Task.sleep(for: .seconds(0.35))
+  }
+
+  /// Two small nods, like "Got it."
+  private func nod() async {
+    for _ in 0..<2 {
+      withAnimation(.easeOut(duration: 0.13)) {
+        nodOffset = 5
+        look = CGSize(width: 0, height: 0.7)
+      }
+      try? await Task.sleep(for: .seconds(0.14))
+      withAnimation(.spring(duration: 0.2, bounce: 0.4)) {
+        nodOffset = 0
+        look = .zero
+      }
+      try? await Task.sleep(for: .seconds(0.18))
+    }
+    blinkOnce()
+  }
+
+  /// Squints with joy while hearts float up from him.
+  private func hearts() async {
+    emit("heart.fill", count: 4, color: Color(red: 1, green: 0.42, blue: 0.55))
+    withAnimation(.smooth(duration: 0.25)) {
+      blink = 0.7
+      leftWing = 0.3
+      rightWing = 0.3
+      tilt = 4
+    }
+    try? await Task.sleep(for: .seconds(1.1))
+    withAnimation(.smooth(duration: 0.35)) {
+      blink = 0
+      leftWing = 0
+      rightWing = 0
+      tilt = 0
+    }
+    try? await Task.sleep(for: .seconds(0.3))
+  }
+
+  /// A big slow yawn with sleepy eyes and a stretch.
+  private func yawn() async {
+    withAnimation(.easeInOut(duration: 0.6)) {
+      beakOpen = 1
+      blink = 0.6
+      stretch = 0.45
+      tilt = -3
+    }
+    try? await Task.sleep(for: .seconds(0.9))
+    withAnimation(.easeInOut(duration: 0.5)) {
+      beakOpen = 0
+      blink = 0
+      stretch = 0
+      tilt = 0
+    }
+    try? await Task.sleep(for: .seconds(0.3))
+    blinkOnce()
+  }
+
+  /// Sends a few little symbols floating up from Dippy's head.
+  private func emit(_ symbol: String, count: Int, color: Color) {
+    let fresh = (0..<count).map { index in
+      OwlParticle(symbol: symbol, color: color, delay: Double(index) * 0.18, drift: Double.random(in: -26...26))
+    }
+    particles += fresh
+    Task {
+      try? await Task.sleep(for: .seconds(2))
+      particles.removeAll { particle in fresh.contains { $0.id == particle.id } }
+    }
+  }
+
   /// Two hoots with the beak open, and a ruffle.
   private func hootOut() async {
     ruffle += 1
-    say(["Hoo hoo!", "Buy low!", "Patience…"].randomElement() ?? "Hoo!", for: 1.4)
+    say([String(localized: "Hoo hoo!"), String(localized: "Buy low!"), String(localized: "Patience…")].randomElement() ?? "Hoo!", for: 1.4)
     for _ in 0..<2 {
       withAnimation(.easeOut(duration: 0.12)) { beakOpen = 1 }
       try? await Task.sleep(for: .seconds(0.2))
@@ -419,12 +556,7 @@ struct LivelyOwl: View {
       wakeUp()
       return
     }
-    withAnimation(.easeOut(duration: 0.2)) { stretch = 0.6 }
-    Task {
-      try? await Task.sleep(for: .seconds(0.35))
-      withAnimation(.easeIn(duration: 0.3)) { stretch = 0 }
-      await perform(.hoot)
-    }
+    Task { await perform(.hearts) }
   }
 
   private func blinkOnce() {
@@ -461,6 +593,10 @@ struct LivelyOwl: View {
         await perform(.tilt)
       case 21 where Int.random(in: 0..<3) == 0:
         await perform(.wave)
+      case 22 where !MarketClock.isOpen():
+        await perform(.yawn)
+      case 23 where Int.random(in: 0..<4) == 0:
+        await perform(.dance)
       default:
         blinkOnce()
       }
@@ -494,5 +630,32 @@ private struct SleepingZs: View {
     .frame(width: 24, height: 30)
     .allowsHitTesting(false)
     .accessibilityHidden(true)
+  }
+}
+
+/// One little heart or note floating up from Dippy.
+struct OwlParticle: Identifiable {
+  let id = UUID()
+  var symbol: String
+  var color: Color
+  var delay: Double
+  var drift: Double
+}
+
+private struct FloatingSymbol: View {
+  var particle: OwlParticle
+  @State private var risen = false
+
+  var body: some View {
+    Image(systemName: particle.symbol)
+      .font(.system(size: 15, weight: .bold))
+      .foregroundStyle(particle.color)
+      .offset(x: risen ? particle.drift : particle.drift * 0.2, y: risen ? -54 : 4)
+      .opacity(risen ? 0 : 1)
+      .scaleEffect(risen ? 1.15 : 0.6)
+      .onAppear {
+        withAnimation(.easeOut(duration: 1.3).delay(particle.delay)) { risen = true }
+      }
+      .accessibilityHidden(true)
   }
 }
