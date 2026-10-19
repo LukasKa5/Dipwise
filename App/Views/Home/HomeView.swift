@@ -40,6 +40,9 @@ struct HomeView: View {
               .transition(.move(edge: .top).combined(with: .opacity))
             }
             hero
+            if let profile = InvestorProfile.make(summary: summary, holdings: holdings, quotes: quotes.quotes, flock: flock.portfolios) {
+              InvestorProfileCard(profile: profile)
+            }
             nearTargets
             dipRadar
             flockPulse

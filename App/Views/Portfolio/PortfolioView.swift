@@ -7,6 +7,7 @@ struct PortfolioView: View {
   @Query(sort: \Holding.addedAt) private var holdings: [Holding]
   @Environment(QuoteStore.self) private var quotes
   @Environment(SubscriptionManager.self) private var subscription
+  @Environment(FlockService.self) private var flock
   @AppStorage(AlertSettings.cashBalanceKey) private var cash = 0.0
   @State private var period: ChartPeriod = .preset(.threeMonths)
   @State private var selectedIndex: Int?
@@ -26,6 +27,9 @@ struct PortfolioView: View {
       VStack(alignment: .leading, spacing: 28) {
         if summary.hasPositions {
           overview(summary)
+          if let profile = InvestorProfile.make(summary: summary, holdings: holdings, quotes: quotes.quotes, flock: flock.portfolios) {
+            InvestorProfileCard(profile: profile)
+          }
           performance(summary)
           allocationSection(summary)
           dividends(summary)
