@@ -98,28 +98,28 @@ The app is translated into German, Spanish, French, Italian, Brazilian Portugues
 
 ## Screenshots
 
-Every image shares one seamless navy night sky in the app's own colors, so the set reads as a single scene as people swipe. Dippy is the main character: he perches on top of each device and reacts to what's on it. He keeps watch, peers down at the buy zone, flaps his wings when the alert lands, checks the odds, and in the last image falls asleep in the crescent moon.
+The set is built from the app icon itself: deep navy, Dippy, and the icon's glowing mint price line. That line runs unbroken through every image, so swiping follows one chart. It slides into the buy zone, pings the alert at the bottom, and climbs to a peak where Dippy falls asleep under the moon. Phones alternate sides to leave Dippy an open lane on the line, where he comments on each step in a speech bubble. Where a detail matters, a magnifier enlarges that exact part of the screen right over where it sits.
 
-Each image still works on its own, with one short headline, one real screen, and at most one moment from it enlarged. The first three carry the promise (buy the dip, draw your zone, get the alert), because they're the only ones people see in search results. All captures match the App Store build: Flock hidden, U.S. English, dollars, and the same prices everywhere.
+The first frame is the icon at full size, with the real alert arriving above Dippy. The next two carry the promise (draw your zone, know your odds), because the first three are the only ones shown in search results. All captures match the App Store build: Flock hidden, U.S. English, dollars, and prices frozen on one day so every screen agrees.
 
-`preview-iphone.png` and `preview-ipad.png` show each whole set side by side; `preview-watch.png` shows the watch set.
+`preview-iphone.png` and `preview-ipad.png` show each whole panorama; `preview-watch.png` shows the watch set.
 
 ### iPhone 6.9-inch (1320 × 2868), from `iPhone-6.9/`
 
-| # | File | Headline |
-|---|------|----------|
-| 1 | 01-buy-the-dip.png | Buy the dip. Never miss it. |
-| 2 | 02-buy-zone.png | Draw your buy zone |
-| 3 | 03-alert.png | It dips. Dippy taps you. |
-| 4 | 04-odds.png | Know your odds before you buy |
-| 5 | 05-smart-alerts.png | 27 smart alerts, plain English |
-| 6 | 06-widgets.png | Your plans, always in sight |
-| 7 | 07-apple-watch.png | Your portfolio, on your wrist |
-| 8 | 08-import.png | Your portfolio in seconds |
-| 9 | 09-portfolio.png | Watch it grow |
-| 10 | 10-start-free.png | Sleep well. Dippy's on watch. |
+| # | File | Headline | Dippy says |
+|---|------|----------|------------|
+| 1 | 01-buy-the-dip.png | Buy the dip. Never miss it. | (the alert arrives) |
+| 2 | 02-buy-zone.png | Draw your buy zone | Right there looks good. |
+| 3 | 03-odds.png | Know your odds before you buy | 65% chance. Nice. |
+| 4 | 04-alert.png | It dips. Dippy taps you. | Hoo! It's in your zone! |
+| 5 | 05-smart-alerts.png | 27 smart alerts, plain English | RSI says oversold. |
+| 6 | 06-widgets.png | Your plans, always in sight | |
+| 7 | 07-apple-watch.png | Your portfolio, on your wrist | Glance, don't stare. |
+| 8 | 08-import.png | Your portfolio in seconds | Any broker. No login. |
+| 9 | 09-portfolio.png | All your stocks, one calm place | Calm, and growing. |
+| 10 | 10-start-free.png | Sleep well. Dippy's on watch. | |
 
-Upload them in this order so the panorama lines up. Apple scales the 6.9-inch set down for every smaller iPhone, so it's the only iPhone set you need. `iPhone-6.5/` (1284 × 2778) has the same images in case you'd rather supply the 6.5-inch size yourself.
+Upload them in this order so the line connects. Apple scales the 6.9-inch set down for every smaller iPhone, so it's the only iPhone set you need. `iPhone-6.5/` (1284 × 2778) has the same images in case you'd rather supply that size yourself.
 
 ### iPad 13-inch (2064 × 2752), from `iPad-13/`
 

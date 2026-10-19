@@ -378,10 +378,93 @@ def pill(canvas, cx, top, label, scale=1.0):
 
 # MARK: - iPhone
 
-# Regions of the raw iPhone captures that get lifted out as cards: (left, top, right, bottom).
+class IconLine:
+    """Dippy's price line, drawn exactly like the app icon's: a thick mint stroke with a soft glow, ending in the
+    icon's glowing dot. One line runs through every image, so swiping follows a single chart."""
+
+    def __init__(self, sky, chapters):
+        self.sky = sky
+        self.points = []
+        for index, chapter in enumerate(chapters):
+            self.points += [(sky.W * index + x, y) for x, y in chapter]
+
+    def y(self, x):
+        pts = self.points
+        if x <= pts[0][0]:
+            return pts[0][1]
+        for i in range(len(pts) - 1):
+            if pts[i][0] <= x <= pts[i + 1][0]:
+                p0, p1, p2, p3 = pts[max(i - 1, 0)], pts[i], pts[i + 1], pts[min(i + 2, len(pts) - 1)]
+                t = (x - p1[0]) / (p2[0] - p1[0])
+                return 0.5 * ((2 * p1[1]) + (-p0[1] + p2[1]) * t + (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * t * t
+                              + (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * t ** 3)
+        return pts[-1][1]
+
+    def draw(self, until=None):
+        canvas = self.sky.canvas
+        u = self.sky.unit
+        end = until or canvas.width
+        points = [(x, self.y(x)) for x in range(0, round(end) + 1, 3)]
+        glow = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+        ImageDraw.Draw(glow).line(points, fill=MINT + (120,), width=round(46 * u), joint="curve")
+        canvas.alpha_composite(glow.filter(ImageFilter.GaussianBlur(26 * u)))
+        stroke = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+        ImageDraw.Draw(stroke).line(points, fill=MINT + (255,), width=round(17 * u), joint="curve")
+        canvas.alpha_composite(stroke)
+
+    def dot(self, x, rings=False):
+        """The icon's end dot: white center, mint ring, and a soft halo; optionally with alert rings."""
+        canvas = self.sky.canvas
+        u = self.sky.unit
+        y = self.y(x)
+        layer = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+        draw = ImageDraw.Draw(layer)
+        if rings:
+            for r, a in [(150, 45), (106, 90)]:
+                draw.ellipse((x - r * u, y - r * u, x + r * u, y + r * u), outline=MINT + (a,), width=round(6 * u))
+        draw.ellipse((x - 62 * u, y - 62 * u, x + 62 * u, y + 62 * u), fill=MINT + (60,))
+        canvas.alpha_composite(layer)
+        draw = ImageDraw.Draw(canvas)
+        draw.ellipse((x - 30 * u, y - 30 * u, x + 30 * u, y + 30 * u), fill=MINT)
+        draw.ellipse((x - 15 * u, y - 15 * u, x + 15 * u, y + 15 * u), fill=WHITE)
+
+    def owl(self, raw_dir, pose, cx, height):
+        """Dippy perched on the line, feet on the stroke like in the icon."""
+        self.sky.owl(raw_dir, pose, cx, self.y(cx) + height * 0.035, height)
+
+
+def bubble(canvas, text, tail_x, tail_y, unit=1.0, side="left", max_width=520, bounds=None):
+    """A white speech bubble with Dippy's line, its tail pointing down at him."""
+    label_font = font(ROUNDED, 46 * unit, "Bold")
+    draw = ImageDraw.Draw(canvas)
+    lines = balanced(draw, text, label_font, max_width * unit)
+    w = max(draw.textlength(l, font=label_font) for l in lines) + 64 * unit
+    lh = 58 * unit
+    h = round(len(lines) * lh + 40 * unit)
+    tail = round(30 * unit)
+    layer = Image.new("RGBA", (round(w), h + tail), (0, 0, 0, 0))
+    layer.paste(WHITE, (0, 0), rounded_mask((round(w), h), round(34 * unit)))
+    ld = ImageDraw.Draw(layer)
+    tx = round(w * (0.28 if side == "left" else 0.72))
+    ld.polygon([(tx - 22 * unit, h - 2), (tx + 22 * unit, h - 2), (tx - (8 if side == "left" else -8) * unit, h + tail)], fill=WHITE)
+    for i, l in enumerate(lines):
+        lw = ld.textlength(l, font=label_font)
+        ld.text(((w - lw) / 2, 18 * unit + i * lh), l, font=label_font, fill=INK)
+    x = tail_x - tx
+    if bounds:
+        x = min(max(x, bounds[0]), bounds[1] - w)
+    shadowed(canvas, layer, x, tail_y - h - tail, blur=round(24 * unit), offset=round(12 * unit), opacity=110)
+
+
+# Regions of the raw captures lifted out as cards: (left, top, right, bottom).
 PLAN_CARD = (60, 1935, 1260, 2620)
 ZONE_CARD = (60, 1190, 1260, 2310)
+ZONE_CHART_ONLY = (60, 1440, 1260, 2230)
 STAT_TILES = (108, 1838, 1212, 2182)
+WIDGET_PORTFOLIO = (155, 229, 1165, 699)
+WIDGET_PLANS = (155, 806, 1165, 1277)
+WIDGET_SMALL_LEFT = (155, 1383, 626, 1853)
+WIDGET_SMALL_RIGHT = (694, 1383, 1165, 1853)
 # The NVDA plan card in the high-resolution watch render.
 WATCH_PLAN = (0, 561, 1170, 1062)
 
@@ -413,95 +496,141 @@ def lift(canvas, layer, x, top, unit=1.0):
     shadowed(canvas, layer, x, top, blur=round(44 * unit), offset=round(30 * unit), opacity=180)
 
 
+def app_icon_tile(icon, size):
+    mark = icon.convert("RGBA").resize((size, size), Image.LANCZOS)
+    tile = Image.new("RGBA", mark.size, (0, 0, 0, 0))
+    tile.paste(mark, (0, 0), rounded_mask(mark.size, round(size * 0.225)))
+    return tile
+
+
 def iphone_story(raw, raw_dir):
     W, H = 1320, 2868
     icon = Image.open(raw_dir / "app-icon.png")
     sky = Sky((W, H), 10)
     x0 = sky.x0
     c = sky.canvas
-    phone_w, top = 900, 920
-    perch = 250
+    # The chart's story: calm, a slide into the buy zone, the alert at the bottom, then a steady climb to a peak.
+    line = IconLine(sky, [
+        [(-200, 1960), (160, 2240), (420, 2420), (640, 2440), (860, 2330), (1020, 2050), (1130, 1830), (1240, 1880)],   # 1 hero: the icon's line
+        [(140, 2160), (420, 2400), (800, 2500), (1200, 2560)],                              # 2 zone: sliding in
+        [(160, 2610), (460, 2650), (820, 2620), (1160, 2560)],                              # 3 odds: near the bottom
+        [(180, 2600), (420, 2680), (700, 2640), (1000, 2520), (1240, 2440)],                # 4 alert: the dip, then up
+        [(200, 2420), (560, 2390), (900, 2400), (1200, 2370)],                              # 5 smart alerts
+        [(200, 2380), (560, 2350), (900, 2360), (1200, 2330)],                              # 6 widgets
+        [(200, 2340), (560, 2310), (900, 2320), (1200, 2290)],                              # 7 watch
+        [(200, 2300), (560, 2270), (900, 2280), (1200, 2250)],                              # 8 import
+        [(200, 2260), (560, 2230), (900, 2240), (1200, 2200)],                              # 9 portfolio
+        [(200, 2180), (520, 2150), (760, 2140), (1000, 2160), (1400, 2200)],                # 10 the peak
+    ])
+    line.draw()
 
-    def phone(index, screen):
-        left, right = device(c, iphone(screen, phone_w), x0(index) + W / 2, top)
-        return left, right
+    phone_w, top = 780, 700
+    lane = 420  # the open side where Dippy sits
 
-    # 1 · Dippy keeps watch on NVDA as the alert arrives.
-    l, r = phone(0, fix_iphone_clock(raw("iphone-stock")))
+    def phone(index, screen, side):
+        cx = x0(index) + (W * 0.635 if side == "right" else W * 0.365)
+        return device(c, iphone(screen, phone_w), cx, top)
+
+    def magnify(index, side, screen, box, width, radius=56):
+        """Enlarges part of a phone's screen right over the spot it comes from, like a magnifier."""
+        s = phone_w / screen.width
+        cx = x0(index) + (W * 0.635 if side == "right" else W * 0.365)
+        layer = iphone(screen, phone_w)
+        screen_left = cx - layer.width / 2 + round(10 * s) + round(13 * s) + round(22 * s)
+        screen_top = top + round(13 * s) + round(22 * s)
+        center_x = screen_left + (box[0] + box[2]) / 2 * s
+        center_y = screen_top + (box[1] + box[3]) / 2 * s
+        low, high = (x0(index) + lane, x0(index) + W - 36) if side == "right" else (x0(index) + 36, x0(index) + W - lane)
+        tile = card(screen, box, min(width, high - low), radius=radius)
+        x = min(max(center_x - tile.width / 2, low), high - tile.width)
+        lift(c, tile, x, center_y - tile.height / 2)
+
+    def owl_spot(index, side):
+        # Dippy sits in the open space beside the phone.
+        return x0(index) + (200 if side == "right" else W - 200)
+
+    # 1 · The icon, life-size: Dippy on his line, the alert arriving above him.
+    hero_x = x0(0) + W / 2
+    line.dot(x0(0) + 1130)
     banner = notification(1180, icon, "NVDA entered your buy zone", ["Now $209.35, inside $206.35–$217.80.", "Your plan: buy a little."])
-    lift(c, banner, x0(0) + (W - banner.width) / 2, 1560)
-    sky.owl(raw_dir, "idle", r - 200, top + 24, perch)
+    lift(c, banner, x0(0) + (W - banner.width) / 2, 760)
+    line.owl(raw_dir, "wave", x0(0) + 560, 860)
 
-    # 2 · He peers down at the zone being drawn.
-    l, r = phone(1, fix_iphone_clock(raw("iphone-plan")))
-    sky.owl(raw_dir, "look-down", l + 210, top + 24, perch)
+    # 2 · Draw the zone.
+    phone(1, fix_iphone_clock(raw("iphone-plan")), "right")
+    magnify(1, "right", fix_iphone_clock(raw("iphone-plan")), ZONE_CHART_ONLY, 1040, radius=52)
+    line.owl(raw_dir, "look-down", owl_spot(1, "right") + 10, 300)
 
-    # 3 · The alert lands, and he can't sit still.
-    l, r = phone(2, clean_lock_screen(raw("scene-lock")))
-    sky.owl(raw_dir, "wings", r - 230, top + 24, perch)
+    # 3 · Know the odds.
+    phone(2, fix_iphone_clock(raw("iphone-stock")), "left")
+    magnify(2, "left", fix_iphone_clock(raw("iphone-stock")), PLAN_CARD, 1060)
+    line.owl(raw_dir, "look-up", owl_spot(2, "left") - 10, 300)
 
-    # 4 · He checks the odds.
-    l, r = phone(3, fix_iphone_clock(raw("iphone-alerts")))
-    plan = card(fix_iphone_clock(raw("iphone-stock")), PLAN_CARD, 1180, radius=60)
-    lift(c, plan, x0(3) + (W - plan.width) / 2, 1980)
-    sky.owl(raw_dir, "look-left", r - 200, top + 24, perch)
+    # 4 · The dip arrives, and Dippy taps you.
+    phone(3, clean_lock_screen(raw("scene-lock")), "right")
+    line.dot(x0(3) + 420, rings=True)
+    line.owl(raw_dir, "surprise", owl_spot(3, "right") + 10, 300)
 
-    # 5 · Smart alerts, each explained.
-    l, r = phone(4, fix_iphone_clock(raw("iphone-plan-smart")))
-    sky.owl(raw_dir, "look-right", l + 200, top + 24, perch)
+    # 5 · Smart alerts.
+    phone(4, fix_iphone_clock(raw("iphone-plan-smart")), "left")
+    line.owl(raw_dir, "hoot", owl_spot(4, "left") - 10, 300)
 
-    # 6 · Widgets, full size, with Dippy on top of the big one.
+    # 6 · Widgets, full size, floating above the line.
     scene = raw("scene-widgets")
-    big = card(scene, (155, 229, 1165, 699), 1160, radius=86)
-    big_top = 1000
-    lift(c, big, x0(5) + (W - big.width) / 2, big_top)
-    small = 560
-    left = card(scene, (155, 806, 626, 1277), small, radius=96)
-    right = card(scene, (694, 806, 1165, 1277), small, radius=96)
-    lift(c, left, x0(5) + W / 2 - 20 - small, big_top + big.height + 40)
-    lift(c, right, x0(5) + W / 2 + 20, big_top + big.height + 40)
-    movers = card(scene, (155, 1383, 1165, 1853), 1160, radius=86)
-    lift(c, movers, x0(5) + (W - movers.width) / 2, big_top + big.height + 40 + small + 40)
-    sky.owl(raw_dir, "look-up", x0(5) + W / 2 + 360, big_top + 24, perch)
+    wtop = 700
+    big = card(scene, WIDGET_PORTFOLIO, 1120, radius=84)
+    lift(c, big, x0(5) + (W - big.width) / 2, wtop)
+    plans = card(scene, WIDGET_PLANS, 1120, radius=84)
+    lift(c, plans, x0(5) + (W - plans.width) / 2, wtop + big.height + 36)
+    line.owl(raw_dir, "wink", x0(5) + W - 190, 280)
 
-    # 7 · Apple Watch, with Dippy perched on the case.
-    wrist = watch(raw("watch-today"), 720)
-    wl, wr = device(c, wrist, x0(6) + W / 2, 1000)
-    plan = card(raw("watch-plans"), WATCH_PLAN, 960, radius=80)
-    lift(c, plan, x0(6) + (W - plan.width) / 2, 2160)
-    sky.owl(raw_dir, "wink", wl + 230, 1000 + 24, perch)
+    # 7 · Apple Watch.
+    wrist = watch(raw("watch-today"), 700, strap=240)
+    device(c, wrist, x0(6) + W * 0.42, 760 - 240)
+    pl = card(raw("watch-plans"), WATCH_PLAN, 820, radius=72)
+    lift(c, pl, x0(6) + 50, 1900)
+    line.owl(raw_dir, "idle", x0(6) + W - 190, 290)
 
     # 8 · Import.
-    l, r = phone(7, fix_iphone_clock(raw("iphone-import")))
-    sky.owl(raw_dir, "look-down", r - 210, top + 24, perch)
+    phone(7, fix_iphone_clock(raw("iphone-import")), "left")
+    line.owl(raw_dir, "look-left", owl_spot(7, "left") - 10, 290)
 
-    # 9 · Portfolio, with the stat tiles enlarged.
-    l, r = phone(8, fix_iphone_clock(raw("iphone-home")))
-    tiles = card(fix_iphone_clock(raw("iphone-home")), STAT_TILES, 1180, radius=60)
-    lift(c, tiles, x0(8) + (W - tiles.width) / 2, 2200)
-    sky.owl(raw_dir, "idle", l + 210, top + 24, perch)
+    # 9 · Portfolio.
+    phone(8, fix_iphone_clock(raw("iphone-home")), "right")
+    magnify(8, "right", fix_iphone_clock(raw("iphone-home")), STAT_TILES, 1080)
+    line.owl(raw_dir, "wings", owl_spot(8, "right") + 10, 280)
 
-    # 10 · Asleep in the moon, everything ticked off, free to start.
-    sky.moon(x0(9) + W / 2 - 20, 1000, 300)
-    sky.owl(raw_dir, "sleep", x0(9) + W / 2 + 70, 1262, 300)
-    checklist(c, x0(9) + W / 2, 1540, ["Buy and sell zones", "Instant price alerts", "27 smart alerts", "Odds for every plan", "Widgets & Apple Watch", "Import from any broker"])
-    pill(c, x0(9) + W / 2, 2460, "Start free")
+    # 10 · Asleep on the peak, under the moon.
+    sky.moon(x0(9) + W - 230, 700, 80)
+    lift(c, app_icon_tile(icon, 230), x0(9) + (W - 230) / 2, 640)
+    checklist(c, x0(9) + W / 2, 940, ["Buy and sell zones", "Instant price alerts", "27 smart alerts", "Odds for every plan", "Widgets & Apple Watch", "Beat-the-market check"], scale=0.9)
+    line.owl(raw_dir, "sleep", x0(9) + 760, 380)
+    pill(c, x0(9) + W / 2, 2470, "Start free")
+
+    # Dippy's lines, after the devices so nothing covers them.
+    bubble(c, "Right there looks good.", owl_spot(1, "right") + 40, line.y(owl_spot(1, "right")) - 300, side="left", max_width=290, bounds=(x0(1) + 24, x0(1) + W - 24))
+    bubble(c, "65% chance. Nice.", owl_spot(2, "left") - 40, line.y(owl_spot(2, "left")) - 300, side="right", max_width=290, bounds=(x0(2) + 24, x0(2) + W - 24))
+    bubble(c, "Hoo! It's in your zone!", owl_spot(3, "right") + 40, line.y(owl_spot(3, "right")) - 300, side="left", max_width=290, bounds=(x0(3) + 24, x0(3) + W - 24))
+    bubble(c, "RSI says oversold.", owl_spot(4, "left") - 40, line.y(owl_spot(4, "left")) - 300, side="right", max_width=290, bounds=(x0(4) + 24, x0(4) + W - 24))
+    bubble(c, "Glance, don't stare.", x0(6) + W - 230, line.y(x0(6) + W - 190) - 290, side="right", max_width=290, bounds=(x0(6) + 24, x0(6) + W - 24))
+    bubble(c, "Any broker. No login.", owl_spot(7, "left") - 40, line.y(owl_spot(7, "left")) - 290, side="right", max_width=290, bounds=(x0(7) + 24, x0(7) + W - 24))
+    bubble(c, "Calm, and growing.", owl_spot(8, "right") + 40, line.y(owl_spot(8, "right")) - 280, side="left", max_width=290, bounds=(x0(8) + 24, x0(8) + W - 24))
 
     for index, (title, subline) in enumerate([
         ("Buy the *dip*.\nNever miss it.", "Dippy watches your stocks day and night."),
         ("Draw your\n*buy zone*", "Drag two handles. That's your whole plan."),
-        ("It dips.\n*Dippy taps you.*", "An alert the second a stock enters your zone."),
         ("Know your *odds*\nbefore you buy", "See how likely each plan is to trigger."),
+        ("It dips.\n*Dippy taps you.*", "An alert the second a stock enters your zone."),
         ("*27* smart alerts,\nplain English", "Dips, trends, RSI, and stops, each explained."),
-        ("Your plans,\nalways *in sight*", "Live widgets with your zones and today's movers."),
+        ("Your plans,\nalways *in sight*", "Portfolio and zones on your Home Screen."),
         ("Your portfolio,\n*on your wrist*", "Plans, prices, and charts on Apple Watch."),
-        ("Your portfolio\nin *seconds*", "Import a CSV from any broker. No login needed."),
-        ("All your stocks,\n*one calm place*", "Value, returns, and dividends at a glance."),
+        ("Your portfolio\nin *seconds*", "Import a CSV from any broker. No login."),
+        ("All your stocks,\n*one calm place*", "Value, returns, dividends, and the S&P 500."),
         ("Sleep well.\n*Dippy's on watch.*", "Free to start. Go Pro for every alert."),
     ]):
-        headline(c, x0(index), W, title, subline)
+        headline(c, x0(index), W, title, subline, size=146, top=150)
 
-    names = ["01-buy-the-dip", "02-buy-zone", "03-alert", "04-odds", "05-smart-alerts",
+    names = ["01-buy-the-dip", "02-buy-zone", "03-odds", "04-alert", "05-smart-alerts",
              "06-widgets", "07-apple-watch", "08-import", "09-portfolio", "10-start-free"]
     return list(zip(names, sky.frames())), sky.canvas
 
@@ -515,34 +644,51 @@ def ipad_story(raw, raw_dir):
     sky = Sky((W, H), 5)
     x0 = sky.x0
     c = sky.canvas
-    tablet_w, top = 1700, 900
-    perch = 300
+    line = IconLine(sky, [
+        [(-200, 2000), (300, 2240), (700, 2380), (1060, 2400), (1380, 2250), (1620, 1960), (1780, 1820), (1960, 1880)],
+        [(300, 2240), (700, 2440), (1300, 2520), (1950, 2580)],
+        [(300, 2620), (800, 2650), (1300, 2580), (1900, 2500)],
+        [(400, 2460), (900, 2430), (1400, 2420), (1950, 2380)],
+        [(400, 2350), (900, 2320), (1300, 2300), (1800, 2320), (2300, 2360)],
+    ])
+    line.draw()
+    tablet_w, top, lane = 1380, 760, 560
 
     def tablet(index, screen):
-        return device(c, ipad(fix_ipad_status(screen), tablet_w), x0(index) + W / 2, top, u)
+        return device(c, ipad(fix_ipad_status(screen), tablet_w), x0(index) + W - 60 - (tablet_w + 120) / 2, top, u)
 
-    l, r = tablet(0, raw("ipad-home"))
-    banner = notification(1400, icon, "NVDA entered your buy zone", ["Now $209.35, inside $206.35–$217.80.", "Your plan: buy a little."])
-    lift(c, banner, x0(0) + (W - banner.width) / 2, 1560, u)
-    sky.owl(raw_dir, "idle", r - 260, top + 28, perch)
+    def owl_x(index):
+        return x0(index) + 270
 
-    l, r = tablet(1, raw("ipad-stock"))
-    zone = card(fix_iphone_clock(raw("iphone-plan")), ZONE_CARD, 1300, radius=60)
-    lift(c, zone, x0(1) + (W - zone.width) / 2, 1560, u)
-    sky.owl(raw_dir, "look-down", l + 260, top + 28, perch)
+    # 1 · The icon, life-size.
+    line.dot(x0(0) + 1780)
+    banner = notification(1500, icon, "NVDA entered your buy zone", ["Now $209.35, inside $206.35–$217.80.", "Your plan: buy a little."])
+    lift(c, banner, x0(0) + (W - banner.width) / 2, 780, u)
+    line.owl(raw_dir, "wave", x0(0) + 860, 1080)
 
-    l, r = tablet(2, raw("ipad-alerts"))
-    plan = card(fix_iphone_clock(raw("iphone-stock")), PLAN_CARD, 1400, radius=60)
-    lift(c, plan, x0(2) + (W - plan.width) / 2, 1820, u)
-    sky.owl(raw_dir, "wings", r - 280, top + 28, perch)
+    tablet(1, raw("ipad-stock"))
+    zone = card(fix_iphone_clock(raw("iphone-plan")), ZONE_CHART_ONLY, W - lane - 70, radius=60)
+    lift(c, zone, x0(1) + lane, 1380, u)
+    line.owl(raw_dir, "look-down", owl_x(1), 400)
 
-    l, r = tablet(3, raw("ipad-watchlist"))
-    sky.owl(raw_dir, "look-left", r - 260, top + 28, perch)
+    tablet(2, raw("ipad-alerts"))
+    plan = card(fix_iphone_clock(raw("iphone-stock")), PLAN_CARD, W - lane - 70, radius=60)
+    lift(c, plan, x0(2) + lane, 1500, u)
+    line.dot(x0(2) + 520, rings=True)
+    line.owl(raw_dir, "surprise", owl_x(2), 400)
 
-    sky.moon(x0(4) + W / 2 - 20, 980, 330)
-    sky.owl(raw_dir, "sleep", x0(4) + W / 2 + 80, 1268, 330)
-    checklist(c, x0(4) + W / 2, 1480, ["Buy and sell zones", "Instant price alerts", "27 smart alerts", "Odds for every plan", "Widgets & Apple Watch", "Import from any broker"], scale=1.05)
-    pill(c, x0(4) + W / 2, 2420, "Start free", scale=1.15)
+    tablet(3, raw("ipad-watchlist"))
+    line.owl(raw_dir, "look-up", owl_x(3), 400)
+
+    sky.moon(x0(4) + W - 320, 760, 110)
+    lift(c, app_icon_tile(icon, 320), x0(4) + (W - 320) / 2, 640, u)
+    checklist(c, x0(4) + W / 2, 1040, ["Buy and sell zones", "Instant price alerts", "27 smart alerts", "Odds for every plan", "Widgets & Apple Watch", "Beat-the-market check"], scale=1.05)
+    line.owl(raw_dir, "sleep", x0(4) + 1780, 470)
+    pill(c, x0(4) + W / 2, 2500, "Start free", scale=1.2)
+
+    for index, text in [(1, "Right there looks good."), (2, "Hoo! It's in your zone!"), (3, "Every stock, calm.")]:
+        bubble(c, text, owl_x(index) + 50, line.y(owl_x(index)) - 400, u, side="left", max_width=300,
+               bounds=(x0(index) + 30, x0(index) + lane - 20))
 
     for index, (title, subline) in enumerate([
         ("Buy the *dip*.\nNever miss it.", "Dippy watches your stocks day and night."),
@@ -551,7 +697,7 @@ def ipad_story(raw, raw_dir):
         ("Every stock,\n*one calm list*", "Prices, trends, and how close each plan is."),
         ("Sleep well.\n*Dippy's on watch.*", "Free to start. Go Pro for every alert."),
     ]):
-        headline(c, x0(index), W, title, subline, size=160)
+        headline(c, x0(index), W, title, subline, size=170, top=170)
 
     names = ["01-buy-the-dip", "02-buy-zone", "03-alert", "04-watchlist", "05-start-free"]
     return list(zip(names, sky.frames())), sky.canvas
