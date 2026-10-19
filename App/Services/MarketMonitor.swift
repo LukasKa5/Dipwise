@@ -10,7 +10,9 @@ enum MarketMonitor {
 
     let alerts = holdings.flatMap { $0.alerts ?? [] }
     let headsUp = AlertSettings.isPro && AlertSettings.headsUpEnabled ? AlertSettings.headsUpThreshold : nil
-    let events = AlertEngine.evaluate(alerts, quotes: quotes.quotes, headsUpThreshold: headsUp)
+    let crowdSymbols = alerts.filter { $0.isActive && $0.kind.needsCrowd }.map(\.symbol)
+    let crowd = await flock?.crowdFacts(for: crowdSymbols, quotes: quotes.quotes) ?? [:]
+    let events = AlertEngine.evaluate(alerts, quotes: quotes.quotes, headsUpThreshold: headsUp, crowd: crowd)
     try? context.save()
     await NotificationManager.post(events)
     if let first = events.first(where: { $0.kind == .reached }) {

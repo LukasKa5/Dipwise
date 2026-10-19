@@ -15,6 +15,7 @@ enum AlertCategory: String, CaseIterable, Identifiable {
   case momentum
   case position
   case income
+  case crowd
 
   var id: Self { self }
 
@@ -26,6 +27,7 @@ enum AlertCategory: String, CaseIterable, Identifiable {
     case .momentum: String(localized: "Momentum")
     case .position: String(localized: "Your position")
     case .income: String(localized: "Income")
+    case .crowd: String(localized: "The Flock")
     }
   }
 }
@@ -37,6 +39,7 @@ enum AlertKind: String, Codable, CaseIterable, Identifiable {
   case rsiOversold, rsiOverbought, macdBullish, macdBearish, bollingerLow, bollingerHigh, volumeSpike
   case trailingStop, stopLoss, profitTarget, breakEven
   case dividendSoon, yieldAbove
+  case crowdBuyZone, crowdBuying, topInvestorBuys
 
   var id: Self { self }
 
@@ -48,6 +51,7 @@ enum AlertKind: String, Codable, CaseIterable, Identifiable {
     case .rsiOversold, .rsiOverbought, .macdBullish, .macdBearish, .bollingerLow, .bollingerHigh, .volumeSpike: .momentum
     case .trailingStop, .stopLoss, .profitTarget, .breakEven: .position
     case .dividendSoon, .yieldAbove: .income
+    case .crowdBuyZone, .crowdBuying, .topInvestorBuys: .crowd
     }
   }
 
@@ -84,6 +88,9 @@ enum AlertKind: String, Codable, CaseIterable, Identifiable {
     case .profitTarget: String(localized: "Profit target")
     case .breakEven: String(localized: "Back to break-even")
     case .dividendSoon: String(localized: "Dividend coming")
+    case .crowdBuyZone: String(localized: "Enters the crowd's buy zone")
+    case .crowdBuying: String(localized: "Flock buying surge")
+    case .topInvestorBuys: String(localized: "A top investor buys")
     }
   }
 
@@ -120,6 +127,9 @@ enum AlertKind: String, Codable, CaseIterable, Identifiable {
     case .profitTarget: String(localized: "Your position rises a set amount above what you paid.")
     case .breakEven: String(localized: "The price climbs back to what you paid.")
     case .dividendSoon: String(localized: "A dividend is expected within a week.")
+    case .crowdBuyZone: String(localized: "The price drops into the range where most Dipwise investors plan to buy.")
+    case .crowdBuying: String(localized: "Most members who moved this week are buying it, not selling.")
+    case .topInvestorBuys: String(localized: "One of the flock's top 50 investors adds it to their portfolio.")
     }
   }
 
@@ -156,12 +166,16 @@ enum AlertKind: String, Codable, CaseIterable, Identifiable {
     case .profitTarget: "flag.checkered"
     case .breakEven: "equal.circle"
     case .dividendSoon: "leaf.fill"
+    case .crowdBuyZone: "person.3.fill"
+    case .crowdBuying: "arrow.left.arrow.right.circle.fill"
+    case .topInvestorBuys: "trophy.circle.fill"
     }
   }
 
   var side: TradeSide {
     switch self {
     case .buyZone, .priceBelow, .dropFromHigh, .weeklyDrop, .losingStreak, .newLow, .goldenCross, .rsiOversold, .macdBullish, .bollingerLow, .reboundFromLow, .beatsMarket, .yieldAbove: .buy
+    case .crowdBuyZone, .crowdBuying, .topInvestorBuys: .buy
     case .sellZone, .priceAbove, .newHigh, .deathCross, .rsiOverbought, .macdBearish, .bollingerHigh, .trailingStop, .stopLoss, .profitTarget, .breakEven, .lagsMarket: .sell
     case .dailyMove, .gapMove, .belowAverage, .aboveAverage, .volumeSpike, .dividendSoon: .watch
     }
@@ -172,7 +186,9 @@ enum AlertKind: String, Codable, CaseIterable, Identifiable {
   /// Alerts measured over a number of trading days.
   var usesDays: Bool { [.weeklyDrop, .losingStreak, .beatsMarket, .lagsMarket].contains(self) }
   var usesAverage: Bool { self == .belowAverage || self == .aboveAverage }
-  var usesLevel: Bool { [.rsiOversold, .rsiOverbought, .volumeSpike].contains(self) }
+  var usesLevel: Bool { [.rsiOversold, .rsiOverbought, .volumeSpike, .crowdBuying].contains(self) }
+  /// Alerts that need the flock's data, not just prices.
+  var needsCrowd: Bool { category == .crowd }
   /// Alerts measured from what the user paid.
   var needsCost: Bool { [.stopLoss, .profitTarget, .breakEven].contains(self) }
   /// Conditions that describe a state, so they should only fire when they newly become true.
@@ -184,6 +200,8 @@ enum AlertKind: String, Codable, CaseIterable, Identifiable {
   var requiresPro: Bool { category != .zones }
 
   static var smart: [AlertKind] { allCases.filter { $0.category != .zones } }
+  /// Smart alerts that work from prices alone, which is what widgets, the watch, and counts in copy refer to.
+  static var priceSmart: [AlertKind] { smart.filter { !$0.needsCrowd } }
 }
 
 /// A condition the user wants to be told about.
@@ -252,6 +270,18 @@ struct AlertRule: Codable, Hashable {
     default:
       guard let trigger = triggerLevel(for: quote) else { return false }
       return triggersBelow ? quote.price <= trigger : quote.price >= trigger
+    }
+  }
+
+  /// For alerts built on the flock's data: whether they're met, or nil when there's no crowd data to judge by.
+  func isMet(by quote: Quote, crowd: CrowdFacts?) -> Bool? {
+    guard kind.needsCrowd else { return isMet(by: quote) }
+    guard let crowd else { return nil }
+    switch kind {
+    case .crowdBuyZone: return crowd.buyZone.map { quote.price <= $0.upperBound } ?? false
+    case .crowdBuying: return crowd.movers >= 5 && crowd.buyShare >= level
+    case .topInvestorBuys: return crowd.topInvestorBuysToday > 0
+    default: return false
     }
   }
 
@@ -347,6 +377,9 @@ struct AlertRule: Codable, Hashable {
     case .profitTarget: return String(localized: "Take profit at +\(p) (\(format(lower * (1 + percent))))")
     case .breakEven: return String(localized: "Back to your cost of \(format(lower))")
     case .dividendSoon: return String(localized: "Dividend expected within a week")
+    case .crowdBuyZone: return String(localized: "Enters the crowd's buy zone")
+    case .crowdBuying: return String(localized: "\(level.formatted(.percent.precision(.fractionLength(0)))) of the flock is buying")
+    case .topInvestorBuys: return String(localized: "A top investor adds it")
     }
   }
 
@@ -374,8 +407,20 @@ struct AlertRule: Codable, Hashable {
     case .losingStreak: rule.days = 5
     case .beatsMarket, .lagsMarket: rule.percent = 0.05; rule.days = 21
     case .yieldAbove: rule.percent = 0.04
+    case .crowdBuying: rule.level = 0.7
     default: break
     }
     return rule
   }
+}
+
+/// What the flock knows about one stock right now, for alerts built on the crowd.
+struct CrowdFacts: Hashable {
+  /// The middle half of everyone's buy targets.
+  var buyZone: ClosedRange<Double>?
+  /// Of members who added or trimmed it this week, the share who added.
+  var buyShare: Double
+  var movers: Int
+  /// Top investors who added to it in the last day.
+  var topInvestorBuysToday: Int
 }

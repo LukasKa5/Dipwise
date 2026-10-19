@@ -110,6 +110,7 @@ extension AlertCategory {
     case .momentum: "gauge.with.dots.needle.67percent"
     case .position: "shield.lefthalf.filled"
     case .income: "leaf.fill"
+    case .crowd: "person.3.fill"
     }
   }
 }

@@ -157,7 +157,8 @@ struct PlanBuilderForm: View {
           Text("Drag the red handles to where you'd take profit.")
         }
 
-        ForEach(AlertCategory.allCases.filter { $0 != .zones }) { category in
+        // Flock alerts appear once the flock is live.
+        ForEach(AlertCategory.allCases.filter { $0 != .zones && ($0 != .crowd || flock.isAvailable) }) { category in
           let kinds = AlertKind.smart.filter { $0.category == category && (holding.isOwned || !$0.needsCost) }
           Section {
             SmartChips(kinds: kinds, selection: $draft.smart, isPro: subscription.isPro)

@@ -115,6 +115,28 @@ final class FlockService {
     leaders.filter { $0.portfolio.weight(of: symbol) != nil }
   }
 
+  /// What the crowd knows about a stock, for Flock alerts.
+  func crowdFacts(for symbol: String) -> CrowdFacts {
+    let flow = flow(of: symbol)
+    let dayAgo = Date.now.addingTimeInterval(-24 * 3600)
+    let topBuys = leaders.filter { investor in
+      investor.moves.contains { $0.symbol == symbol && $0.isBuy && $0.date > dayAgo }
+    }.count
+    return CrowdFacts(buyZone: reports[symbol]?.buyZone, buyShare: flow?.buyShare ?? 0.5, movers: flow?.total ?? 0, topInvestorBuysToday: topBuys)
+  }
+
+  /// Loads what Flock alerts need for these stocks.
+  func crowdFacts(for symbols: [String], quotes: [String: Quote]) async -> [String: CrowdFacts] {
+    guard isAvailable, !symbols.isEmpty else { return [:] }
+    if portfolios.isEmpty { await loadPortfolios() }
+    var facts: [String: CrowdFacts] = [:]
+    for symbol in Set(symbols) {
+      if let price = quotes[symbol]?.price { await load(symbol: symbol, currentPrice: price) }
+      facts[symbol] = crowdFacts(for: symbol)
+    }
+    return facts
+  }
+
   func dipBehavior(for quote: Quote) -> DipBehavior? {
     FlockInsights.dipBehavior(symbol: quote.symbol, closes: quote.closes, dates: quote.dates, moves: moves)
   }

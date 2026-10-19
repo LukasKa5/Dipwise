@@ -119,6 +119,14 @@ struct FlockDetailView: View {
         Button("Watch", systemImage: "binoculars.fill") { showsAddStock = true }
           .buttonStyle(.borderedProminent)
           .controlSize(.small)
+      } else {
+        Menu("Alert me", systemImage: "bell.badge.fill") {
+          ForEach([AlertKind.crowdBuyZone, .crowdBuying, .topInvestorBuys]) { kind in
+            Button(kind.title, systemImage: kind.systemImage) { crowdAlert(kind) }
+          }
+        }
+        .buttonStyle(.borderedProminent)
+        .controlSize(.small)
       }
     }
     .padding(.top, 8)
@@ -497,6 +505,16 @@ struct FlockDetailView: View {
   }
 
   // MARK: Actions
+
+  /// Opens the stock's plan with a Flock alert already picked.
+  private func crowdAlert(_ kind: AlertKind) {
+    guard let holding else { return }
+    guard isPro else {
+      showsPaywall = true
+      return
+    }
+    suggestion = PlanRequest(holding: holding, suggestion: AlertRule.defaults(for: kind, price: quote?.price ?? 0, cost: holding.averageCost))
+  }
 
   private func copyZone(_ zone: ClosedRange<Double>, kind: AlertKind) {
     guard let holding else {

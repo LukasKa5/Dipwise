@@ -109,6 +109,7 @@ enum HelpTopic: Identifiable, Hashable {
       case .momentum: String(localized: "Alerts based on momentum indicators like RSI, MACD, and Bollinger Bands, which help spot when a move may be overdone.")
       case .position: String(localized: "Alerts based on what you paid: protect yourself with a stop loss, lock in gains with a profit target, or know when you're back to even.")
       case .income: String(localized: "Alerts about dividends, so you know when a payout is coming.")
+      case .crowd: String(localized: "Alerts built on what other Dipwise investors do: when a stock reaches the crowd's buy zone, when the flock starts buying it, or when a top investor adds it.")
       }
     case .alert(let kind):
       kind.explanation
