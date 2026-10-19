@@ -1,4 +1,3 @@
-import AuthenticationServices
 import StoreKit
 import SwiftData
 import SwiftUI
@@ -16,7 +15,6 @@ struct SettingsView: View {
   @AppStorage(AlertSettings.quietHoursKey) private var quietAlerts = false
   @Environment(QuoteStore.self) private var quotes
   @Environment(ProgressStore.self) private var progress
-  @Environment(AccountStore.self) private var account
   @AppStorage(AlertSettings.briefReminderKey) private var briefReminder = true
   @AppStorage(AlertSettings.showsBriefKey) private var showsBrief = true
   @AppStorage(AlertSettings.briefReminderMinutesKey) private var briefMinutes = 8 * 60 + 30
@@ -41,8 +39,7 @@ struct SettingsView: View {
     NavigationStack {
       Form {
         Group {
-        accountSection
-        subscriptionSection
+          subscriptionSection
         notificationsSection
         briefSection
         portfolioSection
@@ -67,45 +64,6 @@ struct SettingsView: View {
   }
 
   // MARK: Sections
-
-  private var accountSection: some View {
-    Section {
-      if let profile = account.account {
-        HStack(spacing: 14) {
-          Image(systemName: "person.crop.circle.fill")
-            .font(.system(size: 40))
-            .foregroundStyle(.tint)
-          VStack(alignment: .leading, spacing: 2) {
-            Text(profile.name.isEmpty ? "Signed in with Apple" : profile.name)
-              .font(.headline)
-            if let email = profile.email {
-              Text(email)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-            }
-          }
-        }
-        Button("Sign Out", role: .destructive) { account.signOut() }
-      } else {
-        VStack(alignment: .leading, spacing: 10) {
-          Text("Sign in to get a personal greeting and keep the same anonymous flock identity on all your devices. Optional: everything works without an account.")
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
-          SignInWithAppleButton(.signIn) { account.configure($0) } onCompletion: { account.handle($0) }
-            .signInWithAppleButtonStyle(.black)
-            .frame(height: 46)
-          if let error = account.errorMessage {
-            Text(error)
-              .font(.caption)
-              .foregroundStyle(Palette.sell)
-          }
-        }
-        .padding(.vertical, 4)
-      }
-    } header: {
-      Text("Account")
-    }
-  }
 
   private var subscriptionSection: some View {
     Section {

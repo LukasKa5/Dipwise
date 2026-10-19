@@ -112,9 +112,6 @@
         "properties": {
           "com.apple.security.application-groups": [
             "group.app.bitrig.new.15b8fdf3-82a6-4223-97a2-c5cc5f8ba55e"
-          ],
-          "com.apple.developer.applesignin": [
-            "Default"
           ]
         }
       }

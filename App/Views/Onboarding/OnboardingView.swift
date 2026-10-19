@@ -1,4 +1,3 @@
-import AuthenticationServices
 import SwiftData
 import SwiftUI
 import WidgetKit
@@ -15,13 +14,12 @@ struct OnboardingView: View {
   @Environment(FlockService.self) private var flock
   @Environment(ProgressStore.self) private var progress
   @Environment(SubscriptionManager.self) private var subscription
-  @Environment(AccountStore.self) private var account
   @State private var model = OnboardingModel()
   @State private var page = Self.startPage
   @State private var showsPaywall = false
   @State private var celebration = 0
 
-  private let pageCount = 11
+  private let pageCount = 10
 
   private var isRegular: Bool { sizeClass == .regular }
 
@@ -50,8 +48,7 @@ struct OnboardingView: View {
     case 2: model.selected.isEmpty ? "Pick at least one" : (model.selected.count == 1 ? "Watch 1 stock" : "Watch \(model.selected.count) stocks")
     case 5: model.vote == nil ? "Cast your vote" : "Continue"
     case 8: "Allow Notifications"
-    case 9: account.isSignedIn ? "Continue" : "Continue without an account"
-    case 10: "Start Watching"
+    case 9: "Start Watching"
     default: "Continue"
     }
   }
@@ -72,7 +69,6 @@ struct OnboardingView: View {
           case 6: WidgetShowcaseStep(model: model).fitsScreen()
           case 7: WatchShowcaseStep(model: model).fitsScreen()
           case 8: NotifyStep(model: model).fitsScreen()
-          case 9: AccountStep().fitsScreen()
           default: RevealStep(model: model, streak: max(1, progress.streak)).fitsScreen()
           }
         }
@@ -145,8 +141,6 @@ struct OnboardingView: View {
   private func advance() {
     switch page {
     case 3: model.prepareZone()
-    case 9:
-      if !account.isSignedIn { account.continueAsGuest() }
     case 8:
       Task {
         await NotificationManager.requestAuthorization()
@@ -154,7 +148,7 @@ struct OnboardingView: View {
         celebration += 1
       }
       return
-    case 10:
+    case 9:
       let created = model.commit(context: modelContext, quoteStore: quoteStore, isPro: subscription.isPro)
       for alert in created {
         Task { await flock.share(alert) }
@@ -562,41 +556,6 @@ struct MissionChip: View {
       .background(isDone ? AnyShapeStyle(Brand.buy) : AnyShapeStyle(Brand.amber.opacity(0.15)), in: .capsule)
       .animation(.bouncy, value: isDone)
       .accessibilityLabel(isDone ? Text("Done: \(Text(text))") : Text("Try it: \(Text(text))"))
-  }
-}
-
-private struct AccountStep: View {
-  @Environment(AccountStore.self) private var account
-
-  var body: some View {
-    VStack(spacing: 24) {
-      Spacer(minLength: 8)
-      LivelyOwl(mood: .calm)
-        .frame(width: 120, height: 138)
-      StepTitle(
-        title: account.isSignedIn ? "Welcome, \(account.firstName ?? "friend")!" : "Make Dipwise yours",
-        message: account.isSignedIn ? "You're signed in. Dippy will greet you by name." : "Sign in with Apple for a personal greeting and the same anonymous flock identity on all your devices. It's optional, and Dippy never sees your email unless you share it."
-      )
-      if !account.isSignedIn {
-        SignInWithAppleButton(.continue) { account.configure($0) } onCompletion: { account.handle($0) }
-          .signInWithAppleButtonStyle(.white)
-          .frame(height: 50)
-          .padding(.horizontal, 28)
-        if let error = account.errorMessage {
-          Text(error)
-            .font(.caption)
-            .foregroundStyle(Brand.sell)
-            .multilineTextAlignment(.center)
-            .padding(.horizontal, 28)
-        }
-      } else {
-        Image(systemName: "checkmark.seal.fill")
-          .font(.system(size: 54))
-          .foregroundStyle(Brand.buy)
-          .symbolEffect(.bounce, value: account.isSignedIn)
-      }
-      Spacer(minLength: 8)
-    }
   }
 }
 

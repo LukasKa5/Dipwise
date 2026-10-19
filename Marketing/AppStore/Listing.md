@@ -78,7 +78,7 @@ Set the base territory to Germany for euro prices (or the U.S. for dollar prices
 - Data used to track you: **None**
 - Data linked to you: **None**
 - Data not linked to you: **Financial Info → Other Financial Info** (anonymous alert price levels and portfolio percentages, only when the user turns on Flock sharing) and **Identifiers → User ID** (a random, app-generated ID that groups those anonymous records). Purpose for both: App Functionality.
-- Sign in with Apple name and email stay on the device, so they aren't "collected".
+- Dipwise has no accounts and never asks for a name or email.
 
 This matches `App/PrivacyInfo.xcprivacy`.
 

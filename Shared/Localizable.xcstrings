@@ -43447,48 +43447,48 @@
         }
       }
     },
-    "Your stocks, shares, average costs, cash, alerts, notes, journal, streaks, and settings are stored on your iPhone and shared only with your own Apple Watch and widgets. If you sign in with Apple, your name and email stay on your device and are used only to greet you.": {
+    "Your stocks, shares, average costs, cash, alerts, notes, journal, streaks, and settings are stored on your iPhone and shared only with your own Apple Watch and widgets. Dipwise has no accounts, so it never asks for your name or email.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Deine Aktien, Anteile, Einstandspreise, dein Bargeld, Alarme, Notizen, Tagebuch, Serien und Einstellungen werden auf deinem iPhone gespeichert und nur mit deiner eigenen Apple Watch und deinen Widgets geteilt. Meldest du dich mit Apple an, bleiben Name und E-Mail auf deinem Gerät und dienen nur der Begrüßung."
+            "value": "Deine Aktien, Anteile, Einstandspreise, dein Bargeld, Alarme, Notizen, Tagebuch, Serien und Einstellungen werden auf deinem iPhone gespeichert und nur mit deiner eigenen Apple Watch und deinen Widgets geteilt. Dipwise hat keine Konten und fragt nie nach Name oder E-Mail."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tus acciones, cantidades, precios medios, efectivo, alertas, notas, diario, rachas y ajustes se guardan en tu iPhone y solo se comparten con tu Apple Watch y tus widgets. Si inicias sesión con Apple, tu nombre y correo se quedan en tu dispositivo y solo se usan para saludarte."
+            "value": "Tus acciones, cantidades, precios medios, efectivo, alertas, notas, diario, rachas y ajustes se guardan en tu iPhone y solo se comparten con tu Apple Watch y tus widgets. Dipwise no tiene cuentas, así que nunca pide tu nombre ni tu correo."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tes actions, quantités, prix moyens, liquidités, alertes, notes, journal, séries et réglages sont stockés sur ton iPhone et partagés uniquement avec ta propre Apple Watch et tes widgets. Si tu te connectes avec Apple, ton nom et ton e-mail restent sur ton appareil et servent seulement à t'accueillir."
+            "value": "Tes actions, quantités, prix moyens, liquidités, alertes, notes, journal, séries et réglages sont stockés sur ton iPhone et partagés uniquement avec ta propre Apple Watch et tes widgets. Dipwise n'a pas de comptes et ne demande jamais ton nom ni ton e-mail."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Azioni, quantità, prezzi medi, liquidità, avvisi, note, diario, serie e impostazioni sono salvati sul tuo iPhone e condivisi solo con il tuo Apple Watch e i tuoi widget. Se accedi con Apple, nome ed email restano sul dispositivo e servono solo a salutarti."
+            "value": "Azioni, quantità, prezzi medi, liquidità, avvisi, note, diario, serie e impostazioni sono salvati sul tuo iPhone e condivisi solo con il tuo Apple Watch e i tuoi widget. Dipwise non ha account e non chiede mai nome o email."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "銘柄、株数、平均取得価格、現金、アラート、メモ、ジャーナル、連続記録、設定はiPhoneに保存され、あなたのApple Watchとウィジェットとだけ共有されます。Appleでサインインした場合も、名前とメールはデバイスに残り、あいさつにだけ使われます。"
+            "value": "銘柄、株数、平均取得価格、現金、アラート、メモ、ジャーナル、連続記録、設定はiPhoneに保存され、あなたのApple Watchとウィジェットとだけ共有されます。Dipwiseにはアカウントがなく、名前やメールを尋ねることはありません。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "종목, 수량, 평균 단가, 현금, 알림, 메모, 일지, 연속 기록, 설정은 iPhone에 저장되고 내 Apple Watch와 위젯하고만 공유돼요. Apple로 로그인하면 이름과 이메일은 기기에 남고 인사에만 쓰여요."
+            "value": "종목, 수량, 평균 단가, 현금, 알림, 메모, 일지, 연속 기록, 설정은 iPhone에 저장되고 내 Apple Watch와 위젯하고만 공유돼요. Dipwise에는 계정이 없어 이름이나 이메일을 묻지 않아요."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Suas ações, quantidades, preços médios, dinheiro, alertas, notas, diário, sequências e ajustes ficam no seu iPhone e só são compartilhados com seu Apple Watch e seus widgets. Se você entrar com a Apple, seu nome e e-mail ficam no aparelho e servem só para cumprimentar você."
+            "value": "Suas ações, quantidades, preços médios, dinheiro, alertas, notas, diário, sequências e ajustes ficam no seu iPhone e só são compartilhados com seu Apple Watch e seus widgets. O Dipwise não tem contas e nunca pede seu nome ou e-mail."
           }
         }
       }

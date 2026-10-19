@@ -8,7 +8,6 @@ struct HomeView: View {
   @Environment(Router.self) private var router
   @Environment(\.modelContext) private var modelContext
   @Environment(ProgressStore.self) private var progress
-  @Environment(AccountStore.self) private var account
   @State private var showsProgress = false
   @AppStorage(AlertSettings.showsBriefKey) private var showsBrief = true
   @AppStorage(AlertSettings.briefHiddenDayKey) private var briefHiddenDay = ""
@@ -95,8 +94,7 @@ struct HomeView: View {
   }
 
   private var greeting: String {
-    let base = DayPeriod(date: .now).greeting
-    return account.firstName.map { "\(base), \($0)" } ?? base
+    DayPeriod(date: .now).greeting
   }
 
   private static var today: String { Date.now.formatted(.iso8601.year().month().day()) }
