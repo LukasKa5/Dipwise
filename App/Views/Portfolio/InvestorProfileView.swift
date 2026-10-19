@@ -156,6 +156,8 @@ struct InvestorProfileView: View {
 /// Seven segments, lit up to the risk score, colored from calm green to bright red.
 struct RiskMeter: View {
   var score: Int
+  /// The unlit segments: soft white on navy cards, soft gray on light ones.
+  var track: Color = .white.opacity(0.14)
 
   private func color(_ step: Int) -> Color {
     switch step {
@@ -169,7 +171,7 @@ struct RiskMeter: View {
     HStack(spacing: 5) {
       ForEach(1...7, id: \.self) { step in
         Capsule()
-          .fill(step <= score ? AnyShapeStyle(color(step)) : AnyShapeStyle(.white.opacity(0.14)))
+          .fill(step <= score ? AnyShapeStyle(color(step)) : AnyShapeStyle(track))
           .frame(height: step == score ? 14 : 10)
       }
     }
@@ -264,8 +266,7 @@ struct InvestorProfileCard: View {
             .font(.footnote.weight(.semibold))
             .foregroundStyle(.tertiary)
         }
-        RiskMeter(score: profile.riskScore)
-          .environment(\.colorScheme, .light)
+        RiskMeter(score: profile.riskScore, track: Color.secondary.opacity(0.18))
       }
       .padding(16)
       .cardStyle()

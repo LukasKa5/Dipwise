@@ -28,6 +28,9 @@ struct DipwiseApp: App {
         .environment(progress)
         .environment(Router.shared)
         .task { subscription.start() }
+        #if DEBUG
+        .task { DemoPortfolio.install(in: Self.container.mainContext) }
+        #endif
     }
     .modelContainer(Self.container)
     .onChange(of: scenePhase) { _, phase in

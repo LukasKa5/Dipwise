@@ -37,6 +37,8 @@ final class Router {
   var showsBrief = false
   /// Development only: `-startTab portfolio` opens straight onto the Portfolio screen.
   var showsPortfolio = ProcessInfo.processInfo.arguments.contains("portfolio") && Router.isDebug
+  /// Development only: `-startTab profile` opens straight onto the Investor Profile.
+  var showsProfile = ProcessInfo.processInfo.arguments.contains("profile") && Router.isDebug
 
   private static var isDebug: Bool {
     #if DEBUG

@@ -80,6 +80,9 @@ struct HomeView: View {
       .navigationDestination(isPresented: $router.showsPortfolio) {
         PortfolioView()
       }
+      .navigationDestination(isPresented: $router.showsProfile) {
+        InvestorProfileView()
+      }
       .sheet(isPresented: $showsAddStock) {
         AddStockView { symbol in
           router.homePath = [symbol]
