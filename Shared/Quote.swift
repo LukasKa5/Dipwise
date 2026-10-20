@@ -21,6 +21,8 @@ struct Quote: Codable, Hashable {
   var opens: [Double] = []
   var volumes: [Double] = []
   var updatedAt: Date
+  /// How late this price is, when it isn't real-time.
+  var delay: TimeInterval?
 
   var change: Double {
     previousClose == 0 ? 0 : price / previousClose - 1

@@ -359,11 +359,24 @@ struct TrendingChip: View {
 
 struct DisclaimerFooter: View {
   var lastUpdated: Date?
+  @Environment(SubscriptionManager.self) private var subscription
+  @State private var showsPaywall = false
 
   var body: some View {
     VStack(alignment: .leading, spacing: 4) {
       if let lastUpdated {
         Text("Prices updated \(lastUpdated, format: .relative(presentation: .named))")
+      }
+      if !subscription.isPro {
+        Button {
+          showsPaywall = true
+        } label: {
+          Label("Prices are 15 minutes delayed. Real-time with Pro.", systemImage: "clock.badge.exclamationmark")
+            .font(.caption.weight(.semibold))
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.tint)
+        .sheet(isPresented: $showsPaywall) { PaywallView() }
       }
       Text("Market data may be delayed. Dipwise is not a broker and doesn't give investment advice.")
     }

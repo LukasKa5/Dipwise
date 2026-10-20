@@ -99,6 +99,9 @@ final class WatchTargetStore: NSObject {
       watched = decoded
       TargetSnapshotStore.save(stocks: decoded)
     }
+    if let realTime = context["realTime"] as? Bool {
+      MarketData.isRealTime = realTime
+    }
     if let currency = context["baseCurrency"] as? String {
       baseCurrency = currency
       TargetSnapshotStore.save(baseCurrency: currency)

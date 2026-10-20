@@ -65,5 +65,6 @@ final class SubscriptionManager {
 
   private func cacheProState() {
     UserDefaults.standard.set(isPro, forKey: AlertSettings.isProKey)
+    MarketData.isRealTime = isPro
   }
 }

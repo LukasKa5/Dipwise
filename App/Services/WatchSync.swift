@@ -24,7 +24,7 @@ final class WatchSync: NSObject, WCSessionDelegate {
           let data = try? JSONEncoder().encode(targets),
           let stocksData = try? JSONEncoder().encode(stocks),
           let progressData = try? JSONEncoder().encode(progress) else { return }
-    try? session.updateApplicationContext(["targets": data, "stocks": stocksData, "baseCurrency": baseCurrency, "progress": progressData])
+    try? session.updateApplicationContext(["targets": data, "stocks": stocksData, "baseCurrency": baseCurrency, "progress": progressData, "realTime": MarketData.isRealTime])
   }
 
   func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {

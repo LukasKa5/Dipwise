@@ -13,8 +13,47 @@ struct QuoteService: Sendable {
     return URLSession(configuration: configuration)
   }()
 
-  /// One year of daily data (or five years of weekly data) with dividends.
+  /// One year of daily data (or five years of weekly data) with dividends, delayed for free members.
   func quote(for symbol: String, fiveYears: Bool = false) async throws -> Quote {
+    let delay = Self.effectiveDelay
+    if let proxy = MarketData.proxyURL {
+      return try await Self.proxied(Quote.self, proxy, "quote", ["symbol": symbol, "fiveYears": fiveYears ? "1" : "0", "delay": "\(Int(delay))"])
+    }
+    var quote = try await yahooQuote(for: symbol, fiveYears: fiveYears)
+    // Yahoo is real-time for most US stocks, so hold the price back by the free delay, using today's 5-minute bars.
+    if delay > 0, !fiveYears, MarketClock.isOpen(), let bars = try? await yahooIntraday(for: symbol),
+       let index = bars.dates.lastIndex(where: { $0 <= Date.now.addingTimeInterval(-delay) }) {
+      quote.price = bars.values[index]
+      if !quote.closes.isEmpty { quote.closes[quote.closes.count - 1] = quote.price }
+      quote.delay = delay
+    }
+    return quote
+  }
+
+  /// The delay that applies now. Screenshots with a frozen date are never delayed.
+  private static var effectiveDelay: TimeInterval {
+    #if DEBUG
+    if marketingDate != nil { return 0 }
+    #endif
+    return MarketData.delay
+  }
+
+  private static let proxyDecoder: JSONDecoder = {
+    let decoder = JSONDecoder()
+    decoder.dateDecodingStrategy = .secondsSince1970
+    return decoder
+  }()
+
+  /// Calls your quote proxy, which answers in the app's own types.
+  private static func proxied<T: Decodable>(_ type: T.Type, _ base: URL, _ path: String, _ query: [String: String]) async throws -> T {
+    var components = URLComponents(url: base.appending(path: path), resolvingAgainstBaseURL: false)!
+    components.queryItems = query.map { URLQueryItem(name: $0.key, value: $0.value) }
+    let (data, response) = try await session.data(from: components.url!)
+    guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw QuoteError.noData }
+    return try proxyDecoder.decode(T.self, from: data)
+  }
+
+  private func yahooQuote(for symbol: String, fiveYears: Bool) async throws -> Quote {
     var components = URLComponents(string: "https://query1.finance.yahoo.com/v8/finance/chart/\(symbol)")!
     components.queryItems = [
       URLQueryItem(name: "range", value: fiveYears ? "5y" : "1y"),
@@ -104,8 +143,22 @@ struct QuoteService: Sendable {
   }()
   #endif
 
-  /// Today's prices in five-minute steps.
+  /// Today's prices in five-minute steps, ending at the free delay for free members.
   func intraday(for symbol: String) async throws -> (values: [Double], dates: [Date]) {
+    let delay = Self.effectiveDelay
+    if let proxy = MarketData.proxyURL {
+      let series = try await Self.proxied(IntradayPayload.self, proxy, "intraday", ["symbol": symbol, "delay": "\(Int(delay))"])
+      return (series.values, series.dates)
+    }
+    let bars = try await yahooIntraday(for: symbol)
+    guard delay > 0 else { return bars }
+    let cutoff = Date.now.addingTimeInterval(-delay)
+    let kept = zip(bars.values, bars.dates).filter { $0.1 <= cutoff }
+    guard kept.count > 1 else { throw QuoteError.noData }
+    return (kept.map(\.0), kept.map(\.1))
+  }
+
+  private func yahooIntraday(for symbol: String) async throws -> (values: [Double], dates: [Date]) {
     var components = URLComponents(string: "https://query1.finance.yahoo.com/v8/finance/chart/\(symbol)")!
     components.queryItems = [URLQueryItem(name: "range", value: "1d"), URLQueryItem(name: "interval", value: "5m")]
     let (data, _) = try await Self.session.data(from: components.url!)
@@ -142,10 +195,16 @@ struct QuoteService: Sendable {
   /// How many units of `target` one unit of `source` buys.
   func exchangeRate(from source: String, to target: String) async -> Double? {
     guard source != target else { return 1 }
-    return try? await quote(for: "\(source)\(target)=X").price
+    if let proxy = MarketData.proxyURL {
+      return try? await Self.proxied(RatePayload.self, proxy, "fx", ["from": source, "to": target]).rate
+    }
+    return try? await yahooQuote(for: "\(source)\(target)=X", fiveYears: false).price
   }
 
   func search(_ text: String) async throws -> [SymbolMatch] {
+    if let proxy = MarketData.proxyURL {
+      return try await Self.proxied([SymbolMatch].self, proxy, "search", ["q": text])
+    }
     var components = URLComponents(string: "https://query1.finance.yahoo.com/v1/finance/search")!
     components.queryItems = [
       URLQueryItem(name: "q", value: text),
@@ -161,7 +220,16 @@ struct QuoteService: Sendable {
   }
 }
 
-struct SymbolMatch: Identifiable, Hashable {
+private struct IntradayPayload: Decodable {
+  var values: [Double]
+  var dates: [Date]
+}
+
+private struct RatePayload: Decodable {
+  var rate: Double
+}
+
+struct SymbolMatch: Identifiable, Hashable, Codable {
   var id: String { symbol }
   var symbol: String
   var name: String

@@ -442,6 +442,7 @@ private struct ProFeature {
   static let proWidth: CGFloat = 86
 
   static let all: [ProFeature] = [
+    ProFeature(title: "Real-time prices and alerts", systemImage: "bolt.fill", free: .text("15 min"), pro: .text("Live")),
     ProFeature(title: "Price alerts", systemImage: "bell.fill", free: .text("3"), pro: .text("Unlimited")),
     ProFeature(title: "Smart alerts like RSI, MACD, and trend crosses", systemImage: "sparkles", free: .missing, pro: .text("27 types")),
     ProFeature(title: "Odds that each alert fires", systemImage: "dice.fill", free: .text("1"), pro: .text("All")),
@@ -459,7 +460,7 @@ private struct ProFeature {
   static func cell(_ value: Value, isPro: Bool) -> some View {
     switch value {
     case .text(let text):
-      Text(text)
+      Text(LocalizedStringKey(text))
         .font(.subheadline.weight(isPro ? .bold : .regular))
         .foregroundStyle(isPro ? AnyShapeStyle(Brand.buy) : AnyShapeStyle(.white.opacity(0.5)))
         .lineLimit(1)

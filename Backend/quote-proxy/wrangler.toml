@@ -1,0 +1,6 @@
+name = "dipwise-quotes"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+
+# The vendor key is a secret, never in this file:
+#   npx wrangler secret put TWELVE_DATA_KEY
