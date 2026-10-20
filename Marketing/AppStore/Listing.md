@@ -43,6 +43,8 @@ YOUR PORTFOLIO, IN ONE CALM PLACE
 • Import positions from Robinhood, Fidelity, Charles Schwab, Vanguard, E*TRADE, Interactive Brokers, Trading 212, DEGIRO, or any spreadsheet
 • Value, today's move, total return, and dividend income in your own currency
 • See whether you're beating the S&P 500 over any period (Pro)
+• Investor Profile: see what your broker sees about you, your risk score, style, and habits (Pro)
+• Flock alerts: when a stock enters the crowd's buy zone, the flock starts buying, or a top investor adds it (Pro)
 • A watchlist with prices, trends, and how close each plan is
 
 LIVING WIDGETS AND APPLE WATCH
@@ -106,20 +108,22 @@ The first frame is the icon at full size, with the real alert arriving above Dip
 
 ### iPhone 6.9-inch (1320 × 2868), from `iPhone-6.9/`
 
-| # | File | Headline | Dippy says |
-|---|------|----------|------------|
-| 1 | 01-buy-the-dip.png | Buy the dip. Never miss it. | (the alert arrives) |
-| 2 | 02-buy-zone.png | Draw your buy zone | Right there looks good. |
-| 3 | 03-odds.png | Know your odds before you buy | 65% chance. Nice. |
-| 4 | 04-alert.png | It dips. Dippy taps you. | Hoo! It's in your zone! |
-| 5 | 05-smart-alerts.png | 27 smart alerts, plain English | RSI says oversold. |
-| 6 | 06-widgets.png | Your plans, always in sight | |
-| 7 | 07-apple-watch.png | Your portfolio, on your wrist | Glance, don't stare. |
-| 8 | 08-import.png | Your portfolio in seconds | Any broker. No login. |
-| 9 | 09-portfolio.png | All your stocks, one calm place | Calm, and growing. |
-| 10 | 10-start-free.png | Sleep well. Dippy's on watch. | |
+Each image is its own clean page in the icon's navy: a small Dippy chapter mark, a two-line headline, and the real screen, frameless with Apple's display corners. The first and last frames bookend the story with Dippy on the icon's glowing line: waving as the alert arrives, then asleep under the moon.
 
-Upload them in this order so the line connects. Apple scales the 6.9-inch set down for every smaller iPhone, so it's the only iPhone set you need. `iPhone-6.5/` (1284 × 2778) has the same images in case you'd rather supply that size yourself.
+| # | File | Chapter | Headline |
+|---|------|---------|----------|
+| 1 | 01-buy-the-dip.png | — | Buy the dip. Never miss it. |
+| 2 | 02-buy-zone.png | Plan | Draw your buy zone |
+| 3 | 03-odds.png | Odds | Know your odds before you buy |
+| 4 | 04-alert.png | Alert | It dips. Dippy taps you. |
+| 5 | 05-profile.png | Your profile | See what your broker sees |
+| 6 | 06-smart-alerts.png | Signals | 27 smart alerts, plain English |
+| 7 | 07-widgets.png | Home Screen | Your plans, always in sight |
+| 8 | 08-apple-watch.png | Apple Watch | Your portfolio, on your wrist |
+| 9 | 09-import.png | Import | Your portfolio in seconds |
+| 10 | 10-start-free.png | — | Sleep well. Dippy's on watch. |
+
+Apple scales the 6.9-inch set down for every smaller iPhone. `iPhone-6.5/` has the same images at 1284 × 2778.
 
 ### iPad 13-inch (2064 × 2752), from `iPad-13/`
 

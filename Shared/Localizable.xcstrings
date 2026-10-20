@@ -971,6 +971,52 @@
         }
       }
     },
+    "%@ of the flock is buying": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ des Schwarms kaufen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ de la bandada compra"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ de la volée achète"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "il %@ dello stormo compra"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "群れの%@が買い"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "무리의 %@가 매수 중"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ do bando está comprando"
+          }
+        }
+      }
+    },
     "%@ of their portfolio": {
       "localizations": {
         "de": {
@@ -1013,6 +1059,98 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ da carteira dele"
+          }
+        }
+      }
+    },
+    "%@ of your fired buy alerts are higher today.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ deiner ausgelösten Kaufalarme stehen heute höher."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El %@ de tus alertas de compra saltadas está hoy más alto."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ de tes alertes d'achat déclenchées sont plus hautes aujourd'hui."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "il %@ dei tuoi avvisi di acquisto scattati è più alto oggi."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "作動した買いアラートの%@が今日は上昇しています。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "울린 매수 알림의 %@가 오늘 더 높아요."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ dos seus alertas de compra disparados estão mais altos hoje."
+          }
+        }
+      }
+    },
+    "%@ of your stocks have a plan.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ deiner Aktien haben einen Plan."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El %@ de tus acciones tiene un plan."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ de tes actions ont un plan."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "il %@ delle tue azioni ha un piano."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "銘柄の%@にプランがあります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "종목의 %@에 계획이 있어요."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ das suas ações têm um plano."
           }
         }
       }
@@ -1429,6 +1567,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ · %@%@ hoje"
+          }
+        }
+      }
+    },
+    "%@ · Risk %lld of 7": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · Risiko %lld von 7"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · Riesgo %lld de 7"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · Risque %lld sur 7"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · Rischio %lld su 7"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · リスク 7段階中%lld"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · 위험 7점 중 %lld점"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · Risco %lld de 7"
           }
         }
       }
@@ -1946,6 +2130,52 @@
         }
       }
     },
+    "%lld decisions logged": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Entscheidungen festgehalten"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld decisiones anotadas"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld décisions notées"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld decisioni registrate"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "判断を%lld件記録"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "결정 %lld개 기록"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld decisões registradas"
+          }
+        }
+      }
+    },
     "%lld investors": {
       "localizations": {
         "de": {
@@ -2126,6 +2356,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld de %lld desbloqueadas"
+          }
+        }
+      }
+    },
+    "%lld of 7": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld von 7"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld de 7"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld sur 7"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld su 7"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "7段階中%lld"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "7점 중 %lld점"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld de 7"
           }
         }
       }
@@ -2685,6 +2961,52 @@
         }
       }
     },
+    "12-month result": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "12-Monats-Ergebnis"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resultado a 12 meses"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Résultat sur 12 mois"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risultato a 12 mesi"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "12か月の成績"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "12개월 성과"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resultado em 12 meses"
+          }
+        }
+      }
+    },
     "2%": {},
     "3%": {},
     "5%": {},
@@ -3103,6 +3425,52 @@
         }
       }
     },
+    "A few positions carry most of your portfolio. Brokers flag this as higher risk: one stock can move everything.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wenige Positionen tragen den Großteil deines Portfolios. Broker werten das als höheres Risiko: Eine Aktie kann alles bewegen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unas pocas posiciones pesan casi toda tu cartera. Los brókers lo ven como más riesgo: una acción puede moverlo todo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quelques positions pèsent l'essentiel de ton portefeuille. Les courtiers y voient plus de risque : une action peut tout faire bouger."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poche posizioni pesano gran parte del portafoglio. I broker lo considerano più rischioso: un'azione può muovere tutto."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "少数の銘柄がポートフォリオの大半を占めています。1銘柄で全体が動くため、証券会社は高リスクとみなします。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "몇 종목이 포트폴리오 대부분을 차지해요. 한 종목이 전체를 움직일 수 있어 증권사는 고위험으로 봐요."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poucas posições carregam quase toda a carteira. Corretoras veem mais risco: uma ação pode mexer em tudo."
+          }
+        }
+      }
+    },
     "A glance is enough": {
       "localizations": {
         "de": {
@@ -3145,6 +3513,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Uma olhada basta"
+          }
+        }
+      }
+    },
+    "A good part of your return comes as income. Brokers see a long-term, low-turnover investor.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein guter Teil deiner Rendite kommt als Einkommen. Broker sehen einen langfristigen Anleger mit wenig Umschlag."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buena parte de tu rentabilidad llega como ingresos. Los brókers ven un inversor a largo plazo que opera poco."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Une bonne part de ton rendement vient des revenus. Les courtiers voient un investisseur long terme qui bouge peu."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buona parte del rendimento arriva come reddito. I broker vedono un investitore di lungo periodo che opera poco."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "リターンの多くがインカムです。証券会社は売買の少ない長期投資家とみなします。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "수익의 상당 부분이 배당 수입이에요. 증권사는 매매가 적은 장기 투자자로 봐요."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Boa parte do seu retorno vem como renda. Corretoras veem um investidor de longo prazo que negocia pouco."
           }
         }
       }
@@ -3559,6 +3973,98 @@
           "stringUnit": {
             "state": "translated",
             "value": "O preço de uma ação com suas zonas de compra verdes e de venda vermelhas. Deixe em branco para ver todas."
+          }
+        }
+      }
+    },
+    "A top investor adds it": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein Top-Anleger kauft sie"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un gran inversor la compra"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un top investisseur l'ajoute"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un top investitore la aggiunge"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "トップ投資家が購入"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "상위 투자자가 매수"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Um top investidor compra"
+          }
+        }
+      }
+    },
+    "A top investor buys": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein Top-Anleger kauft"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un gran inversor compra"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un top investisseur achète"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un top investitore compra"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "トップ投資家が買う"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "상위 투자자 매수"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Um top investidor compra"
           }
         }
       }
@@ -4019,6 +4525,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Adicionar ação"
+          }
+        }
+      }
+    },
+    "Add What You Own": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Füge hinzu, was du besitzt"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añade lo que tienes"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajoute ce que tu possèdes"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi ciò che possiedi"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保有銘柄を追加"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "보유 종목 추가"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adicione o que você tem"
           }
         }
       }
@@ -5173,6 +5725,52 @@
         }
       }
     },
+    "Alerts built on what other Dipwise investors do: when a stock reaches the crowd's buy zone, when the flock starts buying it, or when a top investor adds it.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alarme auf Basis dessen, was andere Dipwise-Anleger tun: wenn eine Aktie die Kaufzone der Masse erreicht, wenn der Schwarm zu kaufen beginnt oder wenn ein Top-Anleger sie kauft."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alertas basadas en lo que hacen otros inversores de Dipwise: cuando una acción llega a la zona de compra de la multitud, cuando la bandada empieza a comprarla o cuando un gran inversor la añade."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Des alertes basées sur ce que font les autres investisseurs Dipwise : quand une action atteint la zone d'achat de la foule, quand la volée commence à l'acheter ou quand un top investisseur l'ajoute."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avvisi basati su ciò che fanno gli altri investitori Dipwise: quando un'azione raggiunge la zona di acquisto della folla, quando lo stormo inizia a comprarla o quando un top investitore la aggiunge."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ほかのDipwise投資家の動きに基づくアラート。みんなの買いゾーンに入ったとき、群れが買い始めたとき、トップ投資家が買ったときに通知します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다른 Dipwise 투자자의 행동 기반 알림: 대중 매수 구간 도달, 무리의 매수 시작, 상위 투자자의 매수."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alertas baseados no que outros investidores do Dipwise fazem: quando uma ação chega à zona de compra da multidão, quando o bando começa a comprar ou quando um top investidor adiciona."
+          }
+        }
+      }
+    },
     "Alerts fired": {
       "localizations": {
         "de": {
@@ -5909,6 +6507,52 @@
         }
       }
     },
+    "Anonymous members who share their mix": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anonyme Mitglieder, die ihre Mischung teilen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Miembros anónimos que comparten su mezcla"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Membres anonymes qui partagent leur répartition"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Membri anonimi che condividono il loro mix"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "構成を共有する匿名メンバー"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "구성을 공유하는 익명 회원"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Membros anônimos que compartilham o mix"
+          }
+        }
+      }
+    },
     "Anonymous statistics from other Dipwise investors will appear here soon.": {
       "localizations": {
         "de": {
@@ -6553,6 +7197,52 @@
         }
       }
     },
+    "Balanced investor": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ausgewogener Anleger"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inversor equilibrado"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Investisseur équilibré"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Investitore bilanciato"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "バランス型投資家"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "균형형 투자자"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Investidor equilibrado"
+          }
+        }
+      }
+    },
     "Based on buy alerts that fired in the last 6 months, compared with today's price. Past results don't predict the future.": {
       "localizations": {
         "de": {
@@ -6875,6 +7565,52 @@
         }
       }
     },
+    "Better than %@ of members": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Besser als %@ der Mitglieder"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mejor que el %@ de los miembros"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meilleur que %@ des membres"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meglio del %@ dei membri"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "メンバーの%@より上"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "회원의 %@보다 좋아요"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Melhor que %@ dos membros"
+          }
+        }
+      }
+    },
     "Big daily move": {
       "localizations": {
         "de": {
@@ -7105,6 +7841,52 @@
         }
       }
     },
+    "Biggest position": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Größte Position"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mayor posición"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus grosse position"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Posizione più grande"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最大の保有"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "최대 보유"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maior posição"
+          }
+        }
+      }
+    },
     "Board": {
       "localizations": {
         "de": {
@@ -7147,6 +7929,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Painel"
+          }
+        }
+      }
+    },
+    "Boo!": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buh!"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¡Bu!"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bouh !"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu!"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ばあ！"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "까꿍!"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu!"
           }
         }
       }
@@ -7377,6 +8205,98 @@
           "stringUnit": {
             "state": "translated",
             "value": "Traga sua carteira em segundos"
+          }
+        }
+      }
+    },
+    "Broad funds make up much of what you own. Brokers see a disciplined, low-risk investor.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Breite Fonds machen viel deines Besitzes aus. Broker sehen einen disziplinierten Anleger mit geringem Risiko."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los fondos amplios son buena parte de lo que tienes. Los brókers ven un inversor disciplinado y de bajo riesgo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les fonds larges forment une grande part de ce que tu possèdes. Les courtiers voient un investisseur discipliné et peu risqué."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I fondi ampi sono gran parte di ciò che possiedi. I broker vedono un investitore disciplinato e a basso rischio."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保有の多くが幅広いファンドです。証券会社は規律ある低リスク投資家とみなします。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "보유 자산의 상당 부분이 광범위한 펀드예요. 증권사는 규율 있는 저위험 투자자로 봐요."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fundos amplos são boa parte do que você tem. Corretoras veem um investidor disciplinado e de baixo risco."
+          }
+        }
+      }
+    },
+    "Brokers build a profile like this from every trade you make. Dipwise works it out on your iPhone, so you can see it too. It's information, not advice.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Broker erstellen aus jedem deiner Trades ein solches Profil. Dipwise berechnet es auf deinem iPhone, damit du es auch sehen kannst. Es ist eine Information, keine Beratung."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los brókers crean un perfil así con cada operación que haces. Dipwise lo calcula en tu iPhone para que tú también lo veas. Es información, no asesoramiento."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les courtiers construisent un tel profil à partir de chaque ordre. Dipwise le calcule sur ton iPhone pour que tu le voies aussi. C'est une information, pas un conseil."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I broker costruiscono un profilo così da ogni operazione. Dipwise lo calcola sul tuo iPhone perché tu possa vederlo. È un'informazione, non un consiglio."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "証券会社は取引のたびにこうしたプロフィールを作っています。Dipwiseはそれをあなたのために iPhone上で計算します。情報であり、助言ではありません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "증권사는 매매할 때마다 이런 프로필을 만들어요. Dipwise가 iPhone에서 계산해 나도 볼 수 있게 해요. 정보일 뿐 조언이 아니에요."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Corretoras montam um perfil assim a cada operação sua. O Dipwise calcula no seu iPhone para você ver também. É informação, não recomendação."
           }
         }
       }
@@ -7657,6 +8577,52 @@
         }
       }
     },
+    "Buy alerts in profit": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaufalarme im Plus"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alertas de compra en beneficio"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alertes d'achat gagnantes"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avvisi di acquisto in profitto"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "利益が出た買いアラート"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "수익 중인 매수 알림"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alertas de compra no lucro"
+          }
+        }
+      }
+    },
     "Buy alerts since": {
       "localizations": {
         "de": {
@@ -7929,6 +8895,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Comprar quedas com inteligência"
+          }
+        }
+      }
+    },
+    "Buy low!": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Günstig kaufen!"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¡Compra barato!"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Achète bas !"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compra basso!"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安く買おう！"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "싸게 사요!"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compre na baixa!"
           }
         }
       }
@@ -8389,6 +9401,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Compras no lucro"
+          }
+        }
+      }
+    },
+    "Buys when alerted": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kauft bei Alarm"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compra con alerta"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Achète à l'alerte"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compra all'avviso"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アラート時の購入"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "알림 시 매수"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compra no alerta"
           }
         }
       }
@@ -9769,6 +10827,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Empresa ou ticker"
+          }
+        }
+      }
+    },
+    "Compare yourself with the flock with Pro": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vergleich dich mit Pro mit dem Schwarm"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compárate con la bandada con Pro"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compare-toi à la volée avec Pro"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confrontati con lo stormo con Pro"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proで群れと比較"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro로 무리와 비교"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compare-se ao bando com o Pro"
           }
         }
       }
@@ -12304,6 +13408,52 @@
         }
       }
     },
+    "Diversification": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Streuung"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diversificación"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diversification"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diversificazione"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "分散度"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "분산도"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diversificação"
+          }
+        }
+      }
+    },
     "Diversified": {
       "localizations": {
         "de": {
@@ -12346,6 +13496,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Diversificada"
+          }
+        }
+      }
+    },
+    "Dividend builder": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dividendensammler"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Constructor de dividendos"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bâtisseur de dividendes"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Costruttore di dividendi"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配当ビルダー"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "배당 빌더"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Construtor de dividendos"
           }
         }
       }
@@ -12714,6 +13910,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dividendos se acumulam"
+          }
+        }
+      }
+    },
+    "Dividends pay you about %@ a year.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dividenden bringen dir etwa %@ pro Jahr."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los dividendos te dan alrededor del %@ al año."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les dividendes te rapportent environ %@ par an."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I dividendi ti rendono circa il %@ l'anno."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配当は年に約%@です。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "배당으로 연 약 %@를 받아요."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dividendos rendem cerca de %@ ao ano."
           }
         }
       }
@@ -13588,6 +14830,98 @@
           "stringUnit": {
             "state": "translated",
             "value": "Informe suas ações e o Dippy acompanha valor, retorno e dividendos."
+          }
+        }
+      }
+    },
+    "Enter the shares you own and Dippy will build your investor profile.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gib deine Anteile ein, und Dippy erstellt dein Anlegerprofil."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Introduce tus acciones y Dippy creará tu perfil de inversor."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saisis tes actions et Dippy construira ton profil d'investisseur."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inserisci le tue azioni e Dippy costruirà il tuo profilo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保有株数を入力すると、Dippyが投資家プロフィールを作ります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "보유 주식을 입력하면 Dippy가 투자자 프로필을 만들어요."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Informe suas ações e o Dippy monta seu perfil de investidor."
+          }
+        }
+      }
+    },
+    "Enters the crowd's buy zone": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erreicht die Kaufzone der Masse"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entra en la zona de compra de la multitud"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entre dans la zone d'achat de la foule"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entra nella zona di acquisto della folla"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "みんなの買いゾーンに入る"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "대중 매수 구간 진입"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entra na zona de compra da multidão"
           }
         }
       }
@@ -14972,6 +16306,52 @@
         }
       }
     },
+    "Flock buying surge": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaufwelle im Schwarm"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ola de compras en la bandada"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vague d'achats dans la volée"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ondata di acquisti nello stormo"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "群れの買い急増"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "무리 매수 급증"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Onda de compras no bando"
+          }
+        }
+      }
+    },
     "Floor": {
       "localizations": {
         "de": {
@@ -16306,6 +17686,52 @@
         }
       }
     },
+    "Growth seeker": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wachstumssucher"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscador de crecimiento"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chercheur de croissance"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cacciatore di crescita"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "成長志向"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "성장 추구형"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caçador de crescimento"
+          }
+        }
+      }
+    },
     "Have one of your buy alerts fire.": {
       "localizations": {
         "de": {
@@ -16582,6 +18008,52 @@
         }
       }
     },
+    "Hello!": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hallo!"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¡Hola!"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bonjour !"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ciao!"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "こんにちは！"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "안녕하세요!"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Olá!"
+          }
+        }
+      }
+    },
     "Here's what Dippy will watch for you.": {
       "localizations": {
         "de": {
@@ -16624,6 +18096,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Veja o que o Dippy vai vigiar para você."
+          }
+        }
+      }
+    },
+    "Hi!": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hi!"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¡Hola!"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salut !"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ciao!"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "やあ！"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "안녕!"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oi!"
           }
         }
       }
@@ -16716,6 +18234,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Máxima"
+          }
+        }
+      }
+    },
+    "High-conviction investor": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anleger mit hoher Überzeugung"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inversor de alta convicción"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Investisseur à forte conviction"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Investitore ad alta convinzione"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "確信型投資家"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "고확신 투자자"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Investidor de alta convicção"
           }
         }
       }
@@ -16904,6 +18468,52 @@
         }
       }
     },
+    "Hmm?": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hm?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Hmm?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hmm ?"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hmm?"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ん？"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "음?"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hum?"
+          }
+        }
+      }
+    },
     "Holdings": {
       "localizations": {
         "de": {
@@ -17038,6 +18648,98 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tela de Início"
+          }
+        }
+      }
+    },
+    "Hoo hi!": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Huu, hallo!"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¡Huu, hola!"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hou, salut !"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Huu, ciao!"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ホー、やあ！"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "부엉, 안녕!"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Huu, oi!"
+          }
+        }
+      }
+    },
+    "Hoo hoo!": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Huu huu!"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¡Huu huu!"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hou hou !"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Huu huu!"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ホーホー！"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "부엉부엉!"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Huu huu!"
           }
         }
       }
@@ -18326,6 +20028,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Investidor não encontrado"
+          }
+        }
+      }
+    },
+    "Investor Profile": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anlegerprofil"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Perfil de inversor"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profil d'investisseur"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profilo investitore"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "投資家プロフィール"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "투자자 프로필"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Perfil de investidor"
           }
         }
       }
@@ -19798,6 +21546,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Registrar decisão"
+          }
+        }
+      }
+    },
+    "Log decisions to see this": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Halte Entscheidungen fest, um das zu sehen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anota decisiones para verlo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Note tes décisions pour le voir"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registra le decisioni per vederlo"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "判断を記録すると表示"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "결정을 기록하면 보여요"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registre decisões para ver"
           }
         }
       }
@@ -21684,6 +23478,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mais prováveis a seguir"
+          }
+        }
+      }
+    },
+    "Most members who moved this week are buying it, not selling.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die meisten Mitglieder, die diese Woche gehandelt haben, kaufen, statt zu verkaufen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La mayoría de miembros que se movieron esta semana compran, no venden."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La plupart des membres qui ont bougé cette semaine achètent plutôt que vendre."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La maggior parte dei membri che si sono mossi questa settimana compra, non vende."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今週売買したメンバーの多くが、売りではなく買い。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이번 주 매매한 회원 대부분이 팔지 않고 사고 있어요."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A maioria dos membros que se mexeram nesta semana está comprando, não vendendo."
           }
         }
       }
@@ -24310,6 +26150,52 @@
         }
       }
     },
+    "Oh!": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oh!"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¡Oh!"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oh !"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oh!"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "おっ！"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "오!"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oh!"
+          }
+        }
+      }
+    },
     "On": {
       "localizations": {
         "de": {
@@ -24586,6 +26472,52 @@
         }
       }
     },
+    "One of the flock's top 50 investors adds it to their portfolio.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einer der Top-50-Anleger im Schwarm nimmt sie in sein Portfolio auf."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uno de los 50 mejores inversores de la bandada la añade a su cartera."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un des 50 meilleurs investisseurs de la volée l'ajoute à son portefeuille."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uno dei 50 migliori investitori dello stormo la aggiunge al portafoglio."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "群れのトップ50投資家の誰かがポートフォリオに追加します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "무리 상위 50명 중 한 명이 포트폴리오에 추가해요."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Um dos 50 melhores investidores do bando adiciona à carteira."
+          }
+        }
+      }
+    },
     "One plan per stock": {
       "localizations": {
         "de": {
@@ -24674,6 +26606,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Compra única. Sem assinatura."
+          }
+        }
+      }
+    },
+    "Ooh?": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oh?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Oh?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oh ?"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oh?"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "おや？"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "오?"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opa?"
           }
         }
       }
@@ -25552,6 +27530,98 @@
         }
       }
     },
+    "Past 12 months": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Letzte 12 Monate"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Últimos 12 meses"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "12 derniers mois"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ultimi 12 mesi"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "過去12か月"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지난 12개월"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Últimos 12 meses"
+          }
+        }
+      }
+    },
+    "Patience…": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geduld…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paciencia…"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Patience…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pazienza…"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "忍耐…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "인내…"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paciência…"
+          }
+        }
+      }
+    },
     "Patient Owl": {
       "localizations": {
         "de": {
@@ -25594,6 +27664,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Coruja paciente"
+          }
+        }
+      }
+    },
+    "Patient dip hunter": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geduldiger Dip-Jäger"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cazador de caídas paciente"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chasseur de baisses patient"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paziente cacciatore di ribassi"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "辛抱強い押し目ハンター"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "인내심 있는 저점 사냥꾼"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caçador de quedas paciente"
           }
         }
       }
@@ -29279,6 +31395,52 @@
         }
       }
     },
+    "Risk score": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risikowert"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puntuación de riesgo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Score de risque"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Punteggio di rischio"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "リスクスコア"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "위험 점수"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nota de risco"
+          }
+        }
+      }
+    },
     "Risk score %lld out of 7": {
       "localizations": {
         "de": {
@@ -29321,6 +31483,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Risco %lld de 7"
+          }
+        }
+      }
+    },
+    "Riskier than %@ of members": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Riskanter als %@ der Mitglieder"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Más arriesgado que el %@ de los miembros"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus risqué que %@ des membres"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Più rischioso del %@ dei membri"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "メンバーの%@よりリスクが高い"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "회원의 %@보다 위험해요"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mais arriscado que %@ dos membros"
           }
         }
       }
@@ -29969,6 +32177,52 @@
         }
       }
     },
+    "See everything a broker learns about you with Pro": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sieh mit Pro alles, was ein Broker über dich erfährt"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ve con Pro todo lo que un bróker sabe de ti"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vois avec Pro tout ce qu'un courtier apprend sur toi"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vedi con Pro tutto ciò che un broker sa di te"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proで証券会社が知るすべてを見る"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro로 증권사가 아는 모든 것 보기"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Veja com o Pro tudo o que a corretora sabe sobre você"
+          }
+        }
+      }
+    },
     "See exactly where investors set their alerts": {
       "localizations": {
         "de": {
@@ -30563,6 +32817,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Veja seu calendário de dividendos e renda mensal"
+          }
+        }
+      }
+    },
+    "See your investing habits with Pro": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sieh deine Anlagegewohnheiten mit Pro"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ve tus hábitos de inversión con Pro"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vois tes habitudes d'investissement avec Pro"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vedi le tue abitudini con Pro"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proで投資の習慣を見る"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro로 투자 습관 보기"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Veja seus hábitos com o Pro"
           }
         }
       }
@@ -33143,6 +35443,98 @@
         }
       }
     },
+    "Steady": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ruhig"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tranquilo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calme"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calmo"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "穏やか"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "안정"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calmo"
+          }
+        }
+      }
+    },
+    "Steady indexer": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beständiger Indexanleger"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inversor indexado constante"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Investisseur indiciel régulier"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Investitore indicizzato costante"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "堅実なインデックス投資家"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "꾸준한 인덱스 투자자"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Investidor indexado constante"
+          }
+        }
+      }
+    },
     "Step %lld of %lld": {
       "localizations": {
         "de": {
@@ -33415,6 +35807,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ações negociadas na faixa onde a maioria dos investidores planeja comprar."
+          }
+        }
+      }
+    },
+    "Stocks with a plan": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aktien mit Plan"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acciones con plan"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actions avec plan"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Azioni con piano"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "プランのある銘柄"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "계획 있는 종목"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ações com plano"
           }
         }
       }
@@ -35945,6 +38383,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "O preço volta ao que você pagou."
+          }
+        }
+      }
+    },
+    "The price drops into the range where most Dipwise investors plan to buy.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Kurs fällt in den Bereich, in dem die meisten Dipwise-Anleger kaufen wollen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El precio cae en el rango donde la mayoría de inversores de Dipwise planea comprar."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le cours descend dans la fourchette où la plupart des investisseurs Dipwise prévoient d'acheter."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il prezzo scende nell'intervallo in cui la maggior parte degli investitori Dipwise vuole comprare."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "多くのDipwise投資家が買いを予定する価格帯に下落します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "대부분의 Dipwise 투자자가 사려는 가격대로 내려와요."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O preço cai na faixa onde a maioria dos investidores do Dipwise planeja comprar."
           }
         }
       }
@@ -40779,6 +43263,98 @@
         }
       }
     },
+    "What your broker sees": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Was dein Broker sieht"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lo que ve tu bróker"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce que voit ton courtier"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cosa vede il tuo broker"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "証券会社に見えていること"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "증권사가 보는 것"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O que sua corretora vê"
+          }
+        }
+      }
+    },
+    "Wheee!": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Juhuu!"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¡Yupi!"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Youpi !"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Evviva!"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "わーい！"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "야호!"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uhuu!"
+          }
+        }
+      }
+    },
     "When It Dips": {
       "localizations": {
         "de": {
@@ -40821,6 +43397,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Quando cai"
+          }
+        }
+      }
+    },
+    "When a buy alert fires, you buy %@ of the time.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wenn ein Kaufalarm auslöst, kaufst du in %@ der Fälle."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cuando salta una alerta de compra, compras el %@ de las veces."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quand une alerte d'achat se déclenche, tu achètes %@ du temps."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quando scatta un avviso di acquisto, compri il %@ delle volte."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "買いアラートが作動すると、%@の確率で購入しています。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "매수 알림이 울리면 %@의 확률로 사요."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quando um alerta de compra dispara, você compra %@ das vezes."
           }
         }
       }
@@ -41285,6 +43907,52 @@
         }
       }
     },
+    "Wild": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wild"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volátil"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agité"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volatile"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "激しい"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "변동"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volátil"
+          }
+        }
+      }
+    },
     "Wise Owl": {
       "localizations": {
         "de": {
@@ -41373,6 +44041,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Com “Compartilhar meus alertas anonimamente”, o Dipwise compartilha o ticker, o tipo e os níveis de preço de cada alerta. Com “Compartilhar meu mix de carteira anonimamente”, compartilha o percentual de cada ação e quando você aumenta ou reduz. Ambos ficam no banco de dados público do CloudKit da Apple com um identificador aleatório criado no seu aparelho. Nunca incluem nome, e-mail, valores, quantidade de ações, preços pagos ou notas. Desative qualquer um em Ajustes para remover esses dados."
+          }
+        }
+      }
+    },
+    "Worked out from your holdings and decisions": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ermittelt aus deinen Positionen und Entscheidungen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calculado a partir de tus posiciones y decisiones"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calculé à partir de tes positions et décisions"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calcolato dalle tue posizioni e decisioni"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保有と判断から算出"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "보유 종목과 결정으로 계산"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calculado a partir das suas posições e decisões"
           }
         }
       }
@@ -41791,6 +44505,98 @@
         }
       }
     },
+    "You hold fast-moving stocks. Brokers see a high-risk, high-reward profile.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du hältst schnelle Aktien. Broker sehen ein Profil mit hohem Risiko und hoher Chance."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tienes acciones muy movidas. Los brókers ven un perfil de alto riesgo y alta recompensa."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu détiens des actions qui bougent vite. Les courtiers voient un profil à haut risque et haut rendement."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Possiedi azioni molto mobili. I broker vedono un profilo ad alto rischio e alto rendimento."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "値動きの速い銘柄を保有しています。証券会社はハイリスク・ハイリターンとみなします。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "빠르게 움직이는 종목을 보유해요. 증권사는 고위험·고수익 프로필로 봐요."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Você tem ações que se mexem rápido. Corretoras veem um perfil de alto risco e alto retorno."
+          }
+        }
+      }
+    },
+    "You plan to buy below today's price and wait for it. Brokers see you as calm and price-aware.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du planst, unter dem heutigen Kurs zu kaufen, und wartest darauf. Broker sehen dich als ruhig und preisbewusst."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planeas comprar por debajo del precio actual y esperas. Los brókers te ven tranquilo y atento al precio."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu prévois d'acheter sous le cours actuel et tu attends. Les courtiers te voient calme et attentif aux prix."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pianifichi di comprare sotto il prezzo di oggi e aspetti. I broker ti vedono calmo e attento al prezzo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今日より安い価格での購入を計画し、待っています。証券会社は冷静で価格に敏感な投資家とみなします。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "오늘보다 낮은 가격에 사려고 기다려요. 증권사는 차분하고 가격에 민감한 투자자로 봐요."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Você planeja comprar abaixo do preço de hoje e espera. Corretoras veem você como calmo e atento ao preço."
+          }
+        }
+      }
+    },
     "You startled Dippy!": {
       "localizations": {
         "de": {
@@ -41879,6 +44685,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Você votou %@. Toque para mudar."
+          }
+        }
+      }
+    },
+    "You vs the flock": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du vs. Schwarm"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tú frente a la bandada"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toi face à la volée"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu vs lo stormo"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "あなた vs 群れ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "나 vs 무리"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Você vs. o bando"
           }
         }
       }
@@ -42017,6 +44869,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Seu %@ é mais paciente que %@ dos investidores"
+          }
+        }
+      }
+    },
+    "Your %lld positions behave like %@ equal ones.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deine %lld Positionen verhalten sich wie %@ gleich große."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tus %lld posiciones se comportan como %@ iguales."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tes %lld positions se comportent comme %@ positions égales."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le tue %lld posizioni si comportano come %@ uguali."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld銘柄は、同じ大きさの%@銘柄のように動きます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "보유 %lld종목은 같은 크기 %@종목처럼 움직여요."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suas %lld posições se comportam como %@ iguais."
           }
         }
       }
@@ -42343,6 +45241,52 @@
         }
       }
     },
+    "Your biggest position is %@, at %@ of your portfolio.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deine größte Position ist %@ mit %@ deines Portfolios."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu mayor posición es %@, con el %@ de tu cartera."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta plus grosse position est %@, à %@ de ton portefeuille."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La tua posizione più grande è %@, al %@ del portafoglio."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最大の保有は%@で、ポートフォリオの%@です。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "최대 보유는 %@로 포트폴리오의 %@예요."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sua maior posição é %@, com %@ da carteira."
+          }
+        }
+      }
+    },
     "Your brief is ready on iPhone": {
       "localizations": {
         "de": {
@@ -42665,6 +45609,52 @@
         }
       }
     },
+    "Your habits": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deine Gewohnheiten"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tus hábitos"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tes habitudes"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le tue abitudini"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "あなたの習慣"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "나의 습관"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seus hábitos"
+          }
+        }
+      }
+    },
     "Your level": {
       "localizations": {
         "de": {
@@ -42707,6 +45697,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Seu nível"
+          }
+        }
+      }
+    },
+    "Your money is spread out and your risk is moderate. Brokers see a balanced, long-term investor.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Geld ist gestreut, dein Risiko moderat. Broker sehen einen ausgewogenen, langfristigen Anleger."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu dinero está repartido y tu riesgo es moderado. Los brókers ven un inversor equilibrado a largo plazo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ton argent est réparti et ton risque modéré. Les courtiers voient un investisseur équilibré de long terme."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il denaro è distribuito e il rischio è moderato. I broker vedono un investitore bilanciato di lungo periodo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "資金は分散され、リスクは中程度です。証券会社はバランスの取れた長期投資家とみなします。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "자산이 분산되어 있고 위험은 보통이에요. 증권사는 균형 잡힌 장기 투자자로 봐요."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seu dinheiro está distribuído e o risco é moderado. Corretoras veem um investidor equilibrado de longo prazo."
           }
         }
       }
@@ -43075,6 +46111,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sua carteira e cada zona de compra na Tela de Início, tão claras que uma olhada basta."
+          }
+        }
+      }
+    },
+    "Your portfolio swings about %@ in a typical year.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Portfolio schwankt in einem typischen Jahr um etwa %@."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu cartera oscila alrededor de un %@ en un año típico."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ton portefeuille varie d'environ %@ sur une année type."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il portafoglio oscilla di circa il %@ in un anno tipico."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ポートフォリオは平均的な1年で約%@変動します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "포트폴리오는 보통 1년에 약 %@ 변동해요."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sua carteira oscila cerca de %@ em um ano típico."
           }
         }
       }
@@ -44091,6 +47173,52 @@
         }
       }
     },
+    "buy or sell zone set": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kauf- oder Verkaufszone gesetzt"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "zona de compra o venta fijada"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "zone d'achat ou de vente définie"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "zona di acquisto o vendita impostata"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "買い・売りゾーン設定済み"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "매수·매도 구간 설정"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "zona de compra ou venda definida"
+          }
+        }
+      }
+    },
     "day": {
       "localizations": {
         "de": {
@@ -44367,6 +47495,52 @@
         }
       }
     },
+    "out of 100": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "von 100"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "de 100"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sur 100"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "su 100"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "100点中"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "100점 중"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "de 100"
+          }
+        }
+      }
+    },
     "past 12 months": {
       "localizations": {
         "de": {
@@ -44455,6 +47629,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "criaram %@ novos alertas"
+          }
+        }
+      }
+    },
+    "since they fired": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "seit der Auslösung"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "desde que saltaron"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "depuis le déclenchement"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "da quando sono scattati"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "作動後"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "울린 이후"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "desde o disparo"
           }
         }
       }
@@ -44731,6 +47951,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "até a zona de venda"
+          }
+        }
+      }
+    },
+    "today's holdings": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "heutige Positionen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "posiciones actuales"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "positions actuelles"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "posizioni attuali"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "現在の保有"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "현재 보유"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "posições atuais"
           }
         }
       }
