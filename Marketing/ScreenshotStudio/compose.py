@@ -580,6 +580,46 @@ class Frames:
         self.images = [plain_sky(size, 1) for _ in range(count)]
 
 
+
+def pills(canvas, cx, top, labels, unit=1.0, icons=None):
+    """A centered row of soft navy pills with a mint check, for promises like "No login"."""
+    draw = ImageDraw.Draw(canvas)
+    label_font = font(ROUNDED, 44 * unit, "Bold")
+    height, gap = round(96 * unit), round(18 * unit)
+    widths = [draw.textlength(label, font=label_font) + 118 * unit for label in labels]
+    x = cx - (sum(widths) + gap * (len(labels) - 1)) / 2
+    for label, w in zip(labels, widths):
+        tile = Image.new("RGBA", (round(w), height), (0, 0, 0, 0))
+        tile.paste((255, 255, 255, 26), (0, 0), rounded_mask(tile.size, height // 2))
+        td = ImageDraw.Draw(tile)
+        td.rounded_rectangle((1, 1, tile.width - 2, height - 2), radius=height // 2, outline=(255, 255, 255, 46), width=2)
+        d = round(40 * unit)
+        x0, y0 = round(30 * unit), (height - d) // 2
+        td.ellipse((x0, y0, x0 + d, y0 + d), fill=MINT)
+        td.line([(x0 + 11 * unit, y0 + 21 * unit), (x0 + 18 * unit, y0 + 28 * unit), (x0 + 30 * unit, y0 + 13 * unit)], fill=INK, width=round(5 * unit), joint="curve")
+        td.text((x0 + d + 18 * unit, height * 0.2), label, font=label_font, fill=WHITE)
+        canvas.alpha_composite(tile, (round(x), round(top)))
+        x += w + gap
+
+
+def touch(canvas, x, y, label, unit=1.0, side="left"):
+    """A finger-tap hint: mint ripples on the spot and a small label pointing at it."""
+    layer = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    for r, a in [(92, 50), (64, 110)]:
+        draw.ellipse((x - r * unit, y - r * unit, x + r * unit, y + r * unit), outline=MINT + (a,), width=round(6 * unit))
+    draw.ellipse((x - 36 * unit, y - 36 * unit, x + 36 * unit, y + 36 * unit), fill=(255, 255, 255, 150))
+    canvas.alpha_composite(layer)
+    label_font = font(ROUNDED, 46 * unit, "Bold")
+    w = ImageDraw.Draw(canvas).textlength(label, font=label_font) + 64 * unit
+    h = round(84 * unit)
+    pill_layer = Image.new("RGBA", (round(w), h), (0, 0, 0, 0))
+    pill_layer.paste(MINT, (0, 0), rounded_mask(pill_layer.size, h // 2))
+    ImageDraw.Draw(pill_layer).text((32 * unit, h * 0.17), label, font=label_font, fill=INK)
+    px = x - 120 * unit - w if side == "left" else x + 120 * unit
+    shadowed(canvas, pill_layer, px, y - h / 2, blur=round(20 * unit), offset=round(10 * unit), opacity=120)
+
+
 def iphone_story(raw, raw_dir):
     W, H = 1320, 2868
     icon = Image.open(raw_dir / "app-icon.png")
@@ -604,11 +644,16 @@ def iphone_story(raw, raw_dir):
     line.dot(1130)
     title(c, 0, W, "Buy the *dip*.\nNever miss it.", 210, 150)
     banner = notification(1180, icon, "NVDA entered your buy zone", ["Now $209.35, inside $206.35–$217.80.", "Your plan: buy a little."])
-    lift(c, banner, (W - banner.width) / 2, 760)
+    lift(c, banner, (W - banner.width) / 2, 700)
+    pills(c, W / 2, 1000, ["No login", "No ads", "Any broker"])
     line.owl(raw_dir, "wave", 560, 860)
     frames.append(("01-buy-the-dip", c))
 
-    frames.append(("02-buy-zone", standard("Plan", "Draw your\n*buy zone*", fix_iphone_clock(raw("iphone-plan")))))
+    c = standard("Plan", "Draw your\n*buy zone*", fix_iphone_clock(raw("iphone-plan")))
+    # The editor's High handle, mapped from the capture into the frame.
+    k = 1040 / 1320
+    touch(c, (W - 1040) / 2 + 1040 * k, 720 + 1680 * k, "Drag", side="left")
+    frames.append(("02-buy-zone", c))
     frames.append(("03-odds", standard("Odds", "Know your *odds*\nbefore you buy", fix_iphone_clock(raw("iphone-stock")))))
     frames.append(("04-alert", standard("Alert", "It dips.\n*Dippy taps you.*", clean_lock_screen(raw("scene-lock")))))
     frames.append(("05-profile", standard("Your profile", "See what your\n*broker sees*", fix_iphone_clock(raw("iphone-profile")))))
@@ -630,15 +675,32 @@ def iphone_story(raw, raw_dir):
     lift(c, card(scene, WIDGET_SMALL_RIGHT, small, radius=96), W / 2 + 20, y)
     frames.append(("07-widgets", c))
 
+    # 8 · Desk Mode: the half-folded iPhone Duo, iPad, or iPhone on its side as a live desk tracker.
+    c = frame()
+    chapter(c, 0, W, "Desk Mode", 150, raw_dir)
+    title(c, 0, W, "Your own\n*desk terminal*", 255, 132)
+    desk = screen_tile(raw("desk-landscape"), 1240, corner=0.07)
+    place_screen(c, desk, W / 2, 680)
+    pills(c, W / 2, 680 + desk.height + 110, ["iPhone Duo", "iPad"])
+    draw = ImageDraw.Draw(c)
+    sub = font(ROUNDED, 50, "Medium")
+    note = "Stand it on your desk. It stays awake."
+    draw.text(((W - draw.textlength(note, font=sub)) / 2, 680 + desk.height + 270), note, font=sub, fill=SOFT)
+    line_sky = Sky((W, H), 1)
+    line_sky.canvas = c
+    tail = IconLine(line_sky, [[(-200, 2560), (300, 2470), (700, 2500), (1100, 2420), (1500, 2440)]])
+    tail.draw()
+    tail.owl(raw_dir, "wink", 980, 300)
+    frames.append(("08-desk-mode", c))
+
     # 8 · Apple Watch.
     c = frame()
     chapter(c, 0, W, "Apple Watch", 150, raw_dir)
     title(c, 0, W, "Your portfolio,\n*on your wrist*", 255, 132)
     wrist = watch(raw("watch-today"), 900)
     device(c, wrist, W / 2 - 18, 960)
-    frames.append(("08-apple-watch", c))
+    frames.append(("09-apple-watch", c))
 
-    frames.append(("09-import", standard("Import", "Your portfolio\nin *seconds*", fix_iphone_clock(raw("iphone-import")))))
 
     # 10 · Asleep under the moon.
     c = frame()
@@ -651,9 +713,10 @@ def iphone_story(raw, raw_dir):
     line.owl(raw_dir, "sleep", 640, 760)
     draw = ImageDraw.Draw(c)
     sub = font(ROUNDED, 54, "Medium")
-    text = "Free to start. Go Pro for every alert."
-    draw.text(((W - draw.textlength(text, font=sub)) / 2, 2400), text, font=sub, fill=SOFT)
-    lift(c, app_icon_tile(icon, 190), (W - 190) / 2, 2540)
+    pills(c, W / 2, 2280, ["No login", "Free to start"])
+    text = "Import from any broker in seconds."
+    draw.text(((W - draw.textlength(text, font=sub)) / 2, 2440), text, font=sub, fill=SOFT)
+    lift(c, app_icon_tile(icon, 190), (W - 190) / 2, 2560)
     frames.append(("10-start-free", c))
 
     panorama = Image.new("RGBA", (W * len(frames), H))
@@ -689,13 +752,20 @@ def ipad_story(raw, raw_dir):
     line.dot(1780)
     title(c, 0, W, "Buy the *dip*.\nNever miss it.", 220, 180)
     banner = notification(1500, icon, "NVDA entered your buy zone", ["Now $209.35, inside $206.35–$217.80.", "Your plan: buy a little."])
-    lift(c, banner, (W - banner.width) / 2, 820, u)
+    lift(c, banner, (W - banner.width) / 2, 760, u)
+    pills(c, W / 2, 1110, ["No login", "No ads", "Any broker"], unit=1.3)
     line.owl(raw_dir, "wave", 860, 1080)
     frames.append(("01-buy-the-dip", c))
 
     frames.append(("02-buy-zone", standard("Plan", "Draw your *buy zone*", raw("ipad-stock"))))
     frames.append(("03-alert", standard("Odds & alerts", "Know your odds.\n*Dippy taps you.*", raw("ipad-alerts"))))
-    frames.append(("04-watchlist", standard("Watchlist", "Every stock,\n*one calm list*", raw("ipad-watchlist"))))
+    c = frame()
+    chapter(c, 0, W, "Desk Mode", 160, raw_dir, unit=1.3)
+    title(c, 0, W, "Your own\n*desk terminal*", 290, 160)
+    desk = screen_tile(raw("desk-ipad"), 1840, u, corner=0.04)
+    place_screen(c, desk, W / 2, 860, u)
+    pills(c, W / 2, 860 + desk.height + 110, ["Stays awake", "Live prices", "Your plans"], unit=1.3)
+    frames.append(("04-desk-mode", c))
 
     c = frame()
     sky = Sky((W, H), 1)
@@ -707,9 +777,10 @@ def ipad_story(raw, raw_dir):
     line.owl(raw_dir, "sleep", 1000, 900)
     draw = ImageDraw.Draw(c)
     sub = font(ROUNDED, 70, "Medium")
-    text = "Free to start. Go Pro for every alert."
-    draw.text(((W - draw.textlength(text, font=sub)) / 2, 2370), text, font=sub, fill=SOFT)
-    lift(c, app_icon_tile(icon, 190), (W - 190) / 2, 2520, u)
+    pills(c, W / 2, 2250, ["No login", "Free to start"], unit=1.3)
+    text = "Import from any broker in seconds."
+    draw.text(((W - draw.textlength(text, font=sub)) / 2, 2420), text, font=sub, fill=SOFT)
+    lift(c, app_icon_tile(icon, 160), (W - 160) / 2, 2550, u)
     frames.append(("05-start-free", c))
 
     panorama = Image.new("RGBA", (W * len(frames), H))

@@ -2,22 +2,22 @@
 
 Copy each field into App Store Connect → your app → the version page. Every field is within Apple's limits.
 
-## App name (27/30)
-Dipwise: Buy the Dip Alerts
+## App name (30/30)
+Dipwise: Stock Alert & Tracker
 
-## Subtitle (27/30)
-Stock price zones & widgets
+## Subtitle (25/30)
+Buy dips. No login needed
 
-## Keywords (97/100)
-stock,price,portfolio,tracker,watchlist,dividend,rsi,invest,market,etf,crypto,signal,widget,trade
+## Keywords (95/100)
+price,portfolio,watchlist,dividend,rsi,invest,market,etf,crypto,signal,widget,dip,buy,zone,desk
 
-Words already in the name and subtitle (dip, alerts, buy, zones, widgets) are indexed automatically, so they aren't repeated here.
+Words already in the name and subtitle (stock, alert, tracker, login) are indexed automatically, so they aren't repeated here. "Stock alert" and "stock tracker" are among the most searched finance phrases, which is why they lead the name.
 
 ## Promotional text (143/170)
-Buy the dip with a plan. Draw your buy zone and Dippy taps you the second a stock gets there. Widgets, Apple Watch, and broker import included.
+Buy the dip with a plan. Draw your buy zone and Dippy taps you the second a stock gets there. No login, no ads. Widgets, Desk Mode, and Apple Watch included.
 
 ## Description
-Buy the dip. Calmly.
+Buy the dip. Calmly. No account, no login: open the app and start.
 
 Dipwise turns "I'd buy it if it dropped" into a plan that watches itself. Draw the price range where you'd happily buy, and the range where you'd take profit. Dippy, your stock-watching owl, keeps an eye on the market day and night and taps you the moment a stock gets there.
 
@@ -48,8 +48,8 @@ YOUR PORTFOLIO, IN ONE CALM PLACE
 • A watchlist with prices, trends, and how close each plan is
 
 LIVING WIDGETS AND APPLE WATCH
-• Home Screen widgets for your plans, a stock's chart and zones, today's movers, and your streak
-• A Portfolio widget with your value, today's move, and your closest buy zone in plain words
+• Three widgets made for buying the dip: your Portfolio, Your Plans (the stocks closest to your zones, with how far each has to go), and a Stock Plan with its chart and zone
+• Desk Mode: stand a half-folded iPhone Duo, an iPad, or an iPhone on its side on your desk, and it becomes an always-on tracker with your portfolio, your plans, and today's movers
 • On Apple Watch: your portfolio, closest plans, and charts you scrub with the Digital Crown, plus complications for your portfolio and market hours
 
 A ONE-MINUTE DAILY HABIT
@@ -102,7 +102,7 @@ The app is translated into German, Spanish, French, Italian, Brazilian Portugues
 
 The set is built from the app icon itself: deep navy, Dippy, and the icon's glowing mint price line. That line runs unbroken through every image, so swiping follows one chart. It slides into the buy zone, pings the alert at the bottom, and climbs to a peak where Dippy falls asleep under the moon. Phones alternate sides to leave Dippy an open lane on the line, where he comments on each step in a speech bubble. Where a detail matters, a magnifier enlarges that exact part of the screen right over where it sits.
 
-The first frame is the icon at full size, with the real alert arriving above Dippy. The next two carry the promise (draw your zone, know your odds), because the first three are the only ones shown in search results. All captures match the App Store build: Flock hidden, U.S. English, dollars, and prices frozen on one day so every screen agrees.
+The first and last frames say "No login" in pills, and the buy-zone frame shows a finger hint on the handle you drag. The first frame is the icon at full size, with the real alert arriving above Dippy. The next two carry the promise (draw your zone, know your odds), because the first three are the only ones shown in search results. All captures match the App Store build: Flock hidden, U.S. English, dollars, and prices frozen on one day so every screen agrees.
 
 `preview-iphone.png` and `preview-ipad.png` show each whole panorama; `preview-watch.png` shows the watch set.
 
@@ -119,8 +119,8 @@ Each image is its own clean page in the icon's navy: a small Dippy chapter mark,
 | 5 | 05-profile.png | Your profile | See what your broker sees |
 | 6 | 06-smart-alerts.png | Signals | 27 smart alerts, plain English |
 | 7 | 07-widgets.png | Home Screen | Your plans, always in sight |
-| 8 | 08-apple-watch.png | Apple Watch | Your portfolio, on your wrist |
-| 9 | 09-import.png | Import | Your portfolio in seconds |
+| 8 | 08-desk-mode.png | Desk Mode | Your own desk terminal |
+| 9 | 09-apple-watch.png | Apple Watch | Your portfolio, on your wrist |
 | 10 | 10-start-free.png | — | Sleep well. Dippy's on watch. |
 
 Apple scales the 6.9-inch set down for every smaller iPhone. `iPhone-6.5/` has the same images at 1284 × 2778.
@@ -134,7 +134,7 @@ Required, because Dipwise runs on iPad. Apple scales this set down for smaller i
 | 1 | 01-buy-the-dip.png | Buy the dip. Never miss it. |
 | 2 | 02-buy-zone.png | Draw your buy zone |
 | 3 | 03-alert.png | It dips. Dippy taps you. |
-| 4 | 04-watchlist.png | Every stock, one calm list |
+| 4 | 04-desk-mode.png | Your own desk terminal |
 | 5 | 05-start-free.png | Sleep well. Dippy's on watch. |
 
 ### Apple Watch Ultra (422 × 514), from `AppleWatch-Ultra/`
