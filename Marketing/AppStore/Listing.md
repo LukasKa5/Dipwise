@@ -100,42 +100,36 @@ The app is translated into German, Spanish, French, Italian, Brazilian Portugues
 
 ## Screenshots
 
-The set is built from the app icon itself: deep navy, Dippy, and the icon's glowing mint price line. That line runs unbroken through every image, so swiping follows one chart. It slides into the buy zone, pings the alert at the bottom, and climbs to a peak where Dippy falls asleep under the moon. Phones alternate sides to leave Dippy an open lane on the line, where he comments on each step in a speech bubble. Where a detail matters, a magnifier enlarges that exact part of the screen right over where it sits.
+Dippy tells the story in his own words, one line per image, with no chapter labels. Every image has the same shape, so the set reads as one strip when people swipe: Dippy's line at the top, the whole device below in the same titanium finish the app's intro uses, and Dippy perched on its top edge reacting to what's on it. The alert arrives on an unlocked iPhone, the way people really see it. The first and last images say "No login".
 
-The first and last frames say "No login" in pills, and the buy-zone frame shows a finger hint on the handle you drag. The first frame is the icon at full size, with the real alert arriving above Dippy. The next two carry the promise (draw your zone, know your odds), because the first three are the only ones shown in search results. All captures match the App Store build: Flock hidden, U.S. English, dollars, and prices frozen on one day so every screen agrees.
-
-`preview-iphone.png` and `preview-ipad.png` show each whole panorama; `preview-watch.png` shows the watch set.
+All captures match the App Store build: Flock hidden, U.S. English, dollars, and prices and clocks frozen on one day so every screen agrees. `preview-iphone.png` and `preview-ipad.png` show each whole strip; `preview-watch.png` shows the watch set.
 
 ### iPhone 6.9-inch (1320 × 2868), from `iPhone-6.9/`
 
-Each image is its own clean page in the icon's navy: a small Dippy chapter mark, a two-line headline, and the real screen, frameless with Apple's display corners. The first and last frames bookend the story with Dippy on the icon's glowing line: waving as the alert arrives, then asleep under the moon.
-
-| # | File | Chapter | Headline |
-|---|------|---------|----------|
-| 1 | 01-buy-the-dip.png | — | Buy the dip. Never miss it. |
-| 2 | 02-buy-zone.png | Plan | Draw your buy zone |
-| 3 | 03-odds.png | Odds | Know your odds before you buy |
-| 4 | 04-alert.png | Alert | It dips. Dippy taps you. |
-| 5 | 05-profile.png | Your profile | See what your broker sees |
-| 6 | 06-smart-alerts.png | Signals | 27 smart alerts, plain English |
-| 7 | 07-widgets.png | Home Screen | Your plans, always in sight |
-| 8 | 08-desk-mode.png | Desk Mode | Your own desk terminal |
-| 9 | 09-apple-watch.png | Apple Watch | Your portfolio, on your wrist |
-| 10 | 10-start-free.png | — | Sleep well. Dippy's on watch. |
+| # | File | Dippy says |
+|---|------|------------|
+| 1 | 01-meet-dippy.png | Hi, I'm Dippy. I watch the dips. (No login · No ads · Any broker) |
+| 2 | 02-buy-zone.png | Show me where you'd buy. |
+| 3 | 03-odds.png | I'll show your odds first. |
+| 4 | 04-alert.png | It dips. I tap you. |
+| 5 | 05-profile.png | I see what your broker sees. |
+| 6 | 06-smart-alerts.png | 27 alerts, in plain words. |
+| 7 | 07-widgets.png | I live on your Home Screen. |
+| 8 | 08-desk-mode.png | Stand me on your desk. (iPhone Duo, half folded) |
+| 9 | 09-apple-watch.png | Or keep me on your wrist. |
+| 10 | 10-start-free.png | Sleep well. I'm on watch. (No login · Free to start) |
 
 Apple scales the 6.9-inch set down for every smaller iPhone. `iPhone-6.5/` has the same images at 1284 × 2778.
 
 ### iPad 13-inch (2064 × 2752), from `iPad-13/`
 
-Required, because Dipwise runs on iPad. Apple scales this set down for smaller iPads.
-
-| # | File | Headline |
-|---|------|----------|
-| 1 | 01-buy-the-dip.png | Buy the dip. Never miss it. |
-| 2 | 02-buy-zone.png | Draw your buy zone |
-| 3 | 03-alert.png | It dips. Dippy taps you. |
-| 4 | 04-desk-mode.png | Your own desk terminal |
-| 5 | 05-start-free.png | Sleep well. Dippy's on watch. |
+| # | File | Dippy says |
+|---|------|------------|
+| 1 | 01-meet-dippy.png | Hi, I'm Dippy. I watch the dips. |
+| 2 | 02-buy-zone.png | Show me where you'd buy. |
+| 3 | 03-alert.png | It dips. I tap you. |
+| 4 | 04-desk-mode.png | Stand me on your desk. |
+| 5 | 05-start-free.png | Sleep well. I'm on watch. |
 
 ### Apple Watch Ultra (422 × 514), from `AppleWatch-Ultra/`
 

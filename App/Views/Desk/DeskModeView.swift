@@ -13,6 +13,23 @@ struct DeskModeView: View {
   @State private var selectedIndex: Int?
   @State private var focus = 0
 
+  /// Screenshots launched with `-marketingDate` freeze the clock at 9:41, with the market open, like every other screen.
+  private var clock: Date {
+    #if DEBUG
+    if let day = QuoteService.marketingDate {
+      return Calendar.current.date(bySettingHour: 9, minute: 41, second: 0, of: day) ?? day
+    }
+    #endif
+    return .now
+  }
+
+  private var isMarketOpen: Bool {
+    #if DEBUG
+    if QuoteService.marketingDate != nil { return true }
+    #endif
+    return MarketClock.isOpen()
+  }
+
   private var summary: PortfolioSummary {
     PortfolioSummary(holdings: holdings, quotes: quotes.quotes, baseCurrency: quotes.baseCurrency, convert: quotes.toBase, intraday: quotes.intraday)
   }
@@ -80,11 +97,11 @@ struct DeskModeView: View {
     return HStack(alignment: .center, spacing: 28) {
       VStack(alignment: .leading, spacing: 8) {
         HStack(spacing: 8) {
-          Circle().fill(MarketClock.isOpen() ? Brand.buy : .white.opacity(0.4)).frame(width: 8, height: 8)
-          Text(MarketClock.isOpen() ? "Market open" : "Market closed")
+          Circle().fill(isMarketOpen ? Brand.buy : .white.opacity(0.4)).frame(width: 8, height: 8)
+          Text(isMarketOpen ? "Market open" : "Market closed")
             .font(.subheadline.weight(.semibold))
             .foregroundStyle(.white.opacity(0.7))
-          Text(Date.now, style: .time)
+          Text(clock, style: .time)
             .font(.subheadline.weight(.semibold).monospacedDigit())
             .foregroundStyle(.white.opacity(0.5))
         }
@@ -146,7 +163,7 @@ struct DeskModeView: View {
 
   /// Today's biggest moves among what you own, as a calm ticker along the bottom.
   private var movers: some View {
-    let movers = summary.positions.map(\.quote).sorted { abs($0.change) > abs($1.change) }.prefix(6)
+    let movers = summary.positions.map(\.quote).sorted { abs($0.change) > abs($1.change) }.prefix(5)
     return HStack(spacing: 10) {
       Text("Today")
         .font(.subheadline.weight(.semibold))

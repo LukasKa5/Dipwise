@@ -154,7 +154,7 @@ struct MarketingRenders: View {
     let holdings = (try? modelContext.fetch(FetchDescriptor<Holding>())) ?? []
     await quotes.refresh(symbols: holdings.map(\.symbol))
     try? await Task.sleep(for: .seconds(2))
-    for (name, size) in [("desk-landscape", CGSize(width: 1180, height: 820)), ("desk-ipad", CGSize(width: 1376, height: 1032))] {
+    for (name, size) in [("desk-landscape", CGSize(width: 900, height: 640)), ("desk-ipad", CGSize(width: 1376, height: 1032))] {
       let renderer = ImageRenderer(content:
         DeskModeView()
           .environment(quotes)

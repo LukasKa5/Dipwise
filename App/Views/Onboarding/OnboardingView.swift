@@ -61,11 +61,11 @@ struct OnboardingView: View {
         Group {
           switch page {
           case 0: WelcomeStep(model: model).fitsScreen()
-          case 1: StyleStep(model: model)
-          case 2: PickStep(model: model)
+          case 1: StyleStep(model: model).fitsScreen()
+          case 2: PickStep(model: model).fitsScreen()
           case 3: ScrubStep(model: model).fitsScreen()
           case 4: ZoneStep(model: model).fitsScreen()
-          case 5: FlockStep(model: model)
+          case 5: FlockStep(model: model).fitsScreen()
           case 6: WidgetShowcaseStep(model: model).fitsScreen()
           case 7: WatchShowcaseStep(model: model).fitsScreen()
           case 8: NotifyStep(model: model).fitsScreen()
@@ -164,7 +164,8 @@ struct OnboardingView: View {
 // MARK: - Steps
 
 extension View {
-  /// Centers a step on screen, and lets it scroll only when it's taller than the screen, like on iPhone SE.
+  /// Centers a step on screen at its natural size. On a shorter screen, like iPhone SE, or at a large text size,
+  /// the whole step shrinks evenly to fit, so no step ever scrolls.
   fileprivate func fitsScreen() -> some View {
     modifier(FitsScreen())
   }
@@ -172,22 +173,18 @@ extension View {
 
 private struct FitsScreen: ViewModifier {
   @State private var contentHeight: CGFloat = 0
-  @State private var containerHeight: CGFloat = 0
 
   func body(content: Content) -> some View {
-    ScrollView {
+    GeometryReader { geometry in
+      let available = geometry.size.height
+      let scale = contentHeight > available && contentHeight > 0 ? available / contentHeight : 1
       content
-        .frame(maxWidth: .infinity)
-        .frame(minHeight: containerHeight)
+        .fixedSize(horizontal: false, vertical: true)
         .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { contentHeight = $0 }
+        .frame(width: geometry.size.width)
+        .scaleEffect(scale)
+        .frame(width: geometry.size.width, height: available)
     }
-    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { containerHeight = $0 }
-    // Charts and zone handles need vertical drags, so only scroll when there's no other way.
-    .scrollDisabled(contentHeight <= containerHeight + 1)
-    .scrollBounceBehavior(.basedOnSize)
-    .scrollIndicators(.hidden)
-    // Dippy flies in from off screen, so don't cut him off at the edges.
-    .scrollClipDisabled()
   }
 }
 
@@ -255,68 +252,65 @@ private struct StyleStep: View {
   @State private var hops = 0
 
   var body: some View {
-    ScrollView {
-      VStack(spacing: 18) {
-        VStack(spacing: 10) {
-          LivelyOwl(hopsOnTap: false, mood: .calm)
-            .frame(width: 74, height: 86)
-            .owlFlight(trigger: hops, height: 18)
-          SpeechBubble(text: model.lastStyle.map { LocalizedStringKey($0.owlReply) } ?? "What brings you here?")
-            .animation(.snappy, value: model.lastStyle)
-          Text("Choose all that apply")
-            .font(.subheadline)
-            .foregroundStyle(.white.opacity(0.6))
-        }
-        .padding(.top, 16)
+    VStack(spacing: 18) {
+      VStack(spacing: 10) {
+        LivelyOwl(hopsOnTap: false, mood: .calm)
+          .frame(width: 74, height: 86)
+          .owlFlight(trigger: hops, height: 18)
+        SpeechBubble(text: model.lastStyle.map { LocalizedStringKey($0.owlReply) } ?? "What brings you here?")
+          .animation(.snappy, value: model.lastStyle)
+        Text("Choose all that apply")
+          .font(.subheadline)
+          .foregroundStyle(.white.opacity(0.6))
+      }
+      .padding(.top, 16)
 
-        LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
-          ForEach(InvestorStyle.allCases) { style in
-            let isSelected = model.styles.contains(style)
-            Button {
-              withAnimation(.snappy) { model.toggle(style: style) }
-              if !isSelected { hops += 1 }
-            } label: {
-              VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                  Image(systemName: style.systemImage)
-                    .font(.title3)
-                  Spacer()
-                  Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.headline)
-                    .opacity(isSelected ? 1 : 0.5)
-                }
-                Text(style.title)
-                  .font(.subheadline.weight(.semibold))
-                  .multilineTextAlignment(.leading)
-                  .fixedSize(horizontal: false, vertical: true)
-                Spacer(minLength: 0)
+      LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
+        ForEach(InvestorStyle.allCases) { style in
+          let isSelected = model.styles.contains(style)
+          Button {
+            withAnimation(.snappy) { model.toggle(style: style) }
+            if !isSelected { hops += 1 }
+          } label: {
+            VStack(alignment: .leading, spacing: 10) {
+              HStack {
+                Image(systemName: style.systemImage)
+                  .font(.title3)
+                Spacer()
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                  .font(.headline)
+                  .opacity(isSelected ? 1 : 0.5)
               }
-              .padding(14)
-              .frame(maxWidth: .infinity, minHeight: 104, alignment: .topLeading)
-              .foregroundStyle(isSelected ? Brand.owlInk : .white)
-              .background(isSelected ? AnyShapeStyle(Brand.buy) : AnyShapeStyle(.white.opacity(0.08)), in: .rect(cornerRadius: 18))
-              .overlay {
-                RoundedRectangle(cornerRadius: 18).strokeBorder(.white.opacity(isSelected ? 0 : 0.12))
-              }
+              Text(style.title)
+                .font(.subheadline.weight(.semibold))
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+              Spacer(minLength: 0)
             }
-            .buttonStyle(.plain)
-            .accessibilityAddTraits(isSelected ? .isSelected : [])
+            .padding(14)
+            .frame(maxWidth: .infinity, minHeight: 96, alignment: .topLeading)
+            .foregroundStyle(isSelected ? Brand.owlInk : .white)
+            .background(isSelected ? AnyShapeStyle(Brand.buy) : AnyShapeStyle(.white.opacity(0.08)), in: .rect(cornerRadius: 18))
+            .overlay {
+              RoundedRectangle(cornerRadius: 18).strokeBorder(.white.opacity(isSelected ? 0 : 0.12))
+            }
           }
-        }
-
-        if model.styles.contains(.other) {
-          TextField("What should Dippy help you with?", text: $model.otherGoal, axis: .vertical)
-            .lineLimit(1...3)
-            .padding(16)
-            .background(.white.opacity(0.1), in: .rect(cornerRadius: 16))
-            .transition(.move(edge: .top).combined(with: .opacity))
+          .buttonStyle(.plain)
+          .accessibilityAddTraits(isSelected ? .isSelected : [])
         }
       }
-      .padding(.horizontal, 24)
-      .padding(.bottom, 12)
-      .sensoryFeedback(.selection, trigger: model.styles)
+
+      if model.styles.contains(.other) {
+        TextField("What should Dippy help you with?", text: $model.otherGoal, axis: .vertical)
+          .lineLimit(1...3)
+          .padding(16)
+          .background(.white.opacity(0.1), in: .rect(cornerRadius: 16))
+          .transition(.move(edge: .top).combined(with: .opacity))
+      }
     }
-    .scrollDismissesKeyboard(.interactively)
+    .padding(.horizontal, 24)
+    .padding(.bottom, 12)
+    .sensoryFeedback(.selection, trigger: model.styles)
   }
 }
 
@@ -326,53 +320,52 @@ private struct PickStep: View {
   @ScaledMetric(relativeTo: .headline) private var tileWidth: CGFloat = 150
 
   var body: some View {
-    ScrollView {
-      VStack(spacing: 18) {
-        StepTitle(title: "Pick stocks to watch", message: "Choose up to five. You can add any stock later.")
-          .padding(.top, 16)
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: tileWidth), spacing: 12)], spacing: 12) {
-          ForEach(OnboardingModel.suggestions, id: \.self) { symbol in
-            let isSelected = model.selected.contains(symbol)
-            let quote = model.quotes[symbol]
-            Button {
-              withAnimation(.bouncy) { model.toggle(symbol) }
-            } label: {
-              HStack(spacing: 10) {
-                TickerBadge(symbol: symbol, size: 38)
-                VStack(alignment: .leading, spacing: 2) {
-                  Text(symbol)
-                    .font(.headline)
+    VStack(spacing: 18) {
+      StepTitle(title: "Pick stocks to watch", message: "Choose up to five. You can add any stock later.")
+        .padding(.top, 16)
+      LazyVGrid(columns: [GridItem(.adaptive(minimum: tileWidth), spacing: 12)], spacing: 12) {
+        ForEach(OnboardingModel.suggestions, id: \.self) { symbol in
+          let isSelected = model.selected.contains(symbol)
+          let quote = model.quotes[symbol]
+          Button {
+            withAnimation(.bouncy) { model.toggle(symbol) }
+          } label: {
+            HStack(spacing: 10) {
+              TickerBadge(symbol: symbol, size: 38)
+              VStack(alignment: .leading, spacing: 2) {
+                Text(symbol)
+                  .font(.headline)
+                  .lineLimit(1)
+                  .minimumScaleFactor(0.7)
+                if let quote {
+                  Text(quote.change, format: .percent.precision(.fractionLength(1)).sign(strategy: .always()))
+                    .font(.caption.weight(.semibold).monospacedDigit())
                     .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                  if let quote {
-                    Text(quote.change, format: .percent.precision(.fractionLength(1)).sign(strategy: .always()))
-                      .font(.caption.weight(.semibold).monospacedDigit())
-                      .lineLimit(1)
-                      .foregroundStyle(quote.change >= 0 ? Brand.buy : Brand.sell)
-                  } else {
-                    Text("—").font(.caption).foregroundStyle(.white.opacity(0.5))
-                  }
+                    .foregroundStyle(quote.change >= 0 ? Brand.buy : Brand.sell)
+                } else {
+                  Text("—").font(.caption).foregroundStyle(.white.opacity(0.5))
                 }
-                Spacer(minLength: 0)
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "plus.circle")
-                  .font(.title3)
-                  .foregroundStyle(isSelected ? Brand.buy : .white.opacity(0.5))
               }
-              .padding(12)
-              .background(.white.opacity(isSelected ? 0.16 : 0.07), in: .rect(cornerRadius: 16))
-              .overlay {
-                RoundedRectangle(cornerRadius: 16).strokeBorder(isSelected ? Brand.buy : .clear, lineWidth: 2)
-              }
-              .scaleEffect(isSelected ? 1.03 : 1)
+              Spacer(minLength: 0)
+              Image(systemName: isSelected ? "checkmark.circle.fill" : "plus.circle")
+                .font(.title3)
+                .foregroundStyle(isSelected ? Brand.buy : .white.opacity(0.5))
             }
-            .buttonStyle(.plain)
-            .accessibilityAddTraits(isSelected ? .isSelected : [])
+            .padding(12)
+            .background(.white.opacity(isSelected ? 0.16 : 0.07), in: .rect(cornerRadius: 16))
+            .overlay {
+              RoundedRectangle(cornerRadius: 16).strokeBorder(isSelected ? Brand.buy : .clear, lineWidth: 2)
+            }
+            .scaleEffect(isSelected ? 1.03 : 1)
           }
+          .buttonStyle(.plain)
+          .accessibilityAddTraits(isSelected ? .isSelected : [])
         }
-        .padding(.horizontal, 20)
-        .sensoryFeedback(.selection, trigger: model.selected)
       }
+      .padding(.horizontal, 20)
+      .sensoryFeedback(.selection, trigger: model.selected)
     }
+    .padding(.bottom, 12)
   }
 }
 
@@ -481,56 +474,53 @@ private struct FlockStep: View {
   }
 
   var body: some View {
-    ScrollView {
-      VStack(spacing: 20) {
-        HStack(spacing: -14) {
-          ForEach(0..<3) { index in
-            LivelyOwl(hopsOnTap: false, mood: .calm)
-              .frame(width: index == 1 ? 74 : 54, height: index == 1 ? 86 : 62)
-              .owlFlight(trigger: flights, height: index == 1 ? 34 : 22)
-              .zIndex(index == 1 ? 1 : 0)
-          }
+    VStack(spacing: 16) {
+      HStack(spacing: -12) {
+        ForEach(0..<3) { index in
+          LivelyOwl(hopsOnTap: false, mood: .calm)
+            .frame(width: index == 1 ? 60 : 44, height: index == 1 ? 70 : 51)
+            .owlFlight(trigger: flights, height: index == 1 ? 30 : 20)
+            .zIndex(index == 1 ? 1 : 0)
         }
-        .padding(.top, 12)
-        StepTitle(title: "Meet the flock", message: "The flock is every Dipwise investor. Each alert they set is shared anonymously, and Dippy combines them to show where the crowd plans to buy and sell.")
-
-        if let quote = model.focusQuote {
-          VStack(alignment: .leading, spacing: 10) {
-            Text("\(model.focusSymbol ?? "") · what the crowd plans")
-              .font(.subheadline.weight(.semibold))
-            ZoneTrack(
-              price: quote.price,
-              bands: [
-                ZoneTrack.Band(range: (quote.price * 0.86)...(quote.price * 0.93), side: .buy, isCrowd: true),
-                ZoneTrack.Band(range: (quote.price * 1.12)...(quote.price * 1.2), side: .sell, isCrowd: true),
-                ZoneTrack.Band(range: model.zoneLower...max(model.zoneLower, model.zoneUpper), side: .buy, isCrowd: false),
-              ],
-              low: nil,
-              high: nil,
-              format: { quote.formatted($0) }
-            )
-            ZoneLegend()
-          }
-          .padding(16)
-          .background(.white.opacity(0.07), in: .rect(cornerRadius: 20))
-          .padding(.horizontal, 20)
-        }
-
-        MissionChip(text: "Vote with the flock", isDone: model.completedMissions.contains("flock"))
-        VoteCard(symbol: model.focusSymbol ?? "NVDA", votes: votes, userVote: model.vote) { bullish in
-          model.vote = bullish
-          flights += 1
-          model.complete("flock")
-        }
-        .padding(.horizontal, 20)
-        Text("Your own alerts stay private. Only the price levels are shared, never your name or holdings.")
-          .font(.caption)
-          .foregroundStyle(.white.opacity(0.55))
-          .multilineTextAlignment(.center)
-          .padding(.horizontal, 32)
       }
-      .padding(.bottom, 12)
+      StepTitle(title: "Meet the flock", message: "Every Dipwise investor, anonymous. See where the crowd plans to buy and sell.")
+
+      if let quote = model.focusQuote {
+        VStack(alignment: .leading, spacing: 10) {
+          Text("\(model.focusSymbol ?? "") · what the crowd plans")
+            .font(.subheadline.weight(.semibold))
+          ZoneTrack(
+            price: quote.price,
+            bands: [
+              ZoneTrack.Band(range: (quote.price * 0.86)...(quote.price * 0.93), side: .buy, isCrowd: true),
+              ZoneTrack.Band(range: (quote.price * 1.12)...(quote.price * 1.2), side: .sell, isCrowd: true),
+              ZoneTrack.Band(range: model.zoneLower...max(model.zoneLower, model.zoneUpper), side: .buy, isCrowd: false),
+            ],
+            low: nil,
+            high: nil,
+            format: { quote.formatted($0) }
+          )
+          ZoneLegend()
+        }
+        .padding(14)
+        .background(.white.opacity(0.07), in: .rect(cornerRadius: 20))
+        .padding(.horizontal, 20)
+      }
+
+      MissionChip(text: "Vote with the flock", isDone: model.completedMissions.contains("flock"))
+      VoteCard(symbol: model.focusSymbol ?? "NVDA", votes: votes, userVote: model.vote) { bullish in
+        model.vote = bullish
+        flights += 1
+        model.complete("flock")
+      }
+      .padding(.horizontal, 20)
+      Label("Only price levels are shared, never your name or holdings.", systemImage: "lock.fill")
+        .font(.caption)
+        .foregroundStyle(.white.opacity(0.55))
+        .multilineTextAlignment(.center)
+        .padding(.horizontal, 32)
     }
+    .padding(.vertical, 8)
   }
 }
 
