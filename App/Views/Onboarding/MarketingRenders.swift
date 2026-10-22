@@ -1,5 +1,6 @@
 #if DEBUG
 import Charts
+import SwiftData
 import SwiftUI
 
 /// Development only: renders the Apple Watch pages from the real watch components at 6× scale, and Dippy's poses
@@ -9,6 +10,9 @@ struct MarketingRenders: View {
   var model: OnboardingModel
 
   @State private var saved: [String] = []
+  @Environment(QuoteStore.self) private var quotes
+  @Environment(FlockService.self) private var flock
+  @Environment(\.modelContext) private var modelContext
 
   /// The Apple Watch Ultra display width in points, less the page's side padding.
   private static let width: CGFloat = 211 - 16
@@ -49,7 +53,10 @@ struct MarketingRenders: View {
       Text("Rendered \(saved.count) images")
       ForEach(saved, id: \.self) { Text($0).font(.caption.monospaced()) }
     }
-    .task { render() }
+    .task {
+      render()
+      await renderDesk()
+    }
   }
 
   // MARK: Pages
@@ -141,6 +148,27 @@ struct MarketingRenders: View {
   }
 
   // MARK: Rendering
+
+  /// Desk Mode as it looks on a half-folded iPhone Duo's inner display (landscape) and on iPad.
+  private func renderDesk() async {
+    let holdings = (try? modelContext.fetch(FetchDescriptor<Holding>())) ?? []
+    await quotes.refresh(symbols: holdings.map(\.symbol))
+    try? await Task.sleep(for: .seconds(2))
+    for (name, size) in [("desk-landscape", CGSize(width: 1180, height: 820)), ("desk-ipad", CGSize(width: 1376, height: 1032))] {
+      let renderer = ImageRenderer(content:
+        DeskModeView()
+          .environment(quotes)
+          .environment(flock)
+          .modelContainer(DipwiseApp.container)
+          .frame(width: size.width, height: size.height)
+      )
+      renderer.scale = 2
+      guard let data = renderer.uiImage?.pngData() else { continue }
+      let url = URL.documentsDirectory.appending(path: "\(name).png")
+      try? data.write(to: url)
+      saved.append(url.lastPathComponent)
+    }
+  }
 
   private func render() {
     let pages: [(String, AnyView)] = [

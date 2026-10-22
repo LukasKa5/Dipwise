@@ -104,7 +104,8 @@ struct DeskModeView: View {
         }
       }
       .frame(maxWidth: compact ? 360 : .infinity, alignment: .leading)
-      InteractiveChart(values: history.values, dates: history.dates, gridColor: .white.opacity(0.08), owlSize: compact ? 44 : 40, selectedIndex: $selectedIndex)
+      InteractiveChart(values: history.values, dates: history.dates, lineColor: (history.values.last ?? 0) >= (history.values.first ?? 0) ? Brand.buy : Brand.sell,
+                       gridColor: .white.opacity(0.08), owlSize: compact ? 44 : 40, selectedIndex: $selectedIndex)
         .frame(maxWidth: .infinity, maxHeight: compact ? .infinity : 180)
     }
     .padding(.horizontal, 32)
@@ -137,9 +138,33 @@ struct DeskModeView: View {
         }
       }
       Spacer(minLength: 0)
+      movers
     }
     .padding(.horizontal, 32)
     .padding(.vertical, 18)
+  }
+
+  /// Today's biggest moves among what you own, as a calm ticker along the bottom.
+  private var movers: some View {
+    let movers = summary.positions.map(\.quote).sorted { abs($0.change) > abs($1.change) }.prefix(6)
+    return HStack(spacing: 10) {
+      Text("Today")
+        .font(.subheadline.weight(.semibold))
+        .foregroundStyle(.white.opacity(0.55))
+      ForEach(Array(movers), id: \.symbol) { quote in
+        HStack(spacing: 6) {
+          Text(quote.symbol).font(.subheadline.weight(.bold))
+          Text(changeText(quote.change))
+            .font(.subheadline.weight(.semibold).monospacedDigit())
+            .foregroundStyle(quote.change >= 0 ? Brand.buy : Brand.sell)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 7)
+        .background(.white.opacity(0.07), in: .capsule)
+      }
+      Spacer(minLength: 0)
+    }
+    .lineLimit(1)
   }
 }
 
