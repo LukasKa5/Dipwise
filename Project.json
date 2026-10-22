@@ -38,7 +38,9 @@
             "UIColorName": "LaunchNavy"
           },
           "UISupportedInterfaceOrientations": [
-            "UIInterfaceOrientationPortrait"
+            "UIInterfaceOrientationPortrait",
+            "UIInterfaceOrientationLandscapeLeft",
+            "UIInterfaceOrientationLandscapeRight"
           ],
           "UIBackgroundModes": [
             "fetch"
@@ -94,16 +96,7 @@
           "path": "Widget Extension/StockPlanWidget.swift"
         },
         {
-          "path": "Widget Extension/StreakWidget.swift"
-        },
-        {
           "path": "Widget Extension/WidgetIntents.swift"
-        },
-        {
-          "path": "Widget Extension/MoversWidget.swift"
-        },
-        {
-          "path": "Widget Extension/FlockWidget.swift"
         }
       ],
       "type": "application",

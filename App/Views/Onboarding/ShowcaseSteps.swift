@@ -263,17 +263,8 @@ struct WidgetShowcaseStep: View {
             }
             labeled {
               widget(width: Metrics.small) {
-                StreakWidgetView(entry: StreakEntry(date: LivingClock.tick(step), progress: ProgressSnapshot(
-                  streak: 1, lastBrief: Calendar.current.date(byAdding: .day, value: -1, to: .now), level: 1, levelTitle: "Owlet")), isPreview: true)
-              }
-            }
-          }
-          // The full-size Home Screen for App Store screenshots also shows today's movers.
-          if showsScreenOnly {
-            labeled {
-              widget(width: Metrics.medium) {
-                MoversWidgetView(entry: MoversEntry(date: LivingClock.tick(step), quotes: MoversProvider.sorted(model.previewSymbols.compactMap { model.quotes[$0] })),
-                                 previewFamily: .systemMedium)
+                PortfolioWidgetView(entry: PortfolioEntry(date: LivingClock.tick(step), portfolio: model.samplePortfolio,
+                                                          closest: nil, movers: []), previewFamily: .systemSmall)
               }
             }
           }
@@ -355,7 +346,7 @@ struct WatchShowcaseStep: View {
     static let scrollDistance: CGFloat = 300
   }
 
-  private var movers: [Quote] { MoversProvider.sorted(model.previewSymbols.compactMap { model.quotes[$0] }) }
+  private var movers: [Quote] { model.previewSymbols.compactMap { model.quotes[$0] }.sorted { abs($0.change) > abs($1.change) } }
 
   var body: some View {
     ShowcaseLayout(

@@ -41,7 +41,7 @@ struct MarketingRenders: View {
   }
 
   private var movers: [Quote] {
-    MoversProvider.sorted(Self.holdings.compactMap { model.quotes[$0.0] })
+    Self.holdings.compactMap { model.quotes[$0.0] }.sorted { abs($0.change) > abs($1.change) }
   }
 
   var body: some View {

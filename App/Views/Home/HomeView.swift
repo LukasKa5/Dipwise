@@ -14,6 +14,7 @@ struct HomeView: View {
   @State private var showsAddStock = false
   @State private var showsAddPosition = false
   @State private var showsImport = false
+  @State private var showsDesk = false
   @State private var period: ChartPeriod = .preset(.month)
 
   private var summary: PortfolioSummary {
@@ -68,11 +69,13 @@ struct HomeView: View {
             }
           }
         }
-        ToolbarItem(placement: .topBarTrailing) {
+        ToolbarItemGroup(placement: .topBarTrailing) {
+          Button("Desk Mode", systemImage: "rectangle.split.1x2") { showsDesk = true }
           Button("Add Stock", systemImage: "plus") { showsAddStock = true }
         }
       }
       .sheet(isPresented: $showsProgress) { ProgressHubView() }
+      .fullScreenCover(isPresented: $showsDesk) { DeskModeView() }
       .fullScreenCover(isPresented: $router.showsBrief) { DailyBriefView() }
       .navigationDestination(for: String.self) { symbol in
         StockDetailView(symbol: symbol)

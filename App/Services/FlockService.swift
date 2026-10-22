@@ -225,7 +225,6 @@ final class FlockService {
       alertsThisWeek: overview.alertsThisWeek,
       updatedAt: .now
     ).save()
-    WidgetCenter.shared.reloadTimelines(ofKind: "FlockWidget")
   }
 
   // MARK: Votes

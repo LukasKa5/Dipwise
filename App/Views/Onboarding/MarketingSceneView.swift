@@ -49,7 +49,7 @@ struct MarketingSceneView: View {
             DeviceFinish.wallpaper
             VStack(spacing: 30) {
               PortfolioWidgetView(entry: PortfolioEntry(date: .now, portfolio: model.samplePortfolio, closest: model.sampleStatuses.first,
-                                                        movers: MoversProvider.sorted(model.previewSymbols.compactMap { model.quotes[$0] })), previewFamily: .systemLarge)
+                                                        movers: (model.previewSymbols.compactMap { model.quotes[$0] }).sorted { abs($0.change) > abs($1.change) }), previewFamily: .systemLarge)
                 .padding(16)
                 .frame(width: 364, height: 382)
                 .background(Brand.nightMiddle, in: .rect(cornerRadius: 24, style: .continuous))
