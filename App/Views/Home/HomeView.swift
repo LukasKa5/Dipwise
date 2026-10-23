@@ -375,7 +375,10 @@ struct DisclaimerFooter: View {
       if let lastUpdated {
         Text("Prices updated \(lastUpdated, format: .relative(presentation: .named))")
       }
-      if !subscription.isPro {
+      if !MarketData.offersRealTime {
+        Label("Prices are 15 minutes delayed.", systemImage: "clock")
+          .font(.caption.weight(.semibold))
+      } else if !subscription.isPro {
         Button {
           showsPaywall = true
         } label: {

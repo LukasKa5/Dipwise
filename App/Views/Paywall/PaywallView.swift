@@ -139,7 +139,7 @@ struct PaywallView: View {
   /// Only what changes with Pro, with the Pro column highlighted.
   private var comparison: some View {
     // Only sell what works today: crowd features appear once the Flock is live.
-    let rows = ProFeature.all.filter { flock.isAvailable || !$0.needsFlock }
+    let rows = ProFeature.all.filter { (flock.isAvailable || !$0.needsFlock) && (MarketData.offersRealTime || !$0.needsRealTime) }
     return VStack(spacing: 0) {
       HStack(spacing: 0) {
         Text("What you get")
@@ -437,12 +437,13 @@ private struct ProFeature {
   var free: Value
   var pro: Value
   var needsFlock = false
+  var needsRealTime = false
 
   static let freeWidth: CGFloat = 62
   static let proWidth: CGFloat = 86
 
   static let all: [ProFeature] = [
-    ProFeature(title: "Real-time prices and alerts", systemImage: "bolt.fill", free: .text("15 min"), pro: .text("Live")),
+    ProFeature(title: "Real-time prices and alerts", systemImage: "bolt.fill", free: .text("15 min"), pro: .text("Live"), needsRealTime: true),
     ProFeature(title: "Price alerts", systemImage: "bell.fill", free: .text("3"), pro: .text("Unlimited")),
     ProFeature(title: "Smart alerts like RSI, MACD, and trend crosses", systemImage: "sparkles", free: .missing, pro: .text("27 types")),
     ProFeature(title: "Odds that each alert fires", systemImage: "dice.fill", free: .text("1"), pro: .text("All")),

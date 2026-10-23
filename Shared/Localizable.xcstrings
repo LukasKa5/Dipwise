@@ -31720,6 +31720,52 @@
         }
       }
     },
+    "Prices are 15 minutes delayed.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kurse sind 15 Minuten verzögert."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los precios tienen 15 minutos de retraso."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les cours sont différés de 15 minutes."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I prezzi sono ritardati di 15 minuti."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Os preços têm 15 minutos de atraso."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "価格は15分遅れです。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "가격은 15분 지연돼요."
+          }
+        }
+      }
+    },
     "Prices are 15 minutes delayed. Real-time with Pro.": {
       "localizations": {
         "de": {

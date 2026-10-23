@@ -1,10 +1,10 @@
 # Dipwise quote proxy
 
-A Cloudflare Worker between the app and the market data vendor. It keeps the vendor key off devices and caches every stock once for all users, so data costs scale with the number of distinct stocks, not with users. Free members get prices 15 minutes late (served from the same cached bars at no extra cost); Pro members get real-time.
+A Cloudflare Worker between the app and the market data vendor. It keeps the vendor key off devices and caches every stock once for all users, so data costs scale with the number of distinct stocks, not with users. At launch everyone gets prices 15 minutes late, served from the same cached bars at no extra cost. Real-time for Pro is built in but switched off (`MarketData.offersRealTime`) until exchange display fees are worth paying.
 
 ## Set up (about 15 minutes)
 
-1. **Data vendor.** Create a [Twelve Data](https://twelvedata.com/pricing) account. Pick a plan that allows **external display** (showing data to your app's users). The free and personal tiers don't. Ask them for a quote for "15-minute delayed display to a consumer app, real-time for subscribers". Copy your API key.
+1. **Data vendor.** Create a [Twelve Data](https://twelvedata.com/pricing) account. Pick a plan that allows **external display** (showing data to your app's users). The free and personal tiers don't. Ask them for a quote for "15-minute delayed display to a consumer app", on a monthly plan you can cancel. Copy your API key.
 2. **Cloudflare.** Create a free account at [dash.cloudflare.com](https://dash.cloudflare.com), then in Terminal:
    ```
    cd Backend/quote-proxy
