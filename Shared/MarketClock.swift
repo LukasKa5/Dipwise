@@ -24,6 +24,10 @@ enum MarketClock {
   }
 
   static func isOpen(at date: Date = .now) -> Bool {
+    #if DEBUG
+    // Screenshot captures run at 9:41 on a trading day, with the market open, whatever the real time.
+    if QuoteService.marketingDate != nil, abs(date.timeIntervalSinceNow) < 60 { return true }
+    #endif
     let calendar = Self.calendar
     let weekday = calendar.component(.weekday, from: date)
     guard (2...6).contains(weekday) else { return false }

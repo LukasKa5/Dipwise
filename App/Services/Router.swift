@@ -33,8 +33,19 @@ final class Router {
     #endif
     return .home
   }
-  var homePath: [String] = []
+  var homePath: [String] = Router.startStock.map { [$0] } ?? []
   var showsBrief = false
+
+  /// Development only: `-openStock NVDA` opens straight onto that stock, for screenshots.
+  private static var startStock: String? {
+    #if DEBUG
+    let arguments = ProcessInfo.processInfo.arguments
+    if let index = arguments.firstIndex(of: "-openStock"), arguments.indices.contains(index + 1) {
+      return arguments[index + 1]
+    }
+    #endif
+    return nil
+  }
   /// Development only: `-startTab portfolio` opens straight onto the Portfolio screen.
   var showsPortfolio = ProcessInfo.processInfo.arguments.contains("portfolio") && Router.isDebug
   /// Development only: `-startTab profile` opens straight onto the Investor Profile.

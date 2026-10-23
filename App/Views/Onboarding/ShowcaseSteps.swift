@@ -49,28 +49,20 @@ enum DeviceFinish {
   static let button = LinearGradient(colors: [Color(white: 0.34), Color(white: 0.16)], startPoint: .top, endPoint: .bottom)
   static let shadow = Color.black.opacity(0.5)
 
-  /// The navy wallpaper on the intro's iPhone, in the app's own colors.
-  static var wallpaper: some View {
-    ZStack {
-      LinearGradient(colors: [Brand.nightTop, Brand.nightMiddle, Brand.nightBottom], startPoint: .top, endPoint: .bottom)
-      RadialGradient(colors: [Brand.buy.opacity(0.22), .clear], center: UnitPoint(x: 0.1, y: 0.95), startRadius: 10, endRadius: 420)
-      RadialGradient(colors: [Brand.amber.opacity(0.12), .clear], center: UnitPoint(x: 0.95, y: 0.1), startRadius: 10, endRadius: 360)
-    }
-  }
+  /// The wallpaper on every Home Screen and lock screen Dipwise shows, in the intro and the App Store.
+  static var wallpaper: some View { DipwiseWallpaper() }
 }
 
-/// iPhone proportions, in points: the screen, the black border around it, and the case.
+/// iPhone 18 Pro Max, in points: Apple's own product frame, and where its screen sits inside it.
 enum PhoneSize {
-  static let screen = CGSize(width: 402, height: 874)
-  static let radius: CGFloat = 56
-  static let border: CGFloat = 11
-  static let caseInset: CGFloat = 5
-  static let buttonOverhang: CGFloat = 4
-  static var caseWidth: CGFloat { screen.width + (border + caseInset) * 2 }
-  static var totalWidth: CGFloat { caseWidth + buttonOverhang * 2 }
+  static let device = CGSize(width: 490, height: 1000)
+  static let screen = CGSize(width: 440, height: 956)
+  static let screenOrigin = CGPoint(x: 25, y: 22)
+  static let radius: CGFloat = 62
+  static var totalWidth: CGFloat { device.width }
 }
 
-/// An iPhone drawn to scale: titanium case, black border, Dynamic Island, and side buttons.
+/// The real iPhone 18 Pro Max, Apple's product frame around a live screen, the same device the App Store shows.
 /// Only the top of the phone shows; the rest fades into the page, so the screen stays large enough to read.
 struct PhoneMockup<Screen: View>: View {
   /// How much of the screen shows, in points.
@@ -80,32 +72,22 @@ struct PhoneMockup<Screen: View>: View {
 
   private typealias Size = PhoneSize
 
-  private var height: CGFloat { visibleHeight + Size.border + Size.caseInset }
+  private var height: CGFloat { visibleHeight + Size.screenOrigin.y }
 
   var body: some View {
-    ZStack(alignment: .top) {
-      RoundedRectangle(cornerRadius: Size.radius + Size.border + Size.caseInset, style: .continuous)
-        .fill(DeviceFinish.metal)
-        .overlay {
-          RoundedRectangle(cornerRadius: Size.radius + Size.border + Size.caseInset, style: .continuous)
-            .strokeBorder(DeviceFinish.edge, lineWidth: 1.5)
-        }
-        .frame(width: Size.caseWidth, height: Size.screen.height + (Size.border + Size.caseInset) * 2)
-      RoundedRectangle(cornerRadius: Size.radius + Size.border, style: .continuous)
-        .fill(.black)
-        .frame(width: Size.screen.width + Size.border * 2, height: Size.screen.height + Size.border * 2)
-        .padding(.top, Size.caseInset)
+    ZStack(alignment: .topLeading) {
       screen
         .frame(width: Size.screen.width, height: Size.screen.height, alignment: .top)
         .clipShape(.rect(cornerRadius: Size.radius, style: .continuous))
-        .padding(.top, Size.caseInset + Size.border)
-      Capsule()
-        .fill(.black)
-        .frame(width: 124, height: 36)
-        .padding(.top, Size.caseInset + Size.border + 11)
-      buttons
+        .offset(x: Size.screenOrigin.x, y: Size.screenOrigin.y)
+      Image(.deviceIPhone)
+        .resizable()
+        .frame(width: Size.device.width, height: Size.device.height)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
-    .frame(width: Size.totalWidth, height: height, alignment: .top)
+    .frame(width: Size.device.width, height: height, alignment: .top)
+    .clipped()
     // Only the top of the phone shows; it fades softly into the page.
     .mask {
       LinearGradient(stops: [
@@ -116,30 +98,7 @@ struct PhoneMockup<Screen: View>: View {
     }
     .shadow(color: DeviceFinish.shadow, radius: 24, y: 14)
     .scaleEffect(scale, anchor: .top)
-    .frame(width: Size.totalWidth * scale, height: height * scale, alignment: .top)
-  }
-
-  /// Action button and volume buttons on the left, side button on the right.
-  private var buttons: some View {
-    HStack(alignment: .top) {
-      VStack(spacing: 24) {
-        button(height: 34)
-        button(height: 64)
-        button(height: 64)
-      }
-      .padding(.top, 170)
-      Spacer()
-      button(height: 104)
-        .padding(.top, 236)
-    }
-    .frame(width: Size.totalWidth)
-    .accessibilityHidden(true)
-  }
-
-  private func button(height: CGFloat) -> some View {
-    RoundedRectangle(cornerRadius: 2, style: .continuous)
-      .fill(DeviceFinish.button)
-      .frame(width: Size.buttonOverhang + 2, height: height)
+    .frame(width: Size.device.width * scale, height: height * scale, alignment: .top)
   }
 }
 
@@ -325,17 +284,14 @@ struct WatchShowcaseStep: View {
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @State private var scroll: CGFloat = 0
   @State private var isScrolling = false
-  @State private var crownTurn: CGFloat = 0
   @State private var hops = 0
 
-  /// Apple Watch proportions: display, the black border around it, and the case.
+  /// Apple Watch Series 11 (46 mm), in points: Apple's own product frame, and where its display sits inside it.
   private enum Size {
-    static let display = CGSize(width: 208, height: 250)
-    static let displayRadius: CGFloat = 44
-    static let border: CGFloat = 7
-    static let caseInset: CGFloat = 9
-    static var bezel: CGSize { CGSize(width: display.width + border * 2, height: display.height + border * 2) }
-    static var watchCase: CGSize { CGSize(width: bezel.width + caseInset * 2, height: bezel.height + caseInset * 2) }
+    static let device = CGSize(width: 280, height: 440)
+    static let display = CGSize(width: 208, height: 248)
+    static let displayOrigin = CGPoint(x: 36, y: 96)
+    static let displayRadius: CGFloat = 42
     /// The title bar sits inside the rounded corners, like every watchOS app.
     static let titleInset: CGFloat = 22
     static let titleTop: CGFloat = 10
@@ -374,63 +330,29 @@ struct WatchShowcaseStep: View {
 
   private func scrollTo(_ offset: CGFloat, duration: Double) async {
     withAnimation(.easeOut(duration: 0.2)) { isScrolling = true }
-    withAnimation(.smooth(duration: duration)) {
-      crownTurn += (scroll - offset) / 40
-      scroll = offset
-    }
+    withAnimation(.smooth(duration: duration)) { scroll = offset }
     try? await Task.sleep(for: .seconds(duration))
     withAnimation(.easeIn(duration: 0.4)) { isScrolling = false }
   }
 
   // MARK: Hardware
 
+  /// The real Apple Watch Series 11, Apple's product frame around the live display, the same device the App Store shows.
   private var watch: some View {
-    ZStack {
-      RoundedRectangle(cornerRadius: Size.displayRadius + Size.border + Size.caseInset, style: .continuous)
-        .fill(DeviceFinish.metal)
-        .overlay {
-          RoundedRectangle(cornerRadius: Size.displayRadius + Size.border + Size.caseInset, style: .continuous)
-            .strokeBorder(DeviceFinish.edge, lineWidth: 1.5)
-        }
-        .frame(width: Size.watchCase.width, height: Size.watchCase.height)
-        .shadow(color: DeviceFinish.shadow, radius: 24, y: 14)
-      RoundedRectangle(cornerRadius: Size.displayRadius + Size.border, style: .continuous)
-        .fill(.black)
-        .frame(width: Size.bezel.width, height: Size.bezel.height)
+    ZStack(alignment: .topLeading) {
       display
         .frame(width: Size.display.width, height: Size.display.height)
         .clipShape(.rect(cornerRadius: Size.displayRadius, style: .continuous))
+        .offset(x: Size.displayOrigin.x, y: Size.displayOrigin.y)
+      Image(.deviceWatch)
+        .resizable()
+        .frame(width: Size.device.width, height: Size.device.height)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
-    .overlay(alignment: .topTrailing) { crown }
-    .overlay(alignment: .trailing) { sideButton }
+    .frame(width: Size.device.width, height: Size.device.height)
+    .shadow(color: DeviceFinish.shadow, radius: 24, y: 14)
     .accessibilityElement(children: .contain)
-  }
-
-  /// The Digital Crown, whose ridges roll as the screen scrolls.
-  private var crown: some View {
-    ZStack {
-      RoundedRectangle(cornerRadius: 4, style: .continuous)
-        .fill(LinearGradient(colors: [Color(white: 0.5), Color(white: 0.22)], startPoint: .top, endPoint: .bottom))
-      VStack(spacing: 3.5) {
-        ForEach(0..<9, id: \.self) { _ in
-          Rectangle().fill(.black.opacity(0.35)).frame(height: 1)
-        }
-      }
-      .offset(y: (crownTurn.truncatingRemainder(dividingBy: 1)) * 4.5)
-      .padding(.vertical, -4)
-    }
-    .frame(width: 9, height: 40)
-    .clipShape(.rect(cornerRadius: 4, style: .continuous))
-    .offset(x: 6, y: Size.watchCase.height * 0.2)
-    .accessibilityHidden(true)
-  }
-
-  private var sideButton: some View {
-    Capsule()
-      .fill(DeviceFinish.button)
-      .frame(width: 5, height: 50)
-      .offset(x: 4, y: Size.watchCase.height * 0.16)
-      .accessibilityHidden(true)
   }
 
   // MARK: Display

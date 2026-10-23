@@ -3,7 +3,7 @@ import SwiftData
 import SwiftUI
 import WidgetKit
 
-/// Development only: an iPhone Home Screen with Dipwise's widgets on a light wallpaper, filled from the demo
+/// Development only: an iPhone Home Screen with Dipwise's widgets on the Dipwise wallpaper, filled from the demo
 /// portfolio, for the App Store's widgets screenshot. Launch with `-demoPortfolio -marketingScene home-widgets`.
 struct MarketingHomeScreen: View {
   @Query(sort: \Holding.addedAt) private var holdings: [Holding]
@@ -16,15 +16,16 @@ struct MarketingHomeScreen: View {
 
   var body: some View {
     ZStack(alignment: .top) {
-      wallpaper
+      DipwiseWallpaper()
       if isReady {
         let targets = TargetSnapshotStore.loadTargets()
         let statuses = TargetStatus.sorted(targets: targets, quotes: quotes.quotes)
         let flock = FlockWidgetEntry(date: .now, snapshot: flockSnapshot)
-        VStack(spacing: 14) {
+        VStack(spacing: 0) {
           tile("Dipwise", size: Self.medium) {
             PortfolioWidgetView(entry: PortfolioProvider.entry(quotes: quotes.quotes), previewFamily: .systemMedium)
           }
+          Spacer(minLength: 10)
           HStack(spacing: 24) {
             tile("Dipwise", size: Self.small) {
               PlansWidgetView(entry: PlansEntry(date: .now, statuses: statuses), previewFamily: .systemSmall)
@@ -33,9 +34,11 @@ struct MarketingHomeScreen: View {
               FlockZonesWidgetView(entry: flock, previewFamily: .systemSmall)
             }
           }
+          Spacer(minLength: 10)
           tile("Dipwise", size: Self.medium) {
             FlockMoodWidgetView(entry: flock, previewFamily: .systemMedium)
           }
+          Spacer(minLength: 10)
           HStack(spacing: 24) {
             tile("Dipwise", size: Self.small) {
               MarketWidgetView(entry: MarketEntry(date: marketMoment, market: quotes[Benchmark.symbol] ?? MarketProvider.sampleMarket, plans: targets.count),
@@ -46,13 +49,17 @@ struct MarketingHomeScreen: View {
                                   previewFamily: .systemSmall)
             }
           }
+          Spacer(minLength: 10)
           searchPill
         }
-        .padding(.top, 70)
+        .padding(.top, 72)
+        .padding(.bottom, 34)
+        .frame(maxHeight: .infinity)
       }
     }
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
     .ignoresSafeArea()
-    .environment(\.colorScheme, .light)
+    .environment(\.colorScheme, .dark)
     .task {
       SnapshotPublisher.publish(context: modelContext)
       await quotes.refresh(symbols: holdings.map(\.symbol) + [Benchmark.symbol])
@@ -91,16 +98,6 @@ struct MarketingHomeScreen: View {
     )
   }
 
-  /// A soft, bright wallpaper, so the navy widgets stand out.
-  private var wallpaper: some View {
-    ZStack {
-      LinearGradient(colors: [Color(red: 0.80, green: 0.93, blue: 0.90), Color(red: 0.76, green: 0.85, blue: 0.95), Color(red: 0.86, green: 0.82, blue: 0.95)],
-                     startPoint: .topLeading, endPoint: .bottomTrailing)
-      RadialGradient(colors: [Brand.mint.opacity(0.35), .clear], center: UnitPoint(x: 0.15, y: 0.2), startRadius: 10, endRadius: 360)
-      RadialGradient(colors: [Brand.amber.opacity(0.18), .clear], center: UnitPoint(x: 0.9, y: 0.75), startRadius: 10, endRadius: 320)
-    }
-  }
-
   /// A widget at its real Home Screen size, with the app's name under it like iOS shows.
   private func tile(_ name: String, size: CGSize, @ViewBuilder content: () -> some View) -> some View {
     VStack(spacing: 5) {
@@ -112,18 +109,18 @@ struct MarketingHomeScreen: View {
         .shadow(color: .black.opacity(0.18), radius: 14, y: 6)
       Text(name)
         .font(.system(size: 12, weight: .medium))
-        .foregroundStyle(Color(white: 0.18))
+        .foregroundStyle(.white)
+        .shadow(color: .black.opacity(0.25), radius: 2, y: 1)
     }
   }
 
   private var searchPill: some View {
     Label("Search", systemImage: "magnifyingglass")
       .font(.system(size: 15, weight: .semibold))
-      .foregroundStyle(Color(white: 0.25))
+      .foregroundStyle(.white)
       .padding(.horizontal, 16)
       .padding(.vertical, 8)
-      .background(.white.opacity(0.45), in: .capsule)
-      .padding(.top, 6)
+      .background(.white.opacity(0.22), in: .capsule)
   }
 }
 #endif

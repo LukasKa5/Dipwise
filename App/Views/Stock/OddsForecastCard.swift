@@ -1,13 +1,18 @@
 import Charts
 import SwiftUI
 
-/// Your odds, drawn: the recent price, a cone of where it could go from its own daily moves, and your buy zone
-/// across both. Two rings give the chance it reaches the zone within 30 and 90 days; tap one to see that cone.
+/// Your odds, drawn: the recent price, a cone of where it could go from its own daily moves, and your zone across
+/// both, for buying or for selling. Two rings give the chance it reaches the zone within 30 and 90 days (tap one to
+/// see that cone), with the typical wait and the likely price range a month out. Free shows the 30-day odds for a
+/// buy zone; Pro adds every horizon, the wait, the range, and sell zones.
 struct OddsForecastCard: View {
   var symbol: String
   var quote: Quote
-  var rule: AlertRule
+  var buyZone: AlertRule?
+  var sellZone: AlertRule?
+  var isPro: Bool
 
+  @State private var side: TradeSide = .buy
   @State private var horizon = Horizon.month
 
   enum Horizon: Int, CaseIterable, Identifiable {
@@ -24,8 +29,14 @@ struct OddsForecastCard: View {
     }
   }
 
+  private var rule: AlertRule? {
+    side == .sell ? (sellZone ?? buyZone) : (buyZone ?? sellZone)
+  }
+
   var body: some View {
-    if let odds = AlertOdds(rule: rule, quote: quote) {
+    if let rule, let odds = AlertOdds(rule: rule, quote: quote) {
+      let color = rule.kind.side.brandColor
+      let isSell = rule.kind.side == .sell
       VStack(alignment: .leading, spacing: 16) {
         HStack(spacing: 12) {
           LivelyOwl(mood: .calm)
@@ -33,31 +44,51 @@ struct OddsForecastCard: View {
           VStack(alignment: .leading, spacing: 2) {
             Text("Your odds")
               .font(.headline)
-            Text("\(symbol) · buy between \(quote.formatted(rule.lower)) and \(quote.formatted(max(rule.lower, rule.upper)))")
+            Text(isSell ? "\(symbol) · sell between \(quote.formatted(rule.lower)) and \(quote.formatted(max(rule.lower, rule.upper)))"
+                        : "\(symbol) · buy between \(quote.formatted(rule.lower)) and \(quote.formatted(max(rule.lower, rule.upper)))")
               .font(.caption.weight(.semibold))
-              .foregroundStyle(Brand.buy)
+              .foregroundStyle(color)
               .lineLimit(1)
               .minimumScaleFactor(0.7)
           }
           Spacer(minLength: 0)
         }
 
-        OddsCone(quote: quote, rule: rule, sigma: odds.dailyVolatility, days: horizon.rawValue)
-          .frame(height: 190)
-          .animation(.smooth(duration: 0.6), value: horizon)
-
-        HStack(spacing: 12) {
-          ForEach(Horizon.allCases) { option in
-            Button {
-              withAnimation(.snappy) { horizon = option }
-            } label: {
-              OddsRing(chance: option == .month ? odds.monthChance : odds.quarterChance, title: option.title, isSelected: horizon == option)
-            }
-            .buttonStyle(.plain)
-            .accessibilityAddTraits(horizon == option ? .isSelected : [])
+        if buyZone != nil && sellZone != nil {
+          Picker("Zone", selection: $side.animation(.smooth)) {
+            Text("Buy zone").tag(TradeSide.buy)
+            Text("Sell zone").tag(TradeSide.sell)
           }
+          .pickerStyle(.segmented)
         }
-        .sensoryFeedback(.selection, trigger: horizon)
+
+        VStack(alignment: .leading, spacing: 14) {
+          OddsCone(quote: quote, rule: rule, sigma: odds.dailyVolatility, days: horizon.rawValue, color: color)
+            .frame(height: 180)
+            .animation(.smooth(duration: 0.6), value: horizon)
+
+          HStack(spacing: 12) {
+            ForEach(Horizon.allCases) { option in
+              Button {
+                withAnimation(.snappy) { horizon = option }
+              } label: {
+                OddsRing(chance: option == .month ? odds.monthChance : odds.quarterChance, title: option.title,
+                         color: color, isSelected: horizon == option)
+              }
+              .buttonStyle(.plain)
+              .accessibilityAddTraits(horizon == option ? .isSelected : [])
+              .compactProLock(!isPro && option == .quarter)
+            }
+          }
+          .sensoryFeedback(.selection, trigger: horizon)
+
+          HStack(spacing: 12) {
+            OddsFact(title: "Typical wait", value: waitText(rule: rule, sigma: odds.dailyVolatility), systemImage: "hourglass")
+            OddsFact(title: "Likely in 30 days", value: rangeText(sigma: odds.dailyVolatility), systemImage: "arrow.up.and.down")
+          }
+          .compactProLock(!isPro)
+        }
+        .proLocked(!isPro && isSell, message: "See your odds of reaching your sell zone with Pro")
 
         Text("\(odds.lastTriggeredText). Worked out from \(symbol)'s daily moves over the past year, not a prediction.")
           .font(.caption)
@@ -71,7 +102,46 @@ struct OddsForecastCard: View {
         in: .rect(cornerRadius: 26, style: .continuous)
       )
       .environment(\.colorScheme, .dark)
+      .onAppear { if buyZone == nil { side = .sell } }
     }
+  }
+
+  /// How long half of all likely paths take to first reach the zone, from a random walk at this volatility.
+  private func waitText(rule: AlertRule, sigma: Double) -> String {
+    guard let level = rule.triggerLevel(for: quote), level > 0, sigma > 0 else { return "—" }
+    let distance = abs(log(level / quote.price))
+    let tradingDays = pow(distance / (0.6745 * sigma), 2)
+    let days = max(1, Int((tradingDays * 7 / 5).rounded()))
+    return days > 365 ? String(localized: "Over a year") : String(localized: "About \(days) days")
+  }
+
+  /// Where the price lands in a month in eight of ten likely paths.
+  private func rangeText(sigma: Double) -> String {
+    let spread = 1.28 * sigma * sqrt(21)
+    return "\(compactPrice(quote.price * exp(-spread), currency: quote.currency))–\(compactPrice(quote.price * exp(spread), currency: quote.currency))"
+  }
+}
+
+/// One more thing worth knowing about the odds, on a small tile.
+private struct OddsFact: View {
+  var title: LocalizedStringKey
+  var value: String
+  var systemImage: String
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 4) {
+      Label(title, systemImage: systemImage)
+        .font(.caption.weight(.semibold))
+        .foregroundStyle(.white.opacity(0.6))
+      Text(value)
+        .font(.system(.subheadline, design: .rounded).weight(.bold).monospacedDigit())
+        .lineLimit(1)
+        .minimumScaleFactor(0.7)
+    }
+    .padding(12)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .background(.white.opacity(0.06), in: .rect(cornerRadius: 16, style: .continuous))
+    .accessibilityElement(children: .combine)
   }
 }
 
@@ -82,6 +152,7 @@ private struct OddsCone: View {
   var rule: AlertRule
   var sigma: Double
   var days: Int
+  var color: Color
 
   private struct Band: Identifiable {
     var day: Int
@@ -109,7 +180,7 @@ private struct OddsCone: View {
     Chart {
       RectangleMark(xStart: .value("Start", 0), xEnd: .value("End", today + days),
                     yStart: .value("Zone low", rule.lower), yEnd: .value("Zone high", upper))
-        .foregroundStyle(Brand.buy.opacity(0.22))
+        .foregroundStyle(color.opacity(0.24))
       ForEach(bands) { band in
         AreaMark(x: .value("Day", band.day), yStart: .value("Low", band.low), yEnd: .value("High", band.high), series: .value("Band", "outer"))
           .foregroundStyle(.white.opacity(0.08))
@@ -151,7 +222,7 @@ private struct OddsCone: View {
     }
     .chartXScale(domain: 0...(today + days))
     .chartYScale(domain: (low - pad)...(high + pad))
-    .accessibilityLabel("Price chart with a cone of likely prices over the next \(days) trading days and your buy zone")
+    .accessibilityLabel("Price chart with a cone of likely prices over the next \(days) trading days and your zone")
   }
 }
 
@@ -159,6 +230,7 @@ private struct OddsCone: View {
 private struct OddsRing: View {
   var chance: Double
   var title: LocalizedStringKey
+  var color: Color
   var isSelected: Bool
 
   var body: some View {
@@ -167,7 +239,7 @@ private struct OddsRing: View {
         Circle().stroke(.white.opacity(0.12), lineWidth: 7)
         Circle()
           .trim(from: 0, to: chance)
-          .stroke(Brand.buy, style: StrokeStyle(lineWidth: 7, lineCap: .round))
+          .stroke(color, style: StrokeStyle(lineWidth: 7, lineCap: .round))
           .rotationEffect(.degrees(-90))
         Text(chance, format: .percent.precision(.fractionLength(0)))
           .font(.system(.subheadline, design: .rounded).weight(.bold).monospacedDigit())
@@ -190,8 +262,45 @@ private struct OddsRing: View {
     .background(.white.opacity(isSelected ? 0.14 : 0.05), in: .rect(cornerRadius: 18, style: .continuous))
     .overlay {
       RoundedRectangle(cornerRadius: 18, style: .continuous)
-        .strokeBorder(isSelected ? Brand.buy.opacity(0.7) : .clear, lineWidth: 1.5)
+        .strokeBorder(isSelected ? color.opacity(0.7) : .clear, lineWidth: 1.5)
     }
     .accessibilityElement(children: .combine)
+  }
+}
+
+/// A small Pro lock for tiles: the content softly blurred under a Pro tag; tapping opens the paywall.
+private struct CompactProLock: ViewModifier {
+  var isLocked: Bool
+  @State private var showsPaywall = false
+
+  func body(content: Content) -> some View {
+    if isLocked {
+      content
+        .blur(radius: 6)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+        .overlay {
+          Button {
+            showsPaywall = true
+          } label: {
+            Label("Unlock with Pro", systemImage: "lock.fill")
+              .font(.caption.weight(.bold))
+              .foregroundStyle(Brand.owlInk)
+              .padding(.horizontal, 10)
+              .padding(.vertical, 6)
+              .background(Brand.amber, in: .capsule)
+          }
+          .buttonStyle(.plain)
+        }
+        .sheet(isPresented: $showsPaywall) { PaywallView() }
+    } else {
+      content
+    }
+  }
+}
+
+private extension View {
+  func compactProLock(_ isLocked: Bool) -> some View {
+    modifier(CompactProLock(isLocked: isLocked))
   }
 }

@@ -73,10 +73,10 @@ struct MarketingSceneView: View {
       }
     }
     .ignoresSafeArea()
-    // The Home Screen keeps its real status bar, in dark text on the light wallpaper.
+    // The Home Screen keeps its real status bar, in white on the wallpaper.
     .statusBarHidden(scene != "home-widgets")
-    .preferredColorScheme(scene == "home-widgets" ? .light : nil)
-    .environment(\.colorScheme, scene == "home-widgets" ? .light : .dark)
+    .preferredColorScheme(scene == "home-widgets" ? .dark : nil)
+    .environment(\.colorScheme, .dark)
     .task {
       await model.loadQuotes()
       for symbol in ["NVDA", "MSFT", "AAPL"] { model.toggle(symbol) }

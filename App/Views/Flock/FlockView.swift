@@ -31,15 +31,15 @@ struct FlockView: View {
             ContentUnavailableView("The Flock Is Gathering", systemImage: "person.3", description: Text("Anonymous statistics from other Dipwise investors will appear here soon."))
           } else {
             hero
+            topInvestors
+            owned
+            buyingAndSelling
             if !sharesPortfolio {
               SharePortfolioCard {
                 sharesPortfolio = true
                 Task { await MarketMonitor.refresh(context: modelContext, quotes: quotes, flock: flock) }
               }
             }
-            topInvestors
-            owned
-            buyingAndSelling
             boards
             yourStocks
             if flock.overview.isSample {
@@ -69,51 +69,104 @@ struct FlockView: View {
 
   // MARK: Hero
 
+  /// The flock at a glance on the app's navy: a row of anonymous owls, how many set alerts this week, the mood,
+  /// and the stocks trading inside the crowd's buy zone right now.
   private var hero: some View {
     let overview = flock.overview
+    let faces = Array(flock.leaders.prefix(6))
+    let bullish = overview.mood.bullShare >= 0.5
     return VStack(alignment: .leading, spacing: 18) {
-      HStack(alignment: .top, spacing: 16) {
-        VStack(alignment: .leading, spacing: 6) {
-          HStack(spacing: 2) {
-            Text("This week in the flock")
-              .font(.subheadline.weight(.semibold))
-              .foregroundStyle(.secondary)
-            InfoButton(topic: .flock)
-          }
-          Text("\(overview.investors.formatted()) investors")
-            .font(.title.bold())
-          Text("set \(overview.alertsThisWeek.formatted()) new alerts")
-            .font(.headline)
-            .foregroundStyle(.tint)
-        }
+      HStack {
+        Label("Everyone here is anonymous", systemImage: "lock.fill")
+          .font(.caption.weight(.bold))
+          .foregroundStyle(Brand.mint)
+          .padding(.horizontal, 10)
+          .padding(.vertical, 5)
+          .background(Brand.mint.opacity(0.15), in: .capsule)
         Spacer()
+        InfoButton(topic: .flock)
+      }
+      HStack(alignment: .center, spacing: 12) {
+        VStack(alignment: .leading, spacing: 4) {
+          Text("\(overview.investors.formatted()) investors")
+            .font(.system(.title, design: .rounded).bold())
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+          Text("set \(overview.alertsThisWeek.formatted()) alerts this week")
+            .font(.headline)
+            .foregroundStyle(Brand.mint)
+        }
+        Spacer(minLength: 0)
         LivelyOwl()
-          .frame(width: 64, height: 74)
+          .frame(width: 58, height: 67)
+      }
+      if !faces.isEmpty {
+        HStack(spacing: -10) {
+          ForEach(faces) { investor in
+            InvestorAvatar(investor: investor, size: 38)
+              .overlay { Circle().strokeBorder(Brand.nightMiddle, lineWidth: 2.5) }
+          }
+          Text("+\(max(0, overview.investors - faces.count).formatted())")
+            .font(.caption.weight(.bold).monospacedDigit())
+            .padding(.horizontal, 10)
+            .frame(height: 38)
+            .background(.white.opacity(0.14), in: .capsule)
+            .padding(.leading, 18)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(overview.investors) anonymous investors")
       }
       VStack(alignment: .leading, spacing: 8) {
         HStack {
           Text("Market mood")
             .font(.subheadline.weight(.semibold))
           Spacer()
-          Text(overview.mood.bullShare >= 0.5 ? "Optimistic" : "Cautious")
+          Text(bullish ? "Optimistic" : "Cautious")
             .font(.subheadline.weight(.bold))
-            .foregroundStyle(overview.mood.bullShare >= 0.5 ? Palette.gain : Palette.loss)
+            .foregroundStyle(bullish ? Brand.buy : Brand.sell)
         }
         GeometryReader { geometry in
           HStack(spacing: 3) {
-            Capsule().fill(Palette.gain).frame(width: max(6, (geometry.size.width - 3) * overview.mood.bullShare))
-            Capsule().fill(Palette.loss)
+            Capsule().fill(Brand.buy).frame(width: max(6, (geometry.size.width - 3) * overview.mood.bullShare))
+            Capsule().fill(Brand.sell)
           }
         }
         .frame(height: 10)
         Text("\(overview.mood.bullShare.formatted(.percent.precision(.fractionLength(0)))) expect stocks they vote on to rise over the next 30 days")
           .font(.caption)
-          .foregroundStyle(.secondary)
+          .foregroundStyle(.white.opacity(0.65))
       }
       .accessibilityElement(children: .combine)
+      if !flock.radar.isEmpty {
+        VStack(alignment: .leading, spacing: 10) {
+          Text("In the crowd's buy zone now")
+            .font(.subheadline.weight(.semibold))
+          HStack(spacing: 8) {
+            ForEach(flock.radar.prefix(3)) { item in
+              NavigationLink(value: item.symbol) {
+                HStack(spacing: 6) {
+                  TickerBadge(symbol: item.symbol, size: 24)
+                  Text(item.symbol)
+                    .font(.subheadline.weight(.bold))
+                }
+                .padding(.leading, 5)
+                .padding(.trailing, 10)
+                .padding(.vertical, 5)
+                .background(Brand.buy.opacity(0.2), in: .capsule)
+              }
+              .buttonStyle(.plain)
+            }
+          }
+        }
+      }
     }
     .padding(20)
-    .cardStyle(cornerRadius: 28)
+    .foregroundStyle(.white)
+    .background(
+      LinearGradient(colors: [Brand.nightTop, Brand.nightMiddle], startPoint: .top, endPoint: .bottom),
+      in: .rect(cornerRadius: 28, style: .continuous)
+    )
+    .environment(\.colorScheme, .dark)
     .padding(.top, 8)
   }
 

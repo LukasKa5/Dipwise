@@ -14,8 +14,8 @@ struct HomeView: View {
   @State private var showsAddStock = false
   @State private var showsAddPosition = false
   @State private var showsImport = false
-  @State private var showsDeskClock = false
-  /// Desk Clock is made for iPhone Duo closed and standing on its edge, so it's offered only there.
+  @State private var showsDesk = false
+  /// Desk Mode is made for iPhone Duo standing like a tent on a desk, so it's offered only there.
   @State private var isFoldable = HomeView.forcesFoldable
   @State private var period: ChartPeriod = .preset(.month)
 
@@ -73,13 +73,13 @@ struct HomeView: View {
         }
         ToolbarItemGroup(placement: .topBarTrailing) {
           if isFoldable {
-            Button("Desk Clock", systemImage: "alarm") { showsDeskClock = true }
+            Button("Desk Mode", systemImage: "chart.xyaxis.line") { showsDesk = true }
           }
           Button("Add Stock", systemImage: "plus") { showsAddStock = true }
         }
       }
       .sheet(isPresented: $showsProgress) { ProgressHubView() }
-      .fullScreenCover(isPresented: $showsDeskClock) { DeskClockView() }
+      .fullScreenCover(isPresented: $showsDesk) { DeskModeView() }
       .onFoldableChange { isFoldable = $0 || HomeView.forcesFoldable }
       .fullScreenCover(isPresented: $router.showsBrief) { DailyBriefView() }
       .navigationDestination(for: String.self) { symbol in
@@ -395,7 +395,7 @@ struct DisclaimerFooter: View {
 }
 
 extension HomeView {
-  /// Development only: `-foldable` shows Desk Clock on any iPhone, for testing without iPhone Duo.
+  /// Development only: `-foldable` shows Desk Mode on any iPhone, for testing without iPhone Duo.
   static var forcesFoldable: Bool {
     #if DEBUG
     ProcessInfo.processInfo.arguments.contains("-foldable")

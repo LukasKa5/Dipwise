@@ -70,23 +70,38 @@ struct StockDetailView: View {
   }
 
   private func content(for holding: Holding) -> some View {
-    ScrollView {
-      VStack(alignment: .leading, spacing: 28) {
-        header(for: holding)
-        planSection(for: holding)
-        if let quote, let zone = holding.buyZone, (zone.distance(for: quote) ?? 0) > 0 {
-          OddsForecastCard(symbol: symbol, quote: quote, rule: zone.rule)
+    ScrollViewReader { proxy in
+      ScrollView {
+        VStack(alignment: .leading, spacing: 28) {
+          header(for: holding)
+          planSection(for: holding)
+          if let quote {
+            // Odds only for zones the price hasn't reached yet.
+            let open = { (alert: PriceAlert?) in alert.flatMap { ($0.distance(for: quote) ?? 0) > 0 ? $0.rule : nil } }
+            if open(holding.buyZone) != nil || open(holding.sellZone) != nil {
+              OddsForecastCard(symbol: symbol, quote: quote, buyZone: open(holding.buyZone), sellZone: open(holding.sellZone), isPro: subscription.isPro)
+                .id("odds")
+            }
+          }
+          if let quote { keyStats(quote) }
+          if holding.isOwned { positionSection(for: holding) }
+          if let quote, !quote.dividends.isEmpty { dividendSection(quote, holding: holding) }
+          FlockTeaser(symbol: symbol, quote: quote)
+          DisclaimerFooter(lastUpdated: quote?.updatedAt)
         }
-        if let quote { keyStats(quote) }
-        if holding.isOwned { positionSection(for: holding) }
-        if let quote, !quote.dividends.isEmpty { dividendSection(quote, holding: holding) }
-        FlockTeaser(symbol: symbol, quote: quote)
-        DisclaimerFooter(lastUpdated: quote?.updatedAt)
+        .padding(.horizontal, 20)
+        .padding(.bottom, 32)
+        .frame(maxWidth: 700)
+        .frame(maxWidth: .infinity)
       }
-      .padding(.horizontal, 20)
-      .padding(.bottom, 32)
-      .frame(maxWidth: 700)
-      .frame(maxWidth: .infinity)
+      .task {
+        #if DEBUG
+        // Development only: `-scrollToOdds` opens the stock on its Your Odds card, for screenshots.
+        guard ProcessInfo.processInfo.arguments.contains("-scrollToOdds") else { return }
+        try? await Task.sleep(for: .seconds(1.5))
+        withAnimation(.smooth) { proxy.scrollTo("odds", anchor: UnitPoint(x: 0.5, y: 0.08)) }
+        #endif
+      }
     }
     .swipeActionsContainerIfAvailable()
     .refreshable { await quotes.refresh(symbols: [symbol]) }

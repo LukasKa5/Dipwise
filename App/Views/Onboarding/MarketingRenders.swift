@@ -57,6 +57,7 @@ struct MarketingRenders: View {
       render()
       await renderDesk()
       renderOdds()
+      renderHint()
     }
   }
 
@@ -150,16 +151,18 @@ struct MarketingRenders: View {
 
   // MARK: Rendering
 
-  /// Desk Clock on iPhone Duo's outer display, closed and standing on its edge in landscape (678 × 466 points),
-  /// early in the morning with the market about to open.
+  /// Desk Mode on iPhone Duo's outer display, standing like a tent in landscape (678 × 466 points), at 9:41 with
+  /// the market open.
   private func renderDesk() async {
     let holdings = (try? modelContext.fetch(FetchDescriptor<Holding>())) ?? []
     await quotes.refresh(symbols: holdings.map(\.symbol))
     try? await Task.sleep(for: .seconds(2))
     let day = QuoteService.marketingDate ?? .now
-    let morning = Calendar.current.date(bySettingHour: 7, minute: 2, second: 0, of: day) ?? day
+    let morning = Calendar.current.date(bySettingHour: 9, minute: 41, second: 0, of: day) ?? day
     let renderer = ImageRenderer(content:
-      DeskClockView(frozenDate: morning)
+      DeskModeView(frozenDate: morning)
+        // The outer camera sits in the trailing corner in this pose; the device keeps content clear of it.
+        .safeAreaPadding(.trailing, 44)
         .environment(quotes)
         .environment(flock)
         .modelContainer(DipwiseApp.container)
@@ -167,7 +170,22 @@ struct MarketingRenders: View {
     )
     renderer.scale = 3
     guard let data = renderer.uiImage?.pngData() else { return }
-    let url = URL.documentsDirectory.appending(path: "desk-clock.png")
+    let url = URL.documentsDirectory.appending(path: "desk-mode.png")
+    try? data.write(to: url)
+    saved.append(url.lastPathComponent)
+  }
+
+  /// The intro's own "Try it" chip, for the hint on the buy zone screenshot.
+  private func renderHint() {
+    let renderer = ImageRenderer(content:
+      MissionChip(text: "Drag a green handle", isDone: false)
+        .environment(\.colorScheme, .dark)
+        .padding(4)
+        .background(Brand.nightMiddle, in: .capsule)
+    )
+    renderer.scale = 3
+    guard let data = renderer.uiImage?.pngData() else { return }
+    let url = URL.documentsDirectory.appending(path: "hint-drag.png")
     try? data.write(to: url)
     saved.append(url.lastPathComponent)
   }
@@ -177,7 +195,7 @@ struct MarketingRenders: View {
     let holdings = (try? modelContext.fetch(FetchDescriptor<Holding>())) ?? []
     guard let holding = holdings.first(where: { $0.symbol == "NVDA" }), let zone = holding.buyZone, let quote = quotes["NVDA"] else { return }
     let renderer = ImageRenderer(content:
-      OddsForecastCard(symbol: "NVDA", quote: quote, rule: zone.rule)
+      OddsForecastCard(symbol: "NVDA", quote: quote, buyZone: zone.rule, sellZone: holding.sellZone?.rule, isPro: true)
         .frame(width: 402)
     )
     renderer.scale = 3

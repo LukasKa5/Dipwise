@@ -16,6 +16,8 @@ enum DemoPortfolio {
   private static let zones: [(String, Double, Double)] = [
     ("AMZN", 236.20, 249.30), ("NVDA", 206.35, 217.80), ("AAPL", 306.30, 323.35), ("META", 668.65, 705.80),
   ]
+  /// Where the demo investor would take some profit.
+  private static let sellZones: [(String, Double, Double)] = [("NVDA", 255.00, 268.00), ("MSFT", 585.00, 600.00)]
 
   @MainActor
   static func install(in context: ModelContext) {
@@ -30,6 +32,11 @@ enum DemoPortfolio {
     }
     for zone in zones {
       let alert = PriceAlert(rule: AlertRule(kind: .buyZone, lower: zone.1, upper: zone.2), priceAtCreation: zone.2 * 1.08)
+      alert.holding = bySymbol[zone.0]
+      context.insert(alert)
+    }
+    for zone in sellZones {
+      let alert = PriceAlert(rule: AlertRule(kind: .sellZone, lower: zone.1, upper: zone.2), priceAtCreation: zone.1 * 0.9)
       alert.holding = bySymbol[zone.0]
       context.insert(alert)
     }

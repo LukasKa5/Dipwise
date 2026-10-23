@@ -26,5 +26,7 @@ struct MainTabView: View {
         SettingsView()
       }
     }
+    // A clear, solid edge behind the tab bar, so it always reads as one calm block over busy content.
+    .scrollEdgeEffectStyle(.hard, for: .bottom)
   }
 }
