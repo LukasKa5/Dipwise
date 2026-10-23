@@ -15,6 +15,8 @@ enum Brand {
   static let owlWing = Color(red: 0.776, green: 0.827, blue: 0.882)
   static let owlFeather = Color(red: 0.686, green: 0.753, blue: 0.824)
   static let owlInk = Color(red: 0.039, green: 0.106, blue: 0.180)
+  /// Dippy's rosy cheeks when he blushes.
+  static let owlBlush = Color(red: 1, green: 0.55, blue: 0.62)
 
 }
 

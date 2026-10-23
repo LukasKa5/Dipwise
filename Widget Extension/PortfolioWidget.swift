@@ -108,22 +108,25 @@ struct PortfolioWidgetView: View {
   }
 
   private func medium(_ portfolio: WatchPortfolio) -> some View {
-    HStack(spacing: 14) {
-      VStack(alignment: .leading, spacing: 3) {
-        header(showsOwl: false)
-        Spacer(minLength: 4)
-        value(portfolio, size: 28)
-        todayLine(portfolio)
-        if let month = portfolio.historyChange {
-          Text("\(changeText(month)) this month")
-            .font(.caption2.weight(.semibold).monospacedDigit())
-            .foregroundStyle(.white.opacity(0.6))
-            .lineLimit(1)
+    VStack(alignment: .leading, spacing: 0) {
+      header
+      HStack(spacing: 14) {
+        VStack(alignment: .leading, spacing: 3) {
+          Spacer(minLength: 4)
+          value(portfolio, size: 28)
+          todayLine(portfolio)
+          if let month = portfolio.historyChange {
+            Text("\(changeText(month)) this month")
+              .font(.caption2.weight(.semibold).monospacedDigit())
+              .foregroundStyle(.white.opacity(0.6))
+              .lineLimit(1)
+          }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        PortfolioChart(history: portfolio.history, isUp: portfolio.isUpOverHistory)
+          .frame(maxWidth: .infinity)
+          .padding(.top, 6)
       }
-      .frame(maxWidth: .infinity, alignment: .leading)
-      PortfolioChart(history: portfolio.history, isUp: portfolio.isUpOverHistory)
-        .frame(maxWidth: .infinity)
     }
   }
 
@@ -192,16 +195,8 @@ struct PortfolioWidgetView: View {
 
   // MARK: Pieces
 
-  private var header: some View { header(showsOwl: true) }
-
-  private func header(showsOwl: Bool) -> some View {
-    HStack(spacing: 6) {
-      Text("Portfolio")
-        .font(.caption.weight(.bold))
-        .foregroundStyle(.white.opacity(0.6))
-      Spacer(minLength: 2)
-      if showsOwl { WidgetOwl(size: 20, isAsleep: previewFamily != nil ? false : nil) }
-    }
+  private var header: some View {
+    WidgetHeader("Portfolio", isPreview: previewFamily != nil)
   }
 
   private func value(_ portfolio: WatchPortfolio, size: CGFloat) -> some View {

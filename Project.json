@@ -97,6 +97,12 @@
         },
         {
           "path": "Widget Extension/WidgetIntents.swift"
+        },
+        {
+          "path": "Widget Extension/FlockWidgets.swift"
+        },
+        {
+          "path": "Widget Extension/MarketWidget.swift"
         }
       ],
       "type": "application",

@@ -1,6 +1,6 @@
 import Foundation
 
-/// What the flock is doing, saved by the app so the Flock widget can show it.
+/// What the flock is doing, saved by the app so the Flock widgets can show it.
 struct FlockSnapshot: Codable, Hashable {
   struct Pick: Codable, Hashable, Identifiable {
     var symbol: String

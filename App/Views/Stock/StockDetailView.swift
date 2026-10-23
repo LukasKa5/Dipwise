@@ -74,6 +74,9 @@ struct StockDetailView: View {
       VStack(alignment: .leading, spacing: 28) {
         header(for: holding)
         planSection(for: holding)
+        if let quote, let zone = holding.buyZone, (zone.distance(for: quote) ?? 0) > 0 {
+          OddsForecastCard(symbol: symbol, quote: quote, rule: zone.rule)
+        }
         if let quote { keyStats(quote) }
         if holding.isOwned { positionSection(for: holding) }
         if let quote, !quote.dividends.isEmpty { dividendSection(quote, holding: holding) }

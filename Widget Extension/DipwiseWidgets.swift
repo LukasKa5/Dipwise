@@ -7,6 +7,9 @@ struct DipwiseWidgets: WidgetBundle {
     PortfolioWidget()
     PlansWidget()
     StockPlanWidget()
+    FlockZonesWidget()
+    FlockMoodWidget()
+    MarketWidget()
   }
 }
 

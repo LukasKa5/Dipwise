@@ -550,7 +550,7 @@ struct NotifyStep: View {
     if let symbol = model.focusSymbol, let quote = model.focusQuote, model.zoneUpper > 0 {
       let price = (model.zoneLower + model.zoneUpper) / 2
       list.append(Alert(id: "buy", title: "\(symbol) entered your buy zone",
-                        message: "Now \(quote.formatted(price)), inside \(quote.formatted(model.zoneLower))–\(quote.formatted(model.zoneUpper)). Your plan: buy a little.",
+                        message: "Now \(quote.formatted(price)), inside \(quote.formatted(model.zoneLower))–\(quote.formatted(model.zoneUpper)). Your plan: buy 3 shares.",
                         symbol: "arrow.down.to.line.compact", values: Array(quote.closes.suffix(30)) + [price], color: Brand.buy))
     }
     if let sell = statuses.first(where: { $0.target.rule.kind.side == .sell }), let quote = sell.quote {
@@ -593,6 +593,14 @@ struct NotifyStep: View {
     .task { await play() }
   }
 
+  /// Today, or the screenshot day when capturing for the App Store.
+  private var lockDate: Date {
+    #if DEBUG
+    if showsScreenOnly, let day = QuoteService.marketingDate { return day }
+    #endif
+    return .now
+  }
+
   private var lockScreen: some View {
     ZStack(alignment: .top) {
       DeviceFinish.wallpaper
@@ -609,10 +617,11 @@ struct NotifyStep: View {
       }
       VStack(spacing: 0) {
         PhoneStatusBar(showsTime: false)
-        Image(systemName: "lock.fill")
+        // In the screenshot, Face ID has just unlocked the phone, so the full alerts show.
+        Image(systemName: showsScreenOnly ? "lock.open.fill" : "lock.fill")
           .font(.system(size: 15, weight: .semibold))
           .foregroundStyle(.white.opacity(0.85))
-        Text(Date.now, format: .dateTime.weekday(.wide).day().month(.wide))
+        Text(lockDate, format: .dateTime.weekday(.wide).day().month(.wide))
           .font(.system(size: 20, weight: .semibold))
           .foregroundStyle(.white.opacity(0.85))
           .padding(.top, 10)

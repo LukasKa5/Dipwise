@@ -1,7 +1,7 @@
 import SwiftData
 import SwiftUI
 
-/// "What your broker sees": the risk score, style, concentration, and habits a broker works out from your trading,
+/// Risk Analysis: the risk score, style, concentration, and habits a broker works out from your trading,
 /// computed on your own device and explained in plain words.
 struct InvestorProfileView: View {
   @Query(sort: \Holding.addedAt) private var holdings: [Holding]
@@ -41,7 +41,7 @@ struct InvestorProfileView: View {
       }
     }
     .background(Palette.canvas)
-    .navigationTitle("Investor Profile")
+    .navigationTitle("Risk Analysis")
     .navigationBarTitleDisplayMode(.inline)
   }
 
@@ -90,7 +90,7 @@ struct InvestorProfileView: View {
 
   private func brokerView(_ profile: InvestorProfile) -> some View {
     VStack(alignment: .leading, spacing: 14) {
-      SectionHeader(title: "What your broker sees", subtitle: "Worked out from your holdings and decisions") {
+      SectionHeader(title: "What stands out", subtitle: "Worked out from your holdings and decisions") {
         if !isPro { ProBadge() }
       }
       VStack(alignment: .leading, spacing: 14) {
@@ -239,7 +239,7 @@ private struct PercentileBar: View {
   }
 }
 
-/// A compact entry into the investor profile: style, risk score, and a peek at what a broker sees.
+/// A compact entry into the risk analysis: style, risk score, and the risk meter.
 struct InvestorProfileCard: View {
   var profile: InvestorProfile
 
@@ -249,13 +249,13 @@ struct InvestorProfileCard: View {
     } label: {
       VStack(alignment: .leading, spacing: 12) {
         HStack(spacing: 12) {
-          Image(systemName: "person.text.rectangle.fill")
+          Image(systemName: "gauge.with.dots.needle.67percent")
             .font(.headline)
             .foregroundStyle(.tint)
             .frame(width: 40, height: 40)
             .background(Palette.green.opacity(0.14), in: .circle)
           VStack(alignment: .leading, spacing: 2) {
-            Text("What your broker sees")
+            Text("Risk Analysis")
               .font(.headline)
             Text("\(profile.style.title) · Risk \(profile.riskScore) of 7")
               .font(.subheadline)

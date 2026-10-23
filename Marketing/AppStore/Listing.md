@@ -14,7 +14,7 @@ price,portfolio,watchlist,dividend,rsi,invest,market,etf,crypto,signal,widget,di
 Words already in the name and subtitle (stock, alert, tracker, login) are indexed automatically, so they aren't repeated here. "Stock alert" and "stock tracker" are among the most searched finance phrases, which is why they lead the name.
 
 ## Promotional text (143/170)
-Buy the dip with a plan. Draw your buy zone and Dippy taps you the second a stock gets there. No login, no ads. Widgets, Desk Mode, and Apple Watch included.
+Buy the dip with a plan. Draw your buy zone and Dippy taps you the second a stock gets there. No login, no ads. Widgets, Apple Watch, and a Desk Clock for iPhone Duo.
 
 ## Description
 Buy the dip. Calmly. No account, no login: open the app and start.
@@ -43,13 +43,14 @@ YOUR PORTFOLIO, IN ONE CALM PLACE
 • Import positions from Robinhood, Fidelity, Charles Schwab, Vanguard, E*TRADE, Interactive Brokers, Trading 212, DEGIRO, or any spreadsheet
 • Value, today's move, total return, and dividend income in your own currency
 • See whether you're beating the S&P 500 over any period (Pro)
-• Investor Profile: see what your broker sees about you, your risk score, style, and habits (Pro)
+• Risk Analysis: your risk score, investing style, and habits, worked out the way a broker would (Pro)
+• Your Odds: a cone of where the price could go, and the chance it reaches your zone within 30 and 90 days
 • Flock alerts: when a stock enters the crowd's buy zone, the flock starts buying, or a top investor adds it (Pro)
 • A watchlist with prices, trends, and how close each plan is
 
 LIVING WIDGETS AND APPLE WATCH
-• Three widgets made for buying the dip: your Portfolio, Your Plans (the stocks closest to your zones, with how far each has to go), and a Stock Plan with its chart and zone
-• Desk Mode: stand a half-folded iPhone Duo, an iPad, or an iPhone on its side on your desk, and it becomes an always-on tracker with your portfolio, your plans, and today's movers
+• Six widgets, each with Dippy in the same corner: Portfolio, Your Plans (how far each stock is from your zone), Stock Plan, Flock Buy Zones (where every Dipwise investor plans to buy), Flock Mood, and Market (open or closed, with a countdown to the bell)
+• Desk Clock for iPhone Duo: close it, stand it on its edge, and the outer display becomes a bedside market clock with Dippy, a countdown to the opening bell, your portfolio, and your closest buy zone. It glows a soft red at night
 • On Apple Watch: your portfolio, closest plans, and charts you scrub with the Digital Crown, plus complications for your portfolio and market hours
 
 A ONE-MINUTE DAILY HABIT
@@ -100,24 +101,24 @@ The app is translated into German, Spanish, French, Italian, Brazilian Portugues
 
 ## Screenshots
 
-Dippy tells the story in his own words, one line per image, with no chapter labels. Every image has the same shape, so the set reads as one strip when people swipe: Dippy's line at the top, the whole device below in the same titanium finish the app's intro uses, and Dippy perched on its top edge reacting to what's on it. The alert arrives on an unlocked iPhone, the way people really see it. The first and last images say "No login".
+One night sky runs through the whole set. The app icon's glowing price line crosses every image without a break: it dips under the alert, climbs through the features, and ends where Dippy falls asleep under the moon. Dippy tells the story in his own words, one line per image, perched on top of each device and reacting to it. Every device is Apple's own product bezel (iPhone 18 Pro Max, iPhone Duo, Apple Watch Ultra 3, iPad Pro), from `ScreenshotStudio/Bezels/`. The first and last images say "No login".
 
-All captures match the App Store build: Flock hidden, U.S. English, dollars, and prices and clocks frozen on one day so every screen agrees. `preview-iphone.png` and `preview-ipad.png` show each whole strip; `preview-watch.png` shows the watch set.
+All captures match the App Store build: Flock hidden, U.S. English, dollars, New York time, and prices and clocks frozen on one day so every screen agrees. `preview-iphone.png` and `preview-ipad.png` show each whole strip; `preview-watch.png` shows the watch set.
 
 ### iPhone 6.9-inch (1320 × 2868), from `iPhone-6.9/`
 
-| # | File | Dippy says |
-|---|------|------------|
-| 1 | 01-meet-dippy.png | Hi, I'm Dippy. I watch the dips. (No login · No ads · Any broker) |
-| 2 | 02-buy-zone.png | Show me where you'd buy. |
-| 3 | 03-odds.png | I'll show your odds first. |
-| 4 | 04-alert.png | It dips. I tap you. |
-| 5 | 05-profile.png | I see what your broker sees. |
-| 6 | 06-smart-alerts.png | 27 alerts, in plain words. |
-| 7 | 07-widgets.png | I live on your Home Screen. |
-| 8 | 08-desk-mode.png | Stand me on your desk. (iPhone Duo, half folded) |
-| 9 | 09-apple-watch.png | Or keep me on your wrist. |
-| 10 | 10-start-free.png | Sleep well. I'm on watch. (No login · Free to start) |
+| # | File | Dippy says | Shows |
+|---|------|------------|-------|
+| 1 | 01-meet-dippy.png | Hi, I'm Dippy. I watch the dips. | Home, with No login · No ads · Any broker |
+| 2 | 02-buy-zone.png | Show me where you'd buy. | Dragging a buy zone |
+| 3 | 03-odds.png | I'll show your odds first. | The Your Odds card, a tap on the 90-day ring |
+| 4 | 04-alert.png | It dips. I tap you. | Lock screen unlocked with Face ID, the alert with "buy 3 shares" |
+| 5 | 05-risk-analysis.png | I run your risk analysis. | Risk Analysis |
+| 6 | 06-smart-alerts.png | 27 alerts, in plain words. | Smart alerts, Dippy blushing |
+| 7 | 07-widgets.png | I live on your Home Screen. | Six widgets on a light wallpaper |
+| 8 | 08-desk-clock.png | Your bedside market clock. | iPhone Duo closed on its edge, Desk Clock |
+| 9 | 09-apple-watch.png | Or keep me on your wrist. | Apple Watch Ultra 3 |
+| 10 | 10-start-free.png | Sleep well. I'm on watch. | No login · Free to start |
 
 Apple scales the 6.9-inch set down for every smaller iPhone. `iPhone-6.5/` has the same images at 1284 × 2778.
 
@@ -127,8 +128,8 @@ Apple scales the 6.9-inch set down for every smaller iPhone. `iPhone-6.5/` has t
 |---|------|------------|
 | 1 | 01-meet-dippy.png | Hi, I'm Dippy. I watch the dips. |
 | 2 | 02-buy-zone.png | Show me where you'd buy. |
-| 3 | 03-alert.png | It dips. I tap you. |
-| 4 | 04-desk-mode.png | Stand me on your desk. |
+| 3 | 03-odds.png | I'll show your odds first. |
+| 4 | 04-alert.png | It dips. I tap you. |
 | 5 | 05-start-free.png | Sleep well. I'm on watch. |
 
 ### Apple Watch Ultra (422 × 514), from `AppleWatch-Ultra/`
@@ -139,7 +140,7 @@ The Flock isn't in the screenshots or description yet, because App Store builds 
 
 ### Regenerating
 
-1. Capture iPhone screens on the iPhone 6.9-inch simulator and iPad screens on the iPad Pro 13-inch simulator, launching the debug build with `-hideFlock -AppleLanguages "(en)" -AppleLocale en_US -marketingDate 2026-10-13`. The date freezes every quote at that day's close, so all screens show the same prices. Save them into `ScreenshotStudio/Raw/` with the same names (`iphone-*.png`, `ipad-*.png`).
+1. Capture iPhone screens on the iPhone 6.9-inch simulator and iPad screens on the iPad Pro 13-inch simulator, launching the debug build with `-hideFlock -AppleLanguages "(en)" -AppleLocale en_US -marketingDate 2026-10-13` and the environment variable `SIMCTL_CHILD_TZ=America/New_York`. The date freezes every quote at that day's close, so all screens show the same prices; New York time makes the market hours read right. Add `-previewPro YES` for Risk Analysis, and `-marketingScene home-widgets`, `lock`, or `watch` for the Home Screen, the lock screen, and the high-resolution renders (watch pages, Dippy's poses, the odds card, and the Desk Clock). Save them into `ScreenshotStudio/Raw/` with the same names (`iphone-*.png`, `ipad-*.png`).
 2. Launch with `-marketingScene watch` to render `watch-*.png` and Dippy's `owl-*.png` poses into the app's Documents folder, and copy them into `Raw/` (trim the owls to their visible edges).
 3. Run `python3 Marketing/ScreenshotStudio/compose.py Marketing/ScreenshotStudio/Raw Marketing/AppStore`.
 

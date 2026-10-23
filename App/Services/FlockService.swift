@@ -212,7 +212,7 @@ final class FlockService {
     publishSnapshot()
   }
 
-  /// Shares the crowd's picks with the Flock widget.
+  /// Shares the crowd's picks and mood with the Flock widgets.
   private func publishSnapshot() {
     FlockSnapshot(
       picks: radar.prefix(8).map {
@@ -225,6 +225,8 @@ final class FlockService {
       alertsThisWeek: overview.alertsThisWeek,
       updatedAt: .now
     ).save()
+    WidgetCenter.shared.reloadTimelines(ofKind: "FlockZonesWidget")
+    WidgetCenter.shared.reloadTimelines(ofKind: "FlockMoodWidget")
   }
 
   // MARK: Votes

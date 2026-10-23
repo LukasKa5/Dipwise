@@ -1,3 +1,4 @@
+import AppIntents
 import Charts
 import SwiftUI
 import WidgetKit
@@ -6,6 +7,70 @@ extension View {
   /// Widgets use the same solid navy as the app's hero cards and icon.
   func dipwiseWidgetBackground() -> some View {
     containerBackground(for: .widget) { Brand.nightMiddle }
+  }
+}
+
+/// The top row every Dipwise widget shares: what the widget shows on the leading side, and Dippy in the top
+/// trailing corner, always the same size and in the same place, so every widget reads as Dipwise at a glance.
+struct WidgetHeader<Leading: View, Accessory: View>: View {
+  /// In the app's previews Dippy is always awake.
+  var isPreview = false
+  @ViewBuilder var leading: Leading
+  @ViewBuilder var accessory: Accessory
+
+  var body: some View {
+    HStack(spacing: 6) {
+      leading
+        .layoutPriority(1)
+      Spacer(minLength: 4)
+      accessory
+      WidgetOwl(size: 20, isAsleep: isPreview ? false : nil)
+    }
+    .frame(height: 24)
+  }
+}
+
+extension WidgetHeader where Leading == WidgetTitle, Accessory == EmptyView {
+  init(_ title: LocalizedStringKey, isPreview: Bool = false) {
+    self.init(isPreview: isPreview) { WidgetTitle(text: title) } accessory: { EmptyView() }
+  }
+}
+
+extension WidgetHeader where Leading == WidgetTitle {
+  init(_ title: LocalizedStringKey, isPreview: Bool = false, @ViewBuilder accessory: () -> Accessory) {
+    self.init(isPreview: isPreview, leading: { WidgetTitle(text: title) }, accessory: accessory)
+  }
+}
+
+/// A widget's name, small and quiet, the same on every widget.
+struct WidgetTitle: View {
+  var text: LocalizedStringKey
+
+  var body: some View {
+    Text(text)
+      .font(.caption.weight(.bold))
+      .foregroundStyle(.white.opacity(0.65))
+      .lineLimit(1)
+      .minimumScaleFactor(0.7)
+  }
+}
+
+/// A small round button in a widget's header, like Refresh or Next.
+struct WidgetHeaderButton<Intent: AppIntent>: View {
+  var title: LocalizedStringKey
+  var systemImage: String
+  var intent: Intent
+
+  var body: some View {
+    Button(intent: intent) {
+      Label(title, systemImage: systemImage)
+        .labelStyle(.iconOnly)
+        .font(.caption2.weight(.heavy))
+        .foregroundStyle(.white.opacity(0.8))
+        .frame(width: 22, height: 22)
+        .background(.white.opacity(0.12), in: .circle)
+    }
+    .buttonStyle(.plain)
   }
 }
 
@@ -19,40 +84,6 @@ struct WidgetTile<Content: View>: View {
       .padding(padding)
       .frame(maxWidth: .infinity, alignment: .leading)
       .background(.white.opacity(0.08), in: .rect(cornerRadius: 12, style: .continuous))
-  }
-}
-
-/// Dippy on a widget: a calm companion that keeps the widget feeling like Dipwise. Widgets are for reading at a
-/// glance, so he isn't a button; tapping anywhere opens the app.
-struct LivingDippy: View {
-  var size: CGFloat
-  var date: Date
-  /// Offsets the pose so several widgets don't all look the same way at once.
-  var seed = 0
-  /// In the app's previews Dippy is always awake, so new users meet him at his best.
-  var isPreview = false
-
-  var body: some View {
-    WidgetOwl(size: size, isAsleep: isPreview ? false : nil, pose: DippyPose.at(date, seed: seed))
-  }
-}
-
-/// Dippy with a short line, the way he talks on the app's Home card.
-struct WidgetDippyLine: View {
-  var text: LocalizedStringKey
-  var owlSize: CGFloat = 22
-  var date: Date = .now
-  var isPreview = false
-
-  var body: some View {
-    HStack(spacing: 6) {
-      LivingDippy(size: owlSize, date: date, isPreview: isPreview)
-      Text(text)
-        .font(.caption.weight(.semibold))
-        .foregroundStyle(.white.opacity(0.85))
-        .lineLimit(1)
-        .minimumScaleFactor(0.7)
-    }
   }
 }
 

@@ -2,7 +2,7 @@
 import SwiftUI
 
 /// Development only: shows the intro's Home Screen or lock screen full size, so App Store screenshots
-/// can be captured from the same views. Launch with `-marketingScene widgets` or `-marketingScene lock`, or
+/// can be captured from the same views. Launch with `-marketingScene home-widgets` or `-marketingScene lock`, or
 /// `-marketingScene watch` to render the Apple Watch pages and Dippy at high resolution.
 struct MarketingSceneView: View {
   var scene: String
@@ -43,6 +43,8 @@ struct MarketingSceneView: View {
     Group {
       if scene == "owls" {
         owls
+      } else if scene == "home-widgets" {
+        MarketingHomeScreen()
       } else if isReady {
         if scene == "widget-large" {
           ZStack {
@@ -71,8 +73,10 @@ struct MarketingSceneView: View {
       }
     }
     .ignoresSafeArea()
-    .statusBarHidden()
-    .environment(\.colorScheme, .dark)
+    // The Home Screen keeps its real status bar, in dark text on the light wallpaper.
+    .statusBarHidden(scene != "home-widgets")
+    .preferredColorScheme(scene == "home-widgets" ? .light : nil)
+    .environment(\.colorScheme, scene == "home-widgets" ? .light : .dark)
     .task {
       await model.loadQuotes()
       for symbol in ["NVDA", "MSFT", "AAPL"] { model.toggle(symbol) }

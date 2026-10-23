@@ -56,6 +56,7 @@ struct MarketingRenders: View {
     .task {
       render()
       await renderDesk()
+      renderOdds()
     }
   }
 
@@ -149,25 +150,41 @@ struct MarketingRenders: View {
 
   // MARK: Rendering
 
-  /// Desk Mode as it looks on a half-folded iPhone Duo's inner display (landscape) and on iPad.
+  /// Desk Clock on iPhone Duo's outer display, closed and standing on its edge in landscape (678 × 466 points),
+  /// early in the morning with the market about to open.
   private func renderDesk() async {
     let holdings = (try? modelContext.fetch(FetchDescriptor<Holding>())) ?? []
     await quotes.refresh(symbols: holdings.map(\.symbol))
     try? await Task.sleep(for: .seconds(2))
-    for (name, size) in [("desk-landscape", CGSize(width: 900, height: 640)), ("desk-ipad", CGSize(width: 1376, height: 1032))] {
-      let renderer = ImageRenderer(content:
-        DeskModeView()
-          .environment(quotes)
-          .environment(flock)
-          .modelContainer(DipwiseApp.container)
-          .frame(width: size.width, height: size.height)
-      )
-      renderer.scale = 2
-      guard let data = renderer.uiImage?.pngData() else { continue }
-      let url = URL.documentsDirectory.appending(path: "\(name).png")
-      try? data.write(to: url)
-      saved.append(url.lastPathComponent)
-    }
+    let day = QuoteService.marketingDate ?? .now
+    let morning = Calendar.current.date(bySettingHour: 7, minute: 2, second: 0, of: day) ?? day
+    let renderer = ImageRenderer(content:
+      DeskClockView(frozenDate: morning)
+        .environment(quotes)
+        .environment(flock)
+        .modelContainer(DipwiseApp.container)
+        .frame(width: 678, height: 466)
+    )
+    renderer.scale = 3
+    guard let data = renderer.uiImage?.pngData() else { return }
+    let url = URL.documentsDirectory.appending(path: "desk-clock.png")
+    try? data.write(to: url)
+    saved.append(url.lastPathComponent)
+  }
+
+  /// The Your Odds card for NVDA's buy zone, as it sits on the stock screen.
+  private func renderOdds() {
+    let holdings = (try? modelContext.fetch(FetchDescriptor<Holding>())) ?? []
+    guard let holding = holdings.first(where: { $0.symbol == "NVDA" }), let zone = holding.buyZone, let quote = quotes["NVDA"] else { return }
+    let renderer = ImageRenderer(content:
+      OddsForecastCard(symbol: "NVDA", quote: quote, rule: zone.rule)
+        .frame(width: 402)
+    )
+    renderer.scale = 3
+    guard let data = renderer.uiImage?.pngData() else { return }
+    let url = URL.documentsDirectory.appending(path: "odds-card.png")
+    try? data.write(to: url)
+    saved.append(url.lastPathComponent)
   }
 
   private func render() {
@@ -206,7 +223,7 @@ struct MarketingRenders: View {
       ("wings", OwlMark(wingSpread: 1)),
       ("wave", OwlMark(lookOffset: CGSize(width: 0.2, height: -0.2), rightWing: 1.05)),
       ("surprise", OwlMark(leftWing: 0.35, rightWing: 0.35, eyeScale: 1.24)),
-      ("hoot", OwlMark(lookOffset: CGSize(width: 0, height: -0.3), beakOpen: 1)),
+      ("blush", OwlMark(joy: 1)),
     ]
     for pose in poses {
       let renderer = ImageRenderer(content:

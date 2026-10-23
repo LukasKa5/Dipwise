@@ -100,33 +100,25 @@ struct PlansWidgetView: View {
     if let status = current {
       let color = status.target.rule.kind.side.brandColor
       VStack(alignment: .leading, spacing: 0) {
-        HStack(alignment: .top, spacing: 6) {
-          WidgetBadge(symbol: status.target.symbol, size: 26)
-          VStack(alignment: .leading, spacing: 0) {
-            Text(status.target.symbol)
-              .font(.subheadline.bold())
-              .lineLimit(1)
-              .minimumScaleFactor(0.6)
-            if let quote = status.quote {
-              Text(changeText(quote.change))
-                .font(.caption2.weight(.bold).monospacedDigit())
-                .foregroundStyle(quote.change >= 0 ? Brand.buy : Brand.sell)
+        WidgetHeader(isPreview: isPreview) {
+          HStack(spacing: 6) {
+            WidgetBadge(symbol: status.target.symbol, size: 22)
+            VStack(alignment: .leading, spacing: -1) {
+              Text(status.target.symbol)
+                .font(.subheadline.bold())
                 .lineLimit(1)
+                .minimumScaleFactor(0.6)
+              if let quote = status.quote {
+                Text(changeText(quote.change))
+                  .font(.caption2.weight(.bold).monospacedDigit())
+                  .foregroundStyle(quote.change >= 0 ? Brand.buy : Brand.sell)
+                  .lineLimit(1)
+              }
             }
           }
-          .layoutPriority(1)
-          Spacer(minLength: 0)
+        } accessory: {
           if entry.statuses.count > 1 {
-            Button(intent: NextPlanIntent()) {
-              Image(systemName: "chevron.forward")
-                .font(.caption.weight(.heavy))
-                .frame(width: 24, height: 24)
-                .background(.white.opacity(0.12), in: .circle)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Next plan")
-          } else {
-            WidgetOwl(size: 22, isAsleep: isPreview ? false : nil)
+            WidgetHeaderButton(title: "Next plan", systemImage: "chevron.forward", intent: NextPlanIntent())
           }
         }
         Spacer(minLength: 2)
@@ -189,26 +181,11 @@ struct PlansWidgetView: View {
       let page = entry.index % pages
       let rows = Array(entry.statuses.dropFirst(page * perPage).prefix(perPage))
       VStack(alignment: .leading, spacing: 0) {
-        HStack(spacing: 6) {
-          WidgetOwl(size: 20, isAsleep: isPreview ? false : nil)
-          Text("Closest to your zones")
-            .font(.caption.weight(.bold))
-            .foregroundStyle(.white.opacity(0.75))
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
-          Spacer(minLength: 4)
+        WidgetHeader("Closest to your zones", isPreview: isPreview) {
           if pages > 1 {
             WidgetPageDots(count: pages, index: page)
           }
-          Button(intent: RefreshWidgetsIntent()) {
-            Image(systemName: "arrow.clockwise")
-              .font(.caption2.weight(.bold))
-              .foregroundStyle(.white.opacity(0.75))
-              .frame(width: 22, height: 22)
-              .background(.white.opacity(0.12), in: .circle)
-          }
-          .buttonStyle(.plain)
-          .accessibilityLabel("Refresh prices")
+          WidgetHeaderButton(title: "Refresh prices", systemImage: "arrow.clockwise", intent: RefreshWidgetsIntent())
         }
         .padding(.bottom, family == .systemLarge ? 10 : 6)
         VStack(spacing: family == .systemLarge ? 6 : 4) {

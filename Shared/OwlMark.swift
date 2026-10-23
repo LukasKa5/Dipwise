@@ -2,7 +2,8 @@ import SwiftUI
 
 /// The Dipwise owl, drawn with the same geometry as the app icon.
 /// `wingSpread` (0–1) opens both wings for flight; `leftWing` and `rightWing` lift one wing on its own, for a wave.
-/// `blink` (0–1) closes the eyes, `eyeScale` widens them in surprise, and `beakOpen` (0–1) opens the beak for a hoot.
+/// `blink` (0–1) closes the eyes, `eyeScale` widens them in surprise, and `joy` (0–1) curls the eyes into happy arcs
+/// and blushes his cheeks.
 struct OwlMark: View, Animatable {
   var wingSpread: Double = 0
   var blink: Double = 0
@@ -14,11 +15,11 @@ struct OwlMark: View, Animatable {
   /// Extra lift for the wing on the viewer's right, on top of `wingSpread`.
   var rightWing: Double = 0
   var eyeScale: Double = 1
-  var beakOpen: Double = 0
+  var joy: Double = 0
 
   var animatableData: OwlPoseVector {
     get {
-      OwlPoseVector(values: [wingSpread, blink, lookOffset.width, lookOffset.height, rightEyeOpen, leftWing, rightWing, eyeScale, beakOpen])
+      OwlPoseVector(values: [wingSpread, blink, lookOffset.width, lookOffset.height, rightEyeOpen, leftWing, rightWing, eyeScale, joy])
     }
     set {
       let v = newValue.values
@@ -30,7 +31,7 @@ struct OwlMark: View, Animatable {
       leftWing = v[5]
       rightWing = v[6]
       eyeScale = v[7]
-      beakOpen = v[8]
+      joy = v[8]
     }
   }
 
@@ -168,13 +169,15 @@ struct OwlMark: View, Animatable {
     context.stroke(chest, with: .color(Brand.owlFeather), style: StrokeStyle(lineWidth: 9, lineCap: .round, lineJoin: .round))
 
     for x in [CGFloat(446), 578] {
-      let openness = max(0.08, x > 512 ? max(1 - blink, rightEyeOpen) : 1 - blink)
+      let openness = max(0.08, (x > 512 ? max(1 - blink, rightEyeOpen) : 1 - blink) * (1 - joy))
       let center = CGPoint(x: x, y: 468)
       var eye = context
+      // Joy swaps the round eyes for happy arcs.
+      eye.opacity = 1 - joy
       eye.translateBy(x: center.x, y: center.y)
       eye.scaleBy(x: eyeScale, y: openness * eyeScale)
       eye.fill(Path(ellipseIn: circle(at: .zero, radius: 56)), with: .color(Brand.owlInk))
-      if openness > 0.3 {
+      if openness > 0.3 && joy < 0.5 {
         let look = CGPoint(x: lookOffset.width * 14, y: lookOffset.height * 14)
         eye.fill(Path(ellipseIn: circle(at: look, radius: 38)), with: .color(Brand.amber))
         eye.fill(Path(ellipseIn: circle(at: look, radius: 19)), with: .color(Brand.owlInk))
@@ -182,18 +185,20 @@ struct OwlMark: View, Animatable {
       }
     }
 
-    // An open beak: the lower half drops below the upper one for a hoot.
-    if beakOpen > 0.02 {
-      let drop = 44 * beakOpen
-      let lower = Path { path in
-        path.move(to: CGPoint(x: 500, y: 560 + drop * 0.5))
-        path.addLine(to: CGPoint(x: 524, y: 560 + drop * 0.5))
-        path.addLine(to: CGPoint(x: 512, y: 574 + drop))
-        path.closeSubpath()
+    // Joy: rosy cheeks, and each eye curls into a happy arc, like a smile.
+    if joy > 0.02 {
+      for x in [CGFloat(400), 624] {
+        context.fill(Path(ellipseIn: CGRect(x: x - 34, y: 524, width: 68, height: 38)), with: .color(Brand.owlBlush.opacity(0.75 * joy)))
       }
-      context.fill(Path(ellipseIn: CGRect(x: 494, y: 546, width: 36, height: 18 + drop * 0.85)), with: .color(Brand.owlInk))
-      context.fill(lower, with: .color(Brand.amber))
-      context.stroke(lower, with: .color(Brand.amber), style: StrokeStyle(lineWidth: 10, lineJoin: .round))
+      for x in [CGFloat(446), 578] {
+        let arc = Path { path in
+          path.move(to: CGPoint(x: x - 40, y: 482))
+          path.addQuadCurve(to: CGPoint(x: x + 40, y: 482), control: CGPoint(x: x, y: 418))
+        }
+        var eye = context
+        eye.opacity = joy
+        eye.stroke(arc, with: .color(Brand.owlInk), style: StrokeStyle(lineWidth: 22, lineCap: .round))
+      }
     }
     let beak = Path { path in
       path.move(to: CGPoint(x: 495, y: 540))

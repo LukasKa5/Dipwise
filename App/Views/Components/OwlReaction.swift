@@ -15,8 +15,8 @@ enum OwlReaction: CaseIterable {
   case tilt
   /// Eyes wide, a startled little jump.
   case surprise
-  /// Hoots, beak open, feathers ruffled.
-  case hoot
+  /// Blushes: eyes curl into happy arcs, rosy cheeks, a jelly squish, and a heart.
+  case blush
   /// Hides behind his wings, then pops out wide-eyed: "Boo!"
   case peekaboo
   /// Sways side to side, wings taking turns, music notes floating up.
@@ -29,7 +29,7 @@ enum OwlReaction: CaseIterable {
   case yawn
 
   /// The reactions a tap can bring, so tapping him again and again keeps surprising.
-  static let onTap: [OwlReaction] = [.wave, .hop, .wink, .flap, .tilt, .surprise, .hoot, .peekaboo, .dance, .nod]
+  static let onTap: [OwlReaction] = [.wave, .hop, .wink, .flap, .tilt, .surprise, .blush, .peekaboo, .dance, .nod]
 
   /// Greetings already shown since launch, so Dippy says hi once rather than on every return to a screen.
   @MainActor static var shownGreetings: Set<String> = []

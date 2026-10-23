@@ -140,37 +140,39 @@ struct StockPlanWidgetView: View {
   @ViewBuilder
   private func header(symbol: String, quote: Quote) -> some View {
     if family == .systemMedium {
-      HStack(spacing: 8) {
-        WidgetBadge(symbol: symbol)
-        VStack(alignment: .leading, spacing: 0) {
-          Text(symbol)
-            .font(.headline)
-            .lineLimit(1)
-            .minimumScaleFactor(0.5)
-          Text(quote.name)
-            .font(.caption2)
-            .foregroundStyle(.white.opacity(0.6))
-            .lineLimit(1)
+      WidgetHeader(isPreview: previewFamily != nil) {
+        HStack(spacing: 8) {
+          WidgetBadge(symbol: symbol, size: 24)
+          VStack(alignment: .leading, spacing: -1) {
+            Text(symbol)
+              .font(.subheadline.bold())
+              .lineLimit(1)
+              .minimumScaleFactor(0.5)
+            Text(quote.name)
+              .font(.caption2)
+              .foregroundStyle(.white.opacity(0.6))
+              .lineLimit(1)
+          }
         }
-        Spacer(minLength: 0)
-        VStack(alignment: .trailing, spacing: 1) {
-          Text(compactPrice(quote.price, currency: quote.currency))
-            .font(.system(.headline, design: .rounded).monospacedDigit())
-            .lineLimit(1)
-            .minimumScaleFactor(0.6)
-          WidgetChangePill(change: quote.change)
-        }
+      } accessory: {
+        Text(compactPrice(quote.price, currency: quote.currency))
+          .font(.system(.subheadline, design: .rounded).weight(.bold).monospacedDigit())
+          .lineLimit(1)
+          .minimumScaleFactor(0.6)
+        WidgetChangePill(change: quote.change)
       }
     } else {
       VStack(alignment: .leading, spacing: 2) {
-        HStack(spacing: 6) {
-          WidgetBadge(symbol: symbol, size: 22)
-          Text(symbol)
-            .font(.subheadline.bold())
-            .lineLimit(1)
-            .minimumScaleFactor(0.5)
-          Spacer(minLength: 0)
-          LivingDippy(size: 18, date: entry.date, seed: 1, isPreview: previewFamily != nil)
+        WidgetHeader(isPreview: previewFamily != nil) {
+          HStack(spacing: 6) {
+            WidgetBadge(symbol: symbol, size: 22)
+            Text(symbol)
+              .font(.subheadline.bold())
+              .lineLimit(1)
+              .minimumScaleFactor(0.5)
+          }
+        } accessory: {
+          EmptyView()
         }
         HStack(alignment: .firstTextBaseline, spacing: 4) {
           Text(compactPrice(quote.price, currency: quote.currency))
@@ -190,9 +192,6 @@ struct StockPlanWidgetView: View {
 
   private func footer(quote: Quote) -> some View {
     HStack(spacing: 6) {
-      if family == .systemMedium {
-        LivingDippy(size: 18, date: entry.date, seed: 1, isPreview: previewFamily != nil)
-      }
       if let nearest {
         Text("\(distanceText(nearest.rule.distance(for: quote))) · \(nearest.rule.kind.title.lowercased())")
           .font(.caption2.weight(.semibold))

@@ -84,7 +84,7 @@ extension EnvironmentValues {
 }
 
 /// An owl that feels alive: it breathes, blinks, looks around, and reacts when tapped: a wave, a hop, a wink,
-/// a happy flap, a curious head tilt, a startled jump, or a hoot. Long press ruffles his feathers.
+/// a happy flap, a curious head tilt, a startled jump, or a blush. Hold him and he blushes, all happy arcs and rosy cheeks.
 /// Unless told otherwise, Dippy sleeps whenever the US market is closed, everywhere in the app.
 struct LivelyOwl: View {
   var lookOffset: CGSize = .zero
@@ -114,7 +114,8 @@ struct LivelyOwl: View {
   @State private var leftWing = 0.0
   @State private var rightWing = 0.0
   @State private var eyeScale = 1.0
-  @State private var beakOpen = 0.0
+  @State private var joy = 0.0
+  @State private var squishes = 0
   @State private var tilt = 0.0
   @State private var isReacting = false
   @State private var lastReaction: OwlReaction?
@@ -138,7 +139,7 @@ struct LivelyOwl: View {
       leftWing: leftWing,
       rightWing: rightWing,
       eyeScale: eyeScale,
-      beakOpen: beakOpen
+      joy: joy
     )
     .scaleEffect(x: 1, y: breathing ? (isAsleep ? 1.04 : 1.025) : 1, anchor: .bottom)
     .rotationEffect(.degrees(tilt + sway), anchor: .bottom)
@@ -160,6 +161,18 @@ struct LivelyOwl: View {
         LinearKeyframe(-5, duration: 0.08)
         LinearKeyframe(4, duration: 0.08)
         SpringKeyframe(0, duration: 0.25, spring: .bouncy)
+      }
+    }
+    .keyframeAnimator(initialValue: WakePose(), trigger: squishes) { view, pose in
+      view.scaleEffect(x: 2 - pose.stretch, y: pose.stretch, anchor: .bottom)
+    } keyframes: { _ in
+      // A jelly squish: down and wide, up and tall, then a few happy wobbles.
+      KeyframeTrack(\.stretch) {
+        CubicKeyframe(0.82, duration: 0.14)
+        SpringKeyframe(1.12, duration: 0.22, spring: .bouncy)
+        SpringKeyframe(0.94, duration: 0.18, spring: .bouncy)
+        SpringKeyframe(1.04, duration: 0.18, spring: .bouncy)
+        SpringKeyframe(1, duration: 0.4, spring: .bouncy)
       }
     }
     .keyframeAnimator(initialValue: WakePose(), trigger: wakeUps) { view, pose in
@@ -206,7 +219,7 @@ struct LivelyOwl: View {
     }
     .contentShape(.rect)
     .onTapGesture { handleTap(isAsleep: isAsleep) }
-    .onLongPressGesture(minimumDuration: 0.45) { hoot() }
+    .onLongPressGesture(minimumDuration: 0.45) { cuddle() }
     .onChange(of: cue.count) {
       guard let reaction = cue.reaction, !reduceMotion, effectiveMood != .sleeping else { return }
       Task { await perform(reaction) }
@@ -214,6 +227,7 @@ struct LivelyOwl: View {
     .owlFlight(trigger: hops, direction: hops.isMultiple(of: 2) ? 1 : -1, height: 22, isEnabled: !reduceMotion)
     .sensoryFeedback(.impact(weight: .light), trigger: taps)
     .sensoryFeedback(.impact(weight: .medium), trigger: ruffle)
+    .sensoryFeedback(.impact(flexibility: .soft, intensity: 0.7), trigger: squishes)
     .sensoryFeedback(.impact(flexibility: .soft, intensity: 0.8), trigger: wakeUps)
     .onAppear {
       guard !reduceMotion else { return }
@@ -285,7 +299,7 @@ struct LivelyOwl: View {
     case .flap: await flap()
     case .tilt: await tiltHead()
     case .surprise: await startle()
-    case .hoot: await hootOut()
+    case .blush: await blush()
     case .peekaboo: await peekaboo()
     case .dance: await dance()
     case .nod: await nod()
@@ -475,14 +489,12 @@ struct LivelyOwl: View {
   /// A big slow yawn with sleepy eyes and a stretch.
   private func yawn() async {
     withAnimation(.easeInOut(duration: 0.6)) {
-      beakOpen = 1
       blink = 0.6
       stretch = 0.45
       tilt = -3
     }
     try? await Task.sleep(for: .seconds(0.9))
     withAnimation(.easeInOut(duration: 0.5)) {
-      beakOpen = 0
       blink = 0
       stretch = 0
       tilt = 0
@@ -503,16 +515,29 @@ struct LivelyOwl: View {
     }
   }
 
-  /// Two hoots with the beak open, and a ruffle.
-  private func hootOut() async {
-    ruffle += 1
-    say([String(localized: "Hoo hoo!"), String(localized: "Buy low!"), String(localized: "Patience…")].randomElement() ?? "Hoo!", for: 1.4)
-    for _ in 0..<2 {
-      withAnimation(.easeOut(duration: 0.12)) { beakOpen = 1 }
-      try? await Task.sleep(for: .seconds(0.2))
-      withAnimation(.easeIn(duration: 0.14)) { beakOpen = 0 }
-      try? await Task.sleep(for: .seconds(0.16))
+  /// Pure delight: his eyes curl into happy arcs, his cheeks go rosy, he squishes like jelly, and a heart pops up.
+  private func blush() async {
+    say([String(localized: "Aww!"), String(localized: "Hehe!"), String(localized: "You're sweet!")].randomElement() ?? "Aww!", for: 1.5)
+    withAnimation(.spring(duration: 0.35, bounce: 0.4)) {
+      joy = 1
+      tilt = 6
+      leftWing = 0.15
+      rightWing = 0.15
     }
+    squishes += 1
+    try? await Task.sleep(for: .seconds(0.35))
+    emit("heart.fill", count: 2, color: Brand.owlBlush)
+    withAnimation(.spring(duration: 0.4, bounce: 0.4)) { tilt = -6 }
+    try? await Task.sleep(for: .seconds(0.45))
+    withAnimation(.spring(duration: 0.4, bounce: 0.4)) { tilt = 4 }
+    try? await Task.sleep(for: .seconds(0.55))
+    withAnimation(.smooth(duration: 0.4)) {
+      joy = 0
+      tilt = 0
+      leftWing = 0
+      rightWing = 0
+    }
+    try? await Task.sleep(for: .seconds(0.35))
   }
 
   /// Waking up: one sleepy eye peeks, then both pop open, a shiver, a big stretch,
@@ -550,13 +575,13 @@ struct LivelyOwl: View {
     }
   }
 
-  /// Long press: Dippy hoots and ruffles his feathers.
-  private func hoot() {
+  /// Long press: a cuddle makes Dippy blush.
+  private func cuddle() {
     if effectiveMood == .sleeping {
       wakeUp()
       return
     }
-    Task { await perform(.hearts) }
+    Task { await perform(.blush) }
   }
 
   private func blinkOnce() {

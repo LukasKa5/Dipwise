@@ -163,3 +163,10 @@ func compactSummary(_ status: TargetStatus) -> String {
   default: return rule.kind.title
   }
 }
+
+/// A countdown to `date`: ticking live on screen and in widgets, or fixed from `now` for previews and screenshots.
+func countdownText(to date: Date, from now: Date, isLive: Bool) -> Text {
+  guard !isLive else { return Text(date, style: .relative) }
+  let seconds = max(0, date.timeIntervalSince(now))
+  return Text(Duration.seconds(seconds).formatted(.units(allowed: [.hours, .minutes], width: .abbreviated)))
+}
