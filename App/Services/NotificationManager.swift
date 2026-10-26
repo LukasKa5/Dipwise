@@ -9,7 +9,9 @@ enum NotificationManager {
 
   @discardableResult
   static func requestAuthorization() async -> Bool {
-    (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])) ?? false
+    let granted = (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])) ?? false
+    if granted { await MainActor.run { PushAlerts.register() } }
+    return granted
   }
 
   static func content(for event: AlertEngine.Event) -> UNMutableNotificationContent {
@@ -68,7 +70,9 @@ enum NotificationManager {
   }
 
   static func post(_ events: [AlertEngine.Event]) async {
-    for event in events {
+    // Alerts the quote proxy watches were already pushed the moment they were reached.
+    let pushed = await MainActor.run { PushAlerts.isEnabled ? PushAlerts.syncedIDs : [] }
+    for event in events where !(event.kind == .reached && pushed.contains(event.alert.id)) {
       let request = UNNotificationRequest(identifier: "\(event.alert.id)-\(event.kind)-\(event.alert.triggerCount)", content: content(for: event), trigger: nil)
       try? await UNUserNotificationCenter.current().add(request)
     }

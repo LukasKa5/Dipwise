@@ -244,7 +244,7 @@ struct AlertRule: Codable, Hashable {
   }
 
   /// Level-based rules fire when the price falls to (true) or rises to (false) the level.
-  private var triggersBelow: Bool {
+  var triggersBelow: Bool {
     switch kind {
     case .buyZone, .priceBelow, .dropFromHigh, .trailingStop, .belowAverage, .stopLoss, .newLow, .bollingerLow, .averageDown: true
     default: false

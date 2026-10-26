@@ -12,6 +12,11 @@
 //   /intraday?symbol=NVDA&delay=900
 //   /search?q=nvidia
 //   /fx?from=EUR&to=USD
+//   POST /devices   a device's push token and its price-level alerts, checked every minute by the cron below
+//
+// Instant alerts: a cron trigger runs every minute while the market is open. It reads every device's alerts from
+// KV, prices each symbol once (15 minutes delayed, from the same cached bars), and sends an APNs push the moment a
+// price crosses an alert's level, so nobody waits for iOS to wake the app.
 
 const VENDOR = "https://api.twelvedata.com";
 
@@ -28,9 +33,14 @@ const TTL = {
 };
 
 export default {
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(checkAlerts(env, ctx));
+  },
+
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     try {
+      if (url.pathname === "/devices" && request.method === "POST") return json(await registerDevice(request, env));
       switch (url.pathname) {
         case "/quote": return json(await quote(url.searchParams, env, ctx));
         case "/intraday": return json(await intraday(url.searchParams, env, ctx));
@@ -132,6 +142,135 @@ async function fx(params, env, ctx) {
   if (!from || !to) throw new Error("from and to required");
   const result = await vendor("exchange_rate", { symbol: `${from}/${to}` }, TTL.fx, env, ctx);
   return { rate: Number(result.rate) };
+}
+
+// MARK: - Instant alerts
+
+const DELAY = 15 * 60;
+
+/// Stores a device's alerts, keeping when each one last fired so a re-sync doesn't fire it again.
+async function registerDevice(request, env) {
+  const body = await request.json();
+  if (!body.token || !Array.isArray(body.alerts)) throw new Error("token and alerts required");
+  const key = `device:${body.token}`;
+  const previous = JSON.parse((await env.DEVICES.get(key)) || "{}");
+  const fired = previous.fired || {};
+  const ids = new Set(body.alerts.map((alert) => alert.id));
+  for (const id of Object.keys(fired)) if (!ids.has(id)) delete fired[id];
+  if (body.alerts.length === 0) {
+    await env.DEVICES.delete(key);
+    return { ok: true, alerts: 0 };
+  }
+  await env.DEVICES.put(key, JSON.stringify({
+    token: body.token,
+    environment: body.environment === "production" ? "production" : "sandbox",
+    locale: body.locale || "en-US",
+    alerts: body.alerts.slice(0, 200),
+    fired,
+  }));
+  return { ok: true, alerts: body.alerts.length };
+}
+
+/// Every minute while US prices (15 minutes late) are moving: price each symbol once, push every crossed alert.
+async function checkAlerts(env, ctx) {
+  if (!marketIsLive(new Date(Date.now() - DELAY * 1000))) return;
+  const devices = [];
+  let cursor;
+  do {
+    const page = await env.DEVICES.list({ prefix: "device:", cursor });
+    for (const entry of page.keys) {
+      const device = JSON.parse((await env.DEVICES.get(entry.name)) || "null");
+      if (device) devices.push(device);
+    }
+    cursor = page.list_complete ? undefined : page.cursor;
+  } while (cursor);
+
+  const symbols = [...new Set(devices.flatMap((device) => device.alerts.map((alert) => alert.symbol)))];
+  const prices = {};
+  await Promise.all(symbols.map(async (symbol) => {
+    const bars = await intradayBars(toVendor(symbol), env, ctx).catch(() => []);
+    const cutoff = Date.now() / 1000 - DELAY;
+    const older = bars.filter((bar) => bar.date <= cutoff);
+    if (older.length) prices[symbol] = older[older.length - 1].close;
+  }));
+
+  const day = 20 * 60 * 60 * 1000;
+  for (const device of devices) {
+    let changed = false;
+    for (const alert of device.alerts) {
+      const price = prices[alert.symbol];
+      if (price === undefined) continue;
+      const crossed = alert.below ? price <= alert.level : price >= alert.level;
+      const last = device.fired[alert.id] || 0;
+      if (!crossed || Date.now() - last < day) continue;
+      const formatted = new Intl.NumberFormat(device.locale.replace("_", "-"), { style: "currency", currency: alert.currency || "USD" }).format(price);
+      const status = await sendPush(env, device, {
+        aps: { alert: { title: alert.title, body: alert.body.replace("{price}", formatted) }, sound: "default", "thread-id": alert.symbol },
+        symbol: alert.symbol,
+        alertID: alert.id,
+      });
+      if (status === 410) {
+        await env.DEVICES.delete(`device:${device.token}`);
+        changed = false;
+        break;
+      }
+      if (status === 200) {
+        device.fired[alert.id] = Date.now();
+        changed = true;
+      }
+    }
+    if (changed) await env.DEVICES.put(`device:${device.token}`, JSON.stringify(device));
+  }
+}
+
+/// Regular US hours, Monday to Friday, in New York time.
+function marketIsLive(date) {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York", weekday: "short", hour: "numeric", minute: "numeric", hour12: false,
+  }).formatToParts(date).map((part) => [part.type, part.value]));
+  if (parts.weekday === "Sat" || parts.weekday === "Sun") return false;
+  const minutes = Number(parts.hour) * 60 + Number(parts.minute);
+  return minutes >= 9 * 60 + 30 && minutes <= 16 * 60;
+}
+
+// MARK: - APNs
+
+let cachedToken = null;
+
+/// An ES256 provider token, reused for 50 minutes as Apple asks.
+async function providerToken(env) {
+  if (cachedToken && Date.now() - cachedToken.issued < 50 * 60 * 1000) return cachedToken.value;
+  const pem = env.APNS_KEY.replace(/-----[^-]+-----/g, "").replace(/\s+/g, "");
+  const der = Uint8Array.from(atob(pem), (c) => c.charCodeAt(0));
+  const key = await crypto.subtle.importKey("pkcs8", der, { name: "ECDSA", namedCurve: "P-256" }, false, ["sign"]);
+  const issued = Math.floor(Date.now() / 1000);
+  const encode = (object) => base64url(new TextEncoder().encode(JSON.stringify(object)));
+  const unsigned = `${encode({ alg: "ES256", kid: env.APNS_KEY_ID })}.${encode({ iss: env.APNS_TEAM_ID, iat: issued })}`;
+  const signature = await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, key, new TextEncoder().encode(unsigned));
+  cachedToken = { value: `${unsigned}.${base64url(new Uint8Array(signature))}`, issued: Date.now() };
+  return cachedToken.value;
+}
+
+async function sendPush(env, device, payload) {
+  const host = device.environment === "production" ? "https://api.push.apple.com" : "https://api.sandbox.push.apple.com";
+  const response = await fetch(`${host}/3/device/${device.token}`, {
+    method: "POST",
+    headers: {
+      authorization: `bearer ${await providerToken(env)}`,
+      "apns-topic": env.BUNDLE_ID,
+      "apns-push-type": "alert",
+      "apns-priority": "10",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  return response.status;
+}
+
+function base64url(bytes) {
+  let text = "";
+  for (const byte of bytes) text += String.fromCharCode(byte);
+  return btoa(text).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
 // MARK: - Vendor access with edge caching

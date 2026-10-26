@@ -54,7 +54,12 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
   func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
     UNUserNotificationCenter.current().delegate = self
     WatchSync.shared.activate()
+    PushAlerts.register()
     return true
+  }
+
+  func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+    PushAlerts.didRegister(token: deviceToken)
   }
 
   func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {

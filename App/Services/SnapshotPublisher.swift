@@ -14,6 +14,7 @@ enum SnapshotPublisher {
     TargetSnapshotStore.save(stocks: stocks)
     TargetSnapshotStore.save(baseCurrency: AlertSettings.baseCurrency)
     WidgetCenter.shared.reloadAllTimelines()
+    PushAlerts.sync(targets: targets, quotes: TargetSnapshotStore.loadQuotes())
     WatchSync.shared.send(targets: targets, stocks: stocks, baseCurrency: AlertSettings.baseCurrency, progress: ProgressSnapshot.load())
   }
 }

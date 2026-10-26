@@ -17,11 +17,32 @@ A Cloudflare Worker between the app and the market data vendor. It keeps the ven
 
 Check it in a browser: `https://…workers.dev/quote?symbol=AAPL&delay=900`.
 
+## Instant alerts (push)
+
+iOS wakes apps in the background only now and then, so an alert checked on the phone can arrive minutes or hours late. With push, the proxy checks every buy zone, sell zone, and price-level alert once a minute while the market is open and sends the notification the moment a price crosses, even with the app closed. Prices stay 15 minutes delayed, the same for everyone.
+
+This needs the paid Apple Developer Program (you need it to publish anyway).
+
+1. **App ID and capability.** In Bitrig, give the app its permanent bundle ID, then add the `aps-environment` entitlement (value `development`) to the app target in `Project.json`. The Push Notifications capability is registered on the first build with your paid team.
+2. **APNs key.** On developer.apple.com → Certificates, IDs & Profiles → Keys, create a key with Apple Push Notifications service enabled. Download the `.p8` file (only once), and note its Key ID and your Team ID.
+3. **Cloudflare.**
+   ```
+   npx wrangler kv namespace create DEVICES     # paste the id into wrangler.toml
+   npx wrangler secret put APNS_KEY             # paste the whole .p8 file
+   npx wrangler secret put APNS_KEY_ID
+   npx wrangler secret put APNS_TEAM_ID
+   ```
+   Set `BUNDLE_ID` in `wrangler.toml` to the app's bundle ID, then `npx wrangler deploy`.
+4. **Test.** Run the app on your iPhone, allow notifications, set a buy zone just above today's price, and within a minute or two of the (delayed) price crossing it the notification arrives. Development builds use Apple's sandbox push server automatically; TestFlight and App Store builds use production.
+
+The app keeps checking in the background as a backup, and skips any alert the proxy already pushed.
+
+
 ## What it costs
 
 | Piece | Cost |
 |---|---|
-| Cloudflare Workers | Free up to 100,000 requests a day; $5 a month beyond that (10 million requests) |
+| Cloudflare Workers | Free up to 100,000 requests a day; $5 a month beyond that (10 million requests). With instant alerts, plan on the $5 plan: the alert check reads every device's alerts once a minute during market hours |
 | Twelve Data | Depends on the display license; budget roughly $150–500 a month at launch, confirmed in writing |
 | Real-time for Pro | Exchanges charge display fees per real-time user. Delayed data has no per-user fee, which is why free users stay delayed |
 
