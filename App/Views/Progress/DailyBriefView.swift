@@ -1,7 +1,8 @@
 import SwiftData
 import SwiftUI
 
-/// A one-minute daily routine: how your stocks moved, your closest plans, a flock question, a lesson, and your streak.
+/// A one-minute daily routine: how your stocks moved, your closest plans, how you feel about the market (shared
+/// anonymously with the flock, which answers back with everyone's mood), a flock question, a lesson, and your streak.
 struct DailyBriefView: View {
   @Query(sort: \Holding.addedAt) private var holdings: [Holding]
   @Environment(\.dismiss) private var dismiss
@@ -12,8 +13,21 @@ struct DailyBriefView: View {
   @State private var celebration = 0
   @State private var vote: Bool?
   @State private var didRecord = false
+  @State private var feeling: FlockFeeling?
+  @State private var action: FlockAction?
+  @State private var didCheckIn = false
 
-  private let steps = 5
+  private enum Step {
+    case movers, plans, mood, question, lesson, finish
+  }
+
+  /// The mood check-in appears once the flock is live, since its answer is the flock's own mood.
+  private var stepList: [Step] {
+    flock.isAvailable ? [.movers, .plans, .mood, .question, .lesson, .finish] : [.movers, .plans, .question, .lesson, .finish]
+  }
+
+  private var steps: Int { stepList.count }
+  private var current: Step { stepList[min(step, stepList.count - 1)] }
 
   private var summary: PortfolioSummary {
     PortfolioSummary(holdings: holdings, quotes: quotes.quotes, baseCurrency: quotes.baseCurrency, convert: quotes.toBase)
@@ -28,12 +42,13 @@ struct DailyBriefView: View {
       header
       ScrollView {
         Group {
-          switch step {
-          case 0: movers
-          case 1: plans
-          case 2: question
-          case 3: lesson
-          default: finish
+          switch current {
+          case .movers: movers
+          case .plans: plans
+          case .mood: mood
+          case .question: question
+          case .lesson: lesson
+          case .finish: finish
           }
         }
         .id(step)
@@ -49,7 +64,7 @@ struct DailyBriefView: View {
           .padding(.vertical, 8)
       }
       .buttonStyle(.borderedProminent)
-      .disabled(step == 2 && vote == nil)
+      .disabled((current == .question && vote == nil) || (current == .mood && !didCheckIn))
       .padding(20)
       .frame(maxWidth: 600)
     }
@@ -143,6 +158,81 @@ struct DailyBriefView: View {
         }
       } else {
         OwlSays(text: "No plans yet. Set a buy zone on a stock and I'll track how close it gets every day.")
+      }
+    }
+  }
+
+  private var mood: some View {
+    VStack(alignment: .leading, spacing: 18) {
+      OwlSays(text: didCheckIn ? "Here's how the whole flock feels today." : "How do you feel about the market today?")
+      if !didCheckIn {
+        HStack(spacing: 8) {
+          ForEach(FlockFeeling.allCases) { option in
+            Button {
+              withAnimation(.snappy) { feeling = option }
+            } label: {
+              VStack(spacing: 6) {
+                Image(systemName: option.systemImage)
+                  .font(.title2)
+                  .symbolRenderingMode(.multicolor)
+                  .frame(height: 30)
+                Text(option.title)
+                  .font(.caption.weight(.semibold))
+                  .lineLimit(1)
+                  .minimumScaleFactor(0.6)
+              }
+              .frame(maxWidth: .infinity)
+              .padding(.vertical, 12)
+              .background(feeling == option ? AnyShapeStyle(Palette.green.opacity(0.18)) : AnyShapeStyle(Palette.card), in: .rect(cornerRadius: 16))
+              .overlay {
+                RoundedRectangle(cornerRadius: 16).strokeBorder(feeling == option ? Palette.green : .clear, lineWidth: 2)
+              }
+            }
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(feeling == option ? .isSelected : [])
+          }
+        }
+        .sensoryFeedback(.selection, trigger: feeling)
+        if feeling != nil {
+          Text("And what are you doing this week?")
+            .font(.headline)
+            .transition(.opacity)
+          FlowLayout(spacing: 8) {
+            ForEach(FlockAction.allCases) { option in
+              Button {
+                action = option
+                guard let feeling else { return }
+                Task {
+                  await flock.checkIn(feeling: feeling, action: option)
+                  withAnimation(.smooth) { didCheckIn = true }
+                }
+              } label: {
+                Label(option.title, systemImage: option.systemImage)
+                  .font(.subheadline.weight(.semibold))
+                  .padding(.horizontal, 14)
+                  .padding(.vertical, 10)
+                  .background(action == option ? AnyShapeStyle(Palette.green) : AnyShapeStyle(Palette.card), in: .capsule)
+                  .foregroundStyle(action == option ? .white : .primary)
+              }
+              .buttonStyle(.plain)
+            }
+          }
+          .transition(.opacity)
+        }
+        Label("Anonymous. Only your answer counts, never who you are.", systemImage: "lock.fill")
+          .font(.caption)
+          .foregroundStyle(.secondary)
+      } else if let sentiment = flock.sentiment {
+        FlockSentimentCard(sentiment: sentiment, mine: flock.myCheckIn)
+          .transition(.scale(scale: 0.95).combined(with: .opacity))
+      }
+    }
+    .task {
+      if let mine = flock.myCheckIn {
+        feeling = mine.feeling
+        action = mine.action
+        didCheckIn = true
+        await flock.loadSentiment()
       }
     }
   }

@@ -113,3 +113,134 @@ enum FlockCalendar {
 
   static let week: TimeInterval = 7 * 24 * 3600
 }
+
+// MARK: - Daily check-ins
+
+/// What a member says they're doing with their money this week, from the daily brief.
+enum FlockAction: String, CaseIterable, Identifiable, Codable {
+  case buying
+  case holding
+  case waiting
+  case trimming
+  case selling
+
+  var id: Self { self }
+
+  var title: String {
+    switch self {
+    case .buying: String(localized: "Buying more")
+    case .holding: String(localized: "Holding")
+    case .waiting: String(localized: "Waiting with cash")
+    case .trimming: String(localized: "Taking profit")
+    case .selling: String(localized: "Selling")
+    }
+  }
+
+  var systemImage: String {
+    switch self {
+    case .buying: "cart.fill"
+    case .holding: "hand.raised.fill"
+    case .waiting: "hourglass"
+    case .trimming: "scissors"
+    case .selling: "arrow.up.forward.circle.fill"
+    }
+  }
+}
+
+/// How a member feels about the market today, from fearful to greedy.
+enum FlockFeeling: Int, CaseIterable, Identifiable, Codable {
+  case fearful = 0
+  case worried = 25
+  case calm = 50
+  case confident = 75
+  case greedy = 100
+
+  var id: Self { self }
+
+  var title: String {
+    switch self {
+    case .fearful: String(localized: "Fearful")
+    case .worried: String(localized: "Worried")
+    case .calm: String(localized: "Calm")
+    case .confident: String(localized: "Confident")
+    case .greedy: String(localized: "Greedy")
+    }
+  }
+
+  var systemImage: String {
+    switch self {
+    case .fearful: "cloud.bolt.rain.fill"
+    case .worried: "cloud.drizzle.fill"
+    case .calm: "cloud.sun.fill"
+    case .confident: "sun.max.fill"
+    case .greedy: "flame.fill"
+    }
+  }
+}
+
+/// One member's anonymous daily check-in.
+struct FlockCheckIn: Codable, Hashable {
+  var day: String
+  var feeling: FlockFeeling
+  var action: FlockAction
+}
+
+/// The flock's own fear and greed: the average of every check-in, today and over the last month,
+/// and what members say they're doing. Brokers see this about their clients; Dipwise shows it to everyone.
+struct FlockSentiment: Equatable {
+  struct Day: Identifiable, Equatable {
+    var day: String
+    var score: Double
+    var count: Int
+    var id: String { day }
+  }
+
+  var days: [Day]
+  /// Share of today's check-ins by action.
+  var actions: [FlockAction: Double]
+
+  var today: Day? { days.last }
+  var score: Double { today?.score ?? 50 }
+  /// The change from a week ago, in points.
+  var weekChange: Double? {
+    guard days.count > 7 else { return nil }
+    return score - days[days.count - 8].score
+  }
+
+  var label: String { Self.label(for: score) }
+
+  static func label(for score: Double) -> String {
+    switch score {
+    case ..<20: String(localized: "Extreme fear")
+    case ..<40: String(localized: "Fear")
+    case ..<60: String(localized: "Neutral")
+    case ..<80: String(localized: "Greed")
+    default: String(localized: "Extreme greed")
+    }
+  }
+
+  static func make(from checkIns: [FlockCheckIn]) -> FlockSentiment? {
+    guard !checkIns.isEmpty else { return nil }
+    let byDay = Dictionary(grouping: checkIns, by: \.day)
+    let days = byDay.keys.sorted().map { key in
+      let items = byDay[key] ?? []
+      return Day(day: key, score: Double(items.map(\.feeling.rawValue).reduce(0, +)) / Double(max(items.count, 1)), count: items.count)
+    }
+    let latest = byDay[days.last?.day ?? ""] ?? []
+    var actions: [FlockAction: Double] = [:]
+    for action in FlockAction.allCases {
+      actions[action] = Double(latest.filter { $0.action == action }.count) / Double(max(latest.count, 1))
+    }
+    return FlockSentiment(days: days, actions: actions)
+  }
+}
+
+extension FlockCalendar {
+  /// Today in New York, like "2026-10-26", so everyone's check-ins land on the same market day.
+  static func dayKey(for date: Date = .now) -> String {
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = TimeZone(identifier: "America/New_York") ?? .current
+    let parts = calendar.dateComponents([.year, .month, .day], from: date)
+    return String(format: "%04d-%02d-%02d", parts.year ?? 0, parts.month ?? 0, parts.day ?? 0)
+  }
+}

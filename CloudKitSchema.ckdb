@@ -57,6 +57,22 @@ DEFINE SCHEMA
         GRANT READ TO "_world"
     );
 
+    RECORD TYPE FlockCheckIn (
+        "___createTime"  TIMESTAMP,
+        "___createdBy"   REFERENCE,
+        "___etag"        STRING,
+        "___modTime"     TIMESTAMP,
+        "___modifiedBy"  REFERENCE,
+        "___recordID"    REFERENCE QUERYABLE,
+        day              STRING QUERYABLE SORTABLE,
+        feeling          INT64,
+        action           STRING,
+        installID        STRING,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
     RECORD TYPE FlockMove (
         "___createTime"  TIMESTAMP,
         "___createdBy"   REFERENCE,

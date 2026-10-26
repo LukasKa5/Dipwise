@@ -10,6 +10,8 @@ final class FlockService {
   private let quoteService = QuoteService()
   private(set) var reports: [String: FlockReport] = [:]
   private(set) var overview = FlockOverview()
+  /// The flock's fear and greed, from everyone's daily check-ins.
+  private(set) var sentiment: FlockSentiment?
   private(set) var radar: [RadarItem] = []
   private(set) var isLoadingOverview = false
   private var loading: Set<String> = []
@@ -41,6 +43,41 @@ final class FlockService {
   }
 
   // MARK: Overview
+
+  // MARK: Check-ins
+
+  /// The user's own check-in today, if they've done it.
+  var myCheckIn: FlockCheckIn? {
+    guard let data = UserDefaults.standard.data(forKey: "flock.checkIn"),
+          let checkIn = try? JSONDecoder().decode(FlockCheckIn.self, from: data),
+          checkIn.day == FlockCalendar.dayKey() else { return nil }
+    return checkIn
+  }
+
+  /// The user's own check-ins, kept on this iPhone for their profile.
+  var checkInHistory: [FlockCheckIn] {
+    guard let data = UserDefaults.standard.data(forKey: "flock.checkInHistory") else { return [] }
+    return (try? JSONDecoder().decode([FlockCheckIn].self, from: data)) ?? []
+  }
+
+  /// Shares today's mood and plan anonymously, then refreshes the flock's sentiment to show it right away.
+  func checkIn(feeling: FlockFeeling, action: FlockAction) async {
+    let checkIn = FlockCheckIn(day: FlockCalendar.dayKey(), feeling: feeling, action: action)
+    UserDefaults.standard.set(try? JSONEncoder().encode(checkIn), forKey: "flock.checkIn")
+    var history = checkInHistory.filter { $0.day != checkIn.day }
+    history.append(checkIn)
+    UserDefaults.standard.set(try? JSONEncoder().encode(Array(history.suffix(90))), forKey: "flock.checkInHistory")
+    try? await backend?.checkIn(checkIn, installID: FlockConfiguration.installID)
+    await loadSentiment(including: checkIn)
+  }
+
+  func loadSentiment(including mine: FlockCheckIn? = nil) async {
+    guard let backend else { return }
+    var checkIns = (try? await backend.checkIns(days: 30)) ?? []
+    // The sample flock never stores the user's answer, so count it here; CloudKit already has it.
+    if let mine, backend.isSample { checkIns.append(mine) }
+    sentiment = FlockSentiment.make(from: checkIns)
+  }
 
   func loadOverview() async {
     guard let backend, !isLoadingOverview else { return }

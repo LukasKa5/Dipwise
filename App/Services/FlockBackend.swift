@@ -22,6 +22,11 @@ protocol FlockBackend: Sendable {
   func publish(move: FlockMove) async throws
   /// Takes the user's portfolio and moves out of the flock.
   func withdrawPortfolio(installID: String) async throws
+
+  /// Saves today's anonymous mood and plan from the daily brief, one per member per day.
+  func checkIn(_ checkIn: FlockCheckIn, installID: String) async throws
+  /// Every check-in from the last `days` days.
+  func checkIns(days: Int) async throws -> [FlockCheckIn]
 }
 
 enum FlockConfiguration {
@@ -57,6 +62,7 @@ struct CloudKitFlockBackend: FlockBackend {
   private static let voteType = "FlockVote"
   private static let portfolioType = "FlockPortfolio"
   private static let moveType = "FlockMove"
+  private static let checkInType = "FlockCheckIn"
   let containerID: String
 
   var isSample: Bool { false }
@@ -153,6 +159,26 @@ struct CloudKitFlockBackend: FlockBackend {
     record["bullish"] = bullish ? 1 : 0
     record["installID"] = installID
     _ = try await database.save(record)
+  }
+
+  func checkIn(_ checkIn: FlockCheckIn, installID: String) async throws {
+    let id = CKRecord.ID(recordName: "checkin-\(installID)-\(checkIn.day)")
+    let record = (try? await database.record(for: id)) ?? CKRecord(recordType: Self.checkInType, recordID: id)
+    record["day"] = checkIn.day
+    record["feeling"] = checkIn.feeling.rawValue
+    record["action"] = checkIn.action.rawValue
+    record["installID"] = installID
+    _ = try await database.save(record)
+  }
+
+  func checkIns(days: Int) async throws -> [FlockCheckIn] {
+    let since = FlockCalendar.dayKey(for: .now.addingTimeInterval(-Double(days) * 86_400))
+    return try await records(NSPredicate(format: "day >= %@", since), type: Self.checkInType).compactMap { record in
+      guard let day = record["day"] as? String,
+            let feeling = (record["feeling"] as? Int).flatMap(FlockFeeling.init(rawValue:)),
+            let action = (record["action"] as? String).flatMap(FlockAction.init(rawValue:)) else { return nil }
+      return FlockCheckIn(day: day, feeling: feeling, action: action)
+    }
   }
 
   func portfolios() async throws -> [FlockPortfolio] {

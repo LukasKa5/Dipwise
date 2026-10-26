@@ -54,6 +54,31 @@ struct SampleFlockBackend: FlockBackend {
   func publish(portfolio: FlockPortfolio) async throws {}
   func publish(move: FlockMove) async throws {}
   func withdrawPortfolio(installID: String) async throws {}
+  func checkIn(_ checkIn: FlockCheckIn, installID: String) async throws {}
+
+  /// A month of check-ins whose mood drifts between fear and greed, like a real crowd.
+  func checkIns(days: Int) async throws -> [FlockCheckIn] {
+    var generator = SeededGenerator(seed: "flock-checkins")
+    var result: [FlockCheckIn] = []
+    for offset in stride(from: days, through: 0, by: -1) {
+      let day = FlockCalendar.dayKey(for: .now.addingTimeInterval(-Double(offset) * 86_400))
+      let center = 52 + 18 * sin(Double(offset) / 4.5)
+      for _ in 0..<Int.random(in: 140...320, using: &generator) {
+        let value = center + Double.random(in: -45...45, using: &generator)
+        let feeling = FlockFeeling.allCases.min { abs(Double($0.rawValue) - value) < abs(Double($1.rawValue) - value) } ?? .calm
+        let actionRoll = Double.random(in: 0...1, using: &generator) + (value - 50) / 250
+        let action: FlockAction = switch actionRoll {
+        case ..<0.12: .selling
+        case ..<0.24: .trimming
+        case ..<0.42: .waiting
+        case ..<0.72: .holding
+        default: .buying
+        }
+        result.append(FlockCheckIn(day: day, feeling: feeling, action: action))
+      }
+    }
+    return result
+  }
 
   /// A flock of about 500 members with realistic, overlapping portfolios.
   func portfolios() async throws -> [FlockPortfolio] {

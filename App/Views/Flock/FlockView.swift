@@ -31,6 +31,9 @@ struct FlockView: View {
             ContentUnavailableView("The Flock Is Gathering", systemImage: "person.3", description: Text("Anonymous statistics from other Dipwise investors will appear here soon."))
           } else {
             hero
+            if let sentiment = flock.sentiment {
+              FlockSentimentCard(sentiment: sentiment, mine: flock.myCheckIn)
+            }
             topInvestors
             owned
             buyingAndSelling
@@ -56,9 +59,21 @@ struct FlockView: View {
       }
       .background(Palette.canvas)
       .navigationTitle("Flock")
+      .toolbar {
+        if flock.isAvailable {
+          ToolbarItem(placement: .topBarTrailing) {
+            NavigationLink {
+              InvestorProfileView()
+            } label: {
+              Label("Your Profile", systemImage: "person.crop.circle")
+            }
+          }
+        }
+      }
       .searchable(text: $query, prompt: "Crowd report for any stock")
       .task(id: query) { await search() }
       .task { await flock.loadOverview() }
+      .task { await flock.loadSentiment() }
       .refreshable { await flock.loadOverview() }
       .navigationDestination(for: String.self) { symbol in
         FlockDetailView(symbol: symbol)

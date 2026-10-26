@@ -80,9 +80,11 @@ struct FlockInvestor: Identifiable, Hashable {
   }
 
   /// A stable hue for the member's owl, so the same investor always looks the same.
-  var hue: Double {
+  var hue: Double { Self.hue(for: portfolio.installID) }
+
+  static func hue(for installID: String) -> Double {
     var hash: UInt64 = 14695981039346656037
-    for byte in portfolio.installID.utf8 { hash = (hash ^ UInt64(byte)) &* 1099511628211 }
+    for byte in installID.utf8 { hash = (hash ^ UInt64(byte)) &* 1099511628211 }
     return Double(hash % 360) / 360
   }
 }
