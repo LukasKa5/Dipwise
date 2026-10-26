@@ -124,18 +124,20 @@ struct DeskModeView: View {
       HStack(spacing: 5) {
         Circle().fill(isOpen ? Brand.buy : .white.opacity(0.4)).frame(width: 7, height: 7)
         Text(isOpen ? "Closes in \(countdown)" : "Opens in \(countdown)")
-          .fitsNumber(0.7)
+          .fitsNumber(0.5)
       }
       .font(.caption.weight(.semibold))
       .padding(.horizontal, 9)
       .padding(.vertical, 5)
       .background(.white.opacity(0.08), in: .capsule)
+      .layoutPriority(1)
       Spacer(minLength: 4)
       ForEach(Self.indexes, id: \.symbol) { index in
         if let quote = quotes[index.symbol] {
           HStack(spacing: 4) {
             Text(index.name).foregroundStyle(.white.opacity(0.7))
-            Text(changeText(quote.change)).foregroundStyle(quote.change >= 0 ? Brand.buy : Brand.sell)
+            Text(quote.change.formatted(.percent.precision(.fractionLength(2)).sign(strategy: .always())))
+              .foregroundStyle(quote.change >= 0 ? Brand.buy : Brand.sell)
           }
           .font(.caption.weight(.bold).monospacedDigit())
           .fitsNumber(0.7)
@@ -241,9 +243,12 @@ struct DeskModeView: View {
     return VStack(spacing: 4) {
       ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
         GeometryReader { geometry in
-          let total = max(row.reduce(0) { $0 + $1.weight }, 0.0001)
+          // Small holdings still get a readable tile.
+          let floor = row.reduce(0) { $0 + $1.weight } * 0.2
+          let shown = row.map { max($0.weight, floor) }
+          let total = max(shown.reduce(0, +), 0.0001)
           HStack(spacing: 4) {
-            ForEach(row) { item in
+            ForEach(Array(row.enumerated()), id: \.element.id) { index, item in
               Button {
                 isTouched = true
                 focus = item.symbol
@@ -256,7 +261,7 @@ struct DeskModeView: View {
                 }
                 .fitsNumber(0.6)
                 .padding(4)
-                .frame(width: max(0, (geometry.size.width - CGFloat(row.count - 1) * 4) * item.weight / total), height: geometry.size.height)
+                .frame(width: max(0, (geometry.size.width - CGFloat(row.count - 1) * 4) * shown[index] / total), height: geometry.size.height)
                 .background(Self.heat(item.change), in: .rect(cornerRadius: 8, style: .continuous))
               }
               .buttonStyle(.plain)

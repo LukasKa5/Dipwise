@@ -852,28 +852,22 @@ def iphone_story(raw, raw_dir):
 
     page(1, "Show me where\nyou'd *buy*.", fix_iphone_clock(raw("iphone-plan")), "look-down", owl_side=-1, after=drag)
     page(2, "I'll show your\n*odds* first.", raw("iphone-odds"), "look-left")
-    page(3, "It dips.\n*I tap you.*", raw("scene-lock"), "wings")
+    page(3, "Get alerted the\n*moment it dips*.", raw("scene-lock"), "wings")
     line.dot(x(3, 660), rings=True)
     page(4, "Meet the *flock*.\nAll anonymous.", raw("iphone-flock"), "wink", owl_side=-1)
     page(5, "*27* alerts,\nin plain words.", fix_iphone_clock(raw("iphone-plan-smart")), "blush")
     page(6, "I live on your\n*Home Screen*.", raw("iphone-home-widgets"), "look-down", owl_side=-1)
 
-    # 8 · iPhone Duo standing like a tent on a desk, its outer display a live portfolio tracker.
-    story.title(7, "Stand me up as\nyour *desk tracker*.", 170, 140)
-    # Hinge on top, like a tent: the frame turns over, the screen stays upright.
+    # 8 · iPhone Duo on a desk, its outer display a live stock tracker, straight on so every number reads.
+    story.title(7, "Your stocks,\n*live on your desk*.", 170, 140)
     duo = Bezel("iphone-duo-outer-landscape", upside_down=True)
-    front, _ = duo.device(raw("desk-mode"), 860)
-    stand = tent(front)
+    stand, _ = duo.device(raw("desk-mode"), 880)
     stand_bottom = line.y(x(7, W / 2)) + 8
     top = stand_bottom - stand.height
-    desk_shadow(story.canvas, x(7, W / 2), stand_bottom, stand.width * 0.95)
-    story.place(7, stand, W / 2, top, shadow=0.5)
+    desk_shadow(story.canvas, x(7, W / 2), stand_bottom, stand.width * 0.92)
+    story.place(7, stand, W / 2, top, shadow=0.6)
     perch(story.canvas, raw_dir, "look-down", x(7, W / 2 - 330), top + 14, owl_height)
-    sticker(story.canvas, x(7, W / 2), stand_bottom + 150, ["iPhone Duo", "Desk Mode"])
-    draw = ImageDraw.Draw(story.canvas)
-    note_font = font(ROUNDED, 52, "Medium")
-    for i, note in enumerate(["Your stocks, today's market,", "and the flock, live on your desk."]):
-        draw.text((x(7, (W - draw.textlength(note, font=note_font)) / 2), stand_bottom + 330 + i * 70), note, font=note_font, fill=SOFT)
+    sticker(story.canvas, x(7, W / 2), stand_bottom + 170, ["Optimized for iPhone Duo"])
 
     # 9 · Apple Watch Series 11, the same watch as the app's intro.
     story.title(8, "Or keep me\non your *wrist*.", 170, 140)
@@ -926,7 +920,7 @@ def ipad_story(raw, raw_dir):
     page(1, "Show me where\nyou'd *buy*.", raw("ipad-stock"), "look-down", owl_side=-1)
     page(2, "I'll show your\n*odds* first.", raw("ipad-odds"), "look-left")
     alert = banner_on(raw("ipad-alerts"), icon, 1160, 90, ALERT_TITLE, ALERT_BODY)
-    page(3, "It dips.\n*I tap you.*", alert, "wings")
+    page(3, "Get alerted the\n*moment it dips*.", alert, "wings")
     line.dot(x(3, W / 2 + 200), rings=True)
 
     sky = story.canvas_sky

@@ -70,7 +70,9 @@ struct InvestorBehavior {
     let losers = positions.filter { ($0.holding.gain(at: $0.quote.price) ?? 0) <= -0.2 && ($0.holding.alerts ?? []).allSatisfy { !$0.isActive } }
     if !losers.isEmpty {
       spots.append(BlindSpot(
-        title: String(localized: "\(losers.map(\.holding.symbol).prefix(3).formatted(.list(type: .and))) \(losers.count == 1 ? "is" : "are") down over 20% with no plan"),
+        title: losers.count == 1
+          ? String(localized: "\(losers[0].holding.symbol) is down over 20% with no plan")
+          : String(localized: "\(losers.map(\.holding.symbol).prefix(3).formatted(.list(type: .and))) are down over 20% with no plan"),
         detail: String(localized: "Investors hold losing stocks about 1.5 times longer than winners, hoping to break even. Decide now: average down, set a stop, or let it go."),
         systemImage: "tortoise.fill", isWarning: true))
     }

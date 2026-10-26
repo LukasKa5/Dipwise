@@ -65,7 +65,7 @@ struct MarketingRenders: View {
 
   private var today: some View {
     VStack(alignment: .leading, spacing: 8) {
-      WatchDippyHeader(greeting: "Good morning", message: OwlMood.calm.watchMessage, isAsleep: false)
+      WatchDippyHeader(greeting: "Good morning", message: String(localized: "AMZN is 3.6% from your buy zone."), isAsleep: false)
       if let portfolio {
         WatchPortfolioHero(portfolio: portfolio)
       }

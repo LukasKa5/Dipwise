@@ -236,10 +236,10 @@ extension OwlMood {
   /// A short line for Apple Watch, where every word counts.
   var watchMessage: String {
     switch self {
-    case .sleeping: String(localized: "Markets closed. Your alerts stay on.")
+    case .sleeping: String(localized: "Markets closed. I'm asleep, tap to wake me.")
     case .celebrating: String(localized: "A green day. I'm on watch.")
     case .reassuring: String(localized: "A red day. Plans pay off in dips.")
-    case .calm: String(localized: "All quiet. I'm watching your zones.")
+    case .calm: String(localized: "Market's open. I'm watching your zones.")
     }
   }
 }

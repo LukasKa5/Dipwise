@@ -1,20 +1,19 @@
 import SwiftUI
 
-/// Dipwise's own wallpaper for the iPhones it shows: a bright morning sky fading through mint into a warm glow,
-/// with a soft price wave like the icon's line. Bright enough that the navy widgets stand out, deep enough at the
-/// top for white lock screen text.
+/// Dipwise's own wallpaper for the iPhones it shows: deep indigo through teal into violet, with a soft mint price wave
+/// like the icon's line. Dark enough that white notification text reads clearly, colorful enough that the navy
+/// widgets stand apart from it.
 struct DipwiseWallpaper: View {
   var body: some View {
     ZStack {
       LinearGradient(stops: [
-        .init(color: Color(red: 0.20, green: 0.42, blue: 0.68), location: 0),
-        .init(color: Color(red: 0.30, green: 0.62, blue: 0.78), location: 0.35),
-        .init(color: Color(red: 0.42, green: 0.80, blue: 0.72), location: 0.68),
-        .init(color: Color(red: 0.98, green: 0.78, blue: 0.58), location: 1),
+        .init(color: Color(red: 0.12, green: 0.15, blue: 0.40), location: 0),
+        .init(color: Color(red: 0.10, green: 0.34, blue: 0.48), location: 0.45),
+        .init(color: Color(red: 0.22, green: 0.20, blue: 0.48), location: 1),
       ], startPoint: .top, endPoint: .bottom)
-      RadialGradient(colors: [Brand.mint.opacity(0.45), .clear], center: UnitPoint(x: 0.1, y: 0.55), startRadius: 10, endRadius: 380)
-      RadialGradient(colors: [Color(red: 1, green: 0.62, blue: 0.48).opacity(0.5), .clear], center: UnitPoint(x: 0.95, y: 0.95), startRadius: 10, endRadius: 360)
-      RadialGradient(colors: [.white.opacity(0.22), .clear], center: UnitPoint(x: 0.8, y: 0.12), startRadius: 10, endRadius: 300)
+      RadialGradient(colors: [Brand.mint.opacity(0.35), .clear], center: UnitPoint(x: 0.1, y: 0.6), startRadius: 10, endRadius: 380)
+      RadialGradient(colors: [Color(red: 0.62, green: 0.42, blue: 0.95).opacity(0.45), .clear], center: UnitPoint(x: 0.95, y: 0.92), startRadius: 10, endRadius: 360)
+      RadialGradient(colors: [Color(red: 0.4, green: 0.7, blue: 1).opacity(0.25), .clear], center: UnitPoint(x: 0.85, y: 0.08), startRadius: 10, endRadius: 300)
       // The icon's price line, wide and soft: a dip, then the climb.
       Canvas { context, size in
         let wave = Path { path in
@@ -25,8 +24,8 @@ struct DipwiseWallpaper: View {
         }
         var glow = context
         glow.addFilter(.blur(radius: 18))
-        glow.stroke(wave, with: .color(.white.opacity(0.45)), lineWidth: 26)
-        context.stroke(wave, with: .color(.white.opacity(0.55)), style: StrokeStyle(lineWidth: 5, lineCap: .round))
+        glow.stroke(wave, with: .color(Brand.mint.opacity(0.4)), lineWidth: 26)
+        context.stroke(wave, with: .color(Brand.mint.opacity(0.6)), style: StrokeStyle(lineWidth: 5, lineCap: .round))
       }
     }
     .ignoresSafeArea()

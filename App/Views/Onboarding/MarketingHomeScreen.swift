@@ -106,7 +106,10 @@ struct MarketingHomeScreen: View {
         .padding(16)
         .frame(width: size.width, height: size.height)
         .background(Brand.nightMiddle, in: .rect(cornerRadius: 24, style: .continuous))
-        .shadow(color: .black.opacity(0.18), radius: 14, y: 6)
+        .overlay {
+          RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(.white.opacity(0.14), lineWidth: 1)
+        }
+        .shadow(color: .black.opacity(0.3), radius: 14, y: 6)
       Text(name)
         .font(.system(size: 12, weight: .medium))
         .foregroundStyle(.white)

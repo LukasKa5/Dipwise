@@ -36,10 +36,18 @@ private struct TodayPage: View {
     OwlMood.current(dayChange: store.portfolio?.dayChange, isAwake: false)
   }
 
+  /// What's actually happening: the closest plan on a calm open day, otherwise the day's mood.
+  private var message: String {
+    guard mood == .calm, MarketClock.isOpen(), let closest = store.statuses.first, let distance = closest.distance else { return mood.watchMessage }
+    let zone = closest.target.rule.kind.side == .sell ? String(localized: "sell zone") : String(localized: "buy zone")
+    if distance == 0 { return String(localized: "\(closest.target.symbol) is in your \(zone).") }
+    return String(localized: "\(closest.target.symbol) is \(distance.formatted(.percent.precision(.fractionLength(1)))) from your \(zone).")
+  }
+
   var body: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: 8) {
-        WatchDippyHeader(greeting: WatchGreeting.text(), message: mood.watchMessage, isAsleep: mood == .sleeping, hops: hops)
+        WatchDippyHeader(greeting: WatchGreeting.text(), message: message, isAsleep: mood == .sleeping, hops: hops)
           .onTapGesture { hops += 1 }
           .sensoryFeedback(.impact(weight: .light), trigger: hops)
         if let portfolio = store.portfolio {

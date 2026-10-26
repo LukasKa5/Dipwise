@@ -613,9 +613,10 @@ struct NotifyStep: View {
       .foregroundStyle(.white)
       .padding(14)
       .frame(maxWidth: .infinity, alignment: .leading)
-      .background(.white.opacity(0.13), in: .rect(cornerRadius: 26, style: .continuous))
+      // A dark, solid card so the alert reads clearly on any wallpaper.
+      .background(Color.black.opacity(0.42), in: .rect(cornerRadius: 26, style: .continuous))
       .overlay {
-        RoundedRectangle(cornerRadius: 26, style: .continuous).strokeBorder(.white.opacity(0.08), lineWidth: 1)
+        RoundedRectangle(cornerRadius: 26, style: .continuous).strokeBorder(.white.opacity(0.12), lineWidth: 1)
       }
     }
     .buttonStyle(ShowcasePressStyle())
