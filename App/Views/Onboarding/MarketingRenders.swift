@@ -156,13 +156,15 @@ struct MarketingRenders: View {
   private func renderDesk() async {
     let holdings = (try? modelContext.fetch(FetchDescriptor<Holding>())) ?? []
     await quotes.refresh(symbols: holdings.map(\.symbol))
+    await quotes.refresh(symbols: ["^GSPC", "^IXIC", "^DJI"])
+    await flock.loadOverview()
+    await flock.loadSentiment()
     try? await Task.sleep(for: .seconds(2))
     let day = QuoteService.marketingDate ?? .now
     let morning = Calendar.current.date(bySettingHour: 9, minute: 41, second: 0, of: day) ?? day
     let renderer = ImageRenderer(content:
-      DeskModeView(frozenDate: morning)
-        // The outer camera sits in the trailing corner in this pose; the device keeps content clear of it.
-        .safeAreaPadding(.trailing, 44)
+      // In this pose the outer camera sits in the bottom trailing corner.
+      DeskModeView(frozenDate: morning, simulatedCamera: CGRect(x: 678 - 52, y: 466 - 52, width: 40, height: 40))
         .environment(quotes)
         .environment(flock)
         .modelContainer(DipwiseApp.container)

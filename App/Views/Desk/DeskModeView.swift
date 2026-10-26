@@ -1,26 +1,31 @@
 import SwiftData
 import SwiftUI
 
-/// Desk Mode: a live portfolio tracker for iPhone Duo standing like a tent on a desk, on its outer display.
-/// The time and today's market along the top; your portfolio with a chart you can scrub; and a panel that pages by
-/// itself between your biggest movers, your closest plans, and what the flock is doing, until you tap a page. Your
-/// stocks run along the bottom like a ticker. The screen stays awake while it's open.
+/// Desk Mode: a live, hands-on stock tracker for iPhone Duo standing like a tent on a desk, using its whole outer
+/// display edge to edge and stepping around only the camera. Along the top: the time, the market's countdown, and
+/// the three big indexes. On the left: the portfolio with a chart you can scrub. On the right: a heatmap of your
+/// stocks sized by how much you hold and colored by today's move, your closest plans, or the flock. Tap any stock for
+/// its chart, plan, and crowd. Your stocks run along the bottom like a ticker. The screen stays awake while it's open.
 struct DeskModeView: View {
   /// Renders a fixed moment, for App Store screenshots.
   var frozenDate: Date?
+  /// Where the outer camera sits, for renders that have no real device to ask.
+  var simulatedCamera: CGRect?
 
   @Query(sort: \Holding.addedAt) private var holdings: [Holding]
   @Environment(QuoteStore.self) private var quotes
   @Environment(\.dismiss) private var dismiss
   @Environment(\.modelContext) private var modelContext
   @Environment(FlockService.self) private var flock
-  @State private var page = Page.movers
+  @State private var page = Page.heatmap
   @State private var isTouched = false
   @State private var selectedIndex: Int?
+  @State private var focus: String?
   @State private var tickerWidth: CGFloat = 0
+  @State private var camera: CGRect?
 
   enum Page: String, CaseIterable, Identifiable {
-    case movers
+    case heatmap
     case plans
     case flock
 
@@ -28,14 +33,16 @@ struct DeskModeView: View {
 
     var title: LocalizedStringKey {
       switch self {
-      case .movers: "Movers"
+      case .heatmap: "Heatmap"
       case .plans: "Plans"
       case .flock: "Flock"
       }
     }
   }
 
-  private var pages: [Page] { flock.isAvailable ? Page.allCases : [.movers, .plans] }
+  private static let indexes: [(symbol: String, name: String)] = [("^GSPC", "S&P 500"), ("^IXIC", "Nasdaq"), ("^DJI", "Dow")]
+
+  private var pages: [Page] { flock.isAvailable ? Page.allCases : [.heatmap, .plans] }
 
   private var summary: PortfolioSummary {
     PortfolioSummary(holdings: holdings, quotes: quotes.quotes, baseCurrency: quotes.baseCurrency, convert: quotes.toBase, intraday: quotes.intraday)
@@ -52,29 +59,37 @@ struct DeskModeView: View {
   var body: some View {
     TimelineView(.everyMinute) { context in
       let now = frozenDate ?? context.date
-      VStack(spacing: 12) {
-        topBar(now)
-        HStack(alignment: .top, spacing: 14) {
-          portfolio
-            .frame(maxWidth: .infinity)
-          panel
-            .frame(maxWidth: .infinity)
+      GeometryReader { geometry in
+        let cameraFrame = simulatedCamera ?? camera
+        // Only the ticker runs along the camera's edge, so only it steps around it.
+        let tickerInset = cameraFrame.map { $0.maxY > geometry.size.height - 60 ? max(0, geometry.size.width - $0.minX + 8) : 0 } ?? 0
+        VStack(spacing: 10) {
+          topBar(now)
+          HStack(alignment: .top, spacing: 10) {
+            portfolio
+              .frame(width: geometry.size.width * 0.42)
+            panel
+          }
+          .frame(maxHeight: .infinity)
+          ticker
+            .padding(.trailing, tickerInset)
         }
-        .frame(maxHeight: .infinity)
-        ticker
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
       }
-      .padding(.horizontal, 18)
-      .padding(.vertical, 12)
+      .ignoresSafeArea()
     }
     .foregroundStyle(.white)
     .background {
       LinearGradient(colors: [Brand.nightTop, Brand.nightMiddle, Brand.nightBottom], startPoint: .top, endPoint: .bottom)
         .ignoresSafeArea()
     }
+    .modifier(CameraReader(camera: $camera))
     .environment(\.colorScheme, .dark)
     .statusBarHidden()
     .persistentSystemOverlays(.hidden)
     .sensoryFeedback(.selection, trigger: page)
+    .sensoryFeedback(.selection, trigger: focus)
     .onAppear { UIApplication.shared.isIdleTimerDisabled = true }
     .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
     .task {
@@ -82,16 +97,17 @@ struct DeskModeView: View {
       // Fresh prices every minute while it stands on the desk.
       while !Task.isCancelled {
         await MarketMonitor.refresh(context: modelContext, quotes: quotes, flock: flock)
+        await quotes.refresh(symbols: Self.indexes.map(\.symbol))
         try? await Task.sleep(for: .seconds(60))
       }
     }
     .task {
       guard frozenDate == nil else { return }
-      // The panel tours its pages by itself until someone taps one.
+      // The panel tours its pages by itself until someone touches it.
       while !Task.isCancelled {
-        try? await Task.sleep(for: .seconds(12))
-        guard !isTouched, let index = pages.firstIndex(of: page) else { continue }
-        withAnimation(.smooth) { page = pages[(index + 1) % pages.count] }
+        try? await Task.sleep(for: .seconds(15))
+        guard !isTouched, focus == nil, let index = pages.firstIndex(of: page) else { continue }
+        withAnimation(.easeInOut(duration: 0.35)) { page = pages[(index + 1) % pages.count] }
       }
     }
   }
@@ -100,44 +116,41 @@ struct DeskModeView: View {
 
   private func topBar(_ now: Date) -> some View {
     let isOpen = MarketClock.isOpen(at: now)
-    let bell = MarketClock.nextChange(after: now)
-    let countdown = countdownText(to: bell, from: now, isLive: frozenDate == nil)
-    let market = quotes[Benchmark.symbol]
-    return HStack(spacing: 10) {
+    let countdown = countdownText(to: MarketClock.nextChange(after: now), from: now, isLive: frozenDate == nil)
+    return HStack(spacing: 8) {
       Text(now, format: .dateTime.hour().minute())
         .font(.system(.title2, design: .rounded).weight(.bold).monospacedDigit())
-      Text(now, format: .dateTime.weekday(.abbreviated).month(.abbreviated).day())
-        .font(.subheadline.weight(.semibold))
-        .foregroundStyle(.white.opacity(0.6))
-      Spacer(minLength: 6)
-      HStack(spacing: 6) {
+        .fitsNumber(0.7)
+      HStack(spacing: 5) {
         Circle().fill(isOpen ? Brand.buy : .white.opacity(0.4)).frame(width: 7, height: 7)
         Text(isOpen ? "Closes in \(countdown)" : "Opens in \(countdown)")
-          .lineLimit(1)
+          .fitsNumber(0.7)
       }
       .font(.caption.weight(.semibold))
-      .padding(.horizontal, 10)
-      .padding(.vertical, 6)
+      .padding(.horizontal, 9)
+      .padding(.vertical, 5)
       .background(.white.opacity(0.08), in: .capsule)
-      if let market, abs(market.change) >= 0.0005 {
-        HStack(spacing: 5) {
-          Text("S&P 500")
-            .foregroundStyle(.white.opacity(0.7))
-          Text(changeText(market.change))
-            .foregroundStyle(market.change >= 0 ? Brand.buy : Brand.sell)
+      Spacer(minLength: 4)
+      ForEach(Self.indexes, id: \.symbol) { index in
+        if let quote = quotes[index.symbol] {
+          HStack(spacing: 4) {
+            Text(index.name).foregroundStyle(.white.opacity(0.7))
+            Text(changeText(quote.change)).foregroundStyle(quote.change >= 0 ? Brand.buy : Brand.sell)
+          }
+          .font(.caption.weight(.bold).monospacedDigit())
+          .fitsNumber(0.7)
+          .padding(.horizontal, 9)
+          .padding(.vertical, 5)
+          .background(.white.opacity(0.08), in: .capsule)
         }
-        .font(.caption.weight(.bold).monospacedDigit())
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background(.white.opacity(0.08), in: .capsule)
       }
       LivelyOwl(mood: isOpen ? .calm : .sleeping)
-        .frame(width: 30, height: 35)
+        .frame(width: 26, height: 30)
       Button("Close Desk Mode", systemImage: "xmark") { dismiss() }
         .labelStyle(.iconOnly)
         .font(.caption.weight(.bold))
         .foregroundStyle(.white.opacity(0.7))
-        .frame(width: 30, height: 30)
+        .frame(width: 28, height: 28)
         .background(.white.opacity(0.1), in: .circle)
     }
   }
@@ -149,49 +162,47 @@ struct DeskModeView: View {
     let isUp = summary.dayChangeAmount >= 0
     let day = summary.history(period: .preset(.day))
     let history = day.values.count > 2 ? day : summary.history(period: .preset(.month))
-    return VStack(alignment: .leading, spacing: 4) {
-      Text("Portfolio")
+    let selected = selectedIndex.flatMap { history.values.indices.contains($0) ? $0 : nil }
+    return VStack(alignment: .leading, spacing: 3) {
+      Text(selected.flatMap { history.dates.indices.contains($0) ? history.dates[$0].formatted(date: .abbreviated, time: .shortened) : nil } ?? String(localized: "Portfolio"))
         .font(.caption.weight(.bold))
-        .foregroundStyle(.white.opacity(0.6))
-      Text(quotes.formatBase(summary.totalValue))
-        .font(.system(size: 34, weight: .bold, design: .rounded).monospacedDigit())
-        .lineLimit(1)
-        .minimumScaleFactor(0.5)
+        .foregroundStyle(selected == nil ? .white.opacity(0.6) : Brand.mint)
+      Text(quotes.formatBase(selected.map { history.values[$0] } ?? summary.totalValue))
+        .font(.system(size: 32, weight: .bold, design: .rounded).monospacedDigit())
+        .fitsNumber()
         .contentTransition(.numericText())
-      Label("\(changeText(summary.dayChange)) · \(isUp ? "+" : "")\(quotes.formatBase(summary.dayChangeAmount)) today",
-            systemImage: isUp ? "arrow.up.right" : "arrow.down.right")
+      Text("\(changeText(summary.dayChange)) · \(isUp ? "+" : "")\(quotes.formatBase(summary.dayChangeAmount)) today")
         .font(.subheadline.weight(.semibold).monospacedDigit())
         .foregroundStyle(isUp ? Brand.buy : Brand.sell)
-        .lineLimit(1)
-        .minimumScaleFactor(0.5)
+        .fitsNumber()
       InteractiveChart(values: history.values, dates: history.dates,
                        lineColor: (history.values.last ?? 0) >= (history.values.first ?? 0) ? Brand.buy : Brand.sell,
-                       gridColor: .white.opacity(0.08), owlSize: 30, selectedIndex: $selectedIndex)
+                       gridColor: .white.opacity(0.08), owlSize: 28, selectedIndex: $selectedIndex)
         .frame(maxHeight: .infinity)
         .padding(.top, 4)
     }
-    .padding(14)
+    .padding(12)
     .frame(maxHeight: .infinity, alignment: .top)
-    .background(.white.opacity(0.06), in: .rect(cornerRadius: 20, style: .continuous))
+    .background(.white.opacity(0.06), in: .rect(cornerRadius: 18, style: .continuous))
   }
 
   // MARK: Panel
 
   private var panel: some View {
-    VStack(alignment: .leading, spacing: 10) {
-      // Plain buttons rather than a segmented control, so the page tabs read the same in every render.
+    VStack(alignment: .leading, spacing: 8) {
       HStack(spacing: 4) {
         ForEach(pages) { option in
           Button {
             isTouched = true
-            withAnimation(.smooth) { page = option }
+            focus = nil
+            withAnimation(.easeInOut(duration: 0.2)) { page = option }
           } label: {
             Text(option.title)
               .font(.caption.weight(.bold))
-              .foregroundStyle(page == option ? Brand.owlInk : .white.opacity(0.75))
+              .foregroundStyle(page == option && focus == nil ? Brand.owlInk : .white.opacity(0.75))
               .frame(maxWidth: .infinity)
               .padding(.vertical, 6)
-              .background(page == option ? AnyShapeStyle(Brand.mint) : AnyShapeStyle(.clear), in: .capsule)
+              .background(page == option && focus == nil ? AnyShapeStyle(Brand.mint) : AnyShapeStyle(.clear), in: .capsule)
               .contentShape(.capsule)
           }
           .buttonStyle(.plain)
@@ -200,40 +211,59 @@ struct DeskModeView: View {
       }
       .padding(3)
       .background(.white.opacity(0.08), in: .capsule)
-      Group {
-        switch page {
-        case .movers: movers
-        case .plans: plansPage
-        case .flock: flockPage
+
+      // Pages swap in place with a quick crossfade, never sliding across the screen.
+      ZStack {
+        if let focus, let quote = quotes[focus] {
+          stockDetail(symbol: focus, quote: quote)
+        } else {
+          switch page {
+          case .heatmap: heatmap
+          case .plans: plansPage
+          case .flock: flockPage
+          }
         }
       }
-      .frame(maxHeight: .infinity, alignment: .top)
-      .transition(.opacity.combined(with: .move(edge: .trailing)))
-      .id(page)
+      .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+      .transition(.opacity)
+      .animation(.easeInOut(duration: 0.2), value: page)
+      .animation(.easeInOut(duration: 0.2), value: focus)
     }
-    .padding(12)
+    .padding(10)
     .frame(maxHeight: .infinity, alignment: .top)
-    .background(.white.opacity(0.06), in: .rect(cornerRadius: 20, style: .continuous))
+    .background(.white.opacity(0.06), in: .rect(cornerRadius: 18, style: .continuous))
   }
 
-  private var movers: some View {
-    let positions = summary.positions.sorted { abs($0.quote.change) > abs($1.quote.change) }.prefix(4)
-    return VStack(spacing: 6) {
-      ForEach(Array(positions), id: \.holding.id) { position in
-        HStack(spacing: 8) {
-          WidgetBadge(symbol: position.holding.symbol, size: 26)
-          VStack(alignment: .leading, spacing: 0) {
-            Text(position.holding.symbol)
-              .font(.subheadline.bold())
-            Text(position.quote.formatted(position.quote.price))
-              .font(.caption.monospacedDigit())
-              .foregroundStyle(.white.opacity(0.6))
+  /// Every stock you own as a tile, as big as its share of the portfolio and as green or red as today's move.
+  private var heatmap: some View {
+    let positions = summary.positions.sorted { $0.weight > $1.weight }
+    let rows = Self.rows(of: positions.map { HeatTile(symbol: $0.holding.symbol, weight: $0.weight, change: $0.quote.change) })
+    return VStack(spacing: 4) {
+      ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+        GeometryReader { geometry in
+          let total = max(row.reduce(0) { $0 + $1.weight }, 0.0001)
+          HStack(spacing: 4) {
+            ForEach(row) { item in
+              Button {
+                isTouched = true
+                focus = item.symbol
+              } label: {
+                VStack(spacing: 1) {
+                  Text(item.symbol)
+                    .font(.subheadline.weight(.heavy))
+                  Text(changeText(item.change))
+                    .font(.caption.weight(.bold).monospacedDigit())
+                }
+                .fitsNumber(0.6)
+                .padding(4)
+                .frame(width: max(0, (geometry.size.width - CGFloat(row.count - 1) * 4) * item.weight / total), height: geometry.size.height)
+                .background(Self.heat(item.change), in: .rect(cornerRadius: 8, style: .continuous))
+              }
+              .buttonStyle(.plain)
+              .accessibilityLabel("\(item.symbol), \(changeText(item.change)) today")
+            }
           }
-          Spacer(minLength: 4)
-          WidgetChangePill(change: position.quote.change)
         }
-        .frame(maxHeight: .infinity)
-        .accessibilityElement(children: .combine)
       }
     }
   }
@@ -245,26 +275,32 @@ struct DeskModeView: View {
         .font(.subheadline)
         .foregroundStyle(.white.opacity(0.7))
     } else {
-      VStack(spacing: 8) {
+      VStack(spacing: 6) {
         ForEach(plans.prefix(3)) { status in
-          VStack(alignment: .leading, spacing: 5) {
-            HStack(spacing: 8) {
-              WidgetBadge(symbol: status.target.symbol, size: 24)
-              VStack(alignment: .leading, spacing: 0) {
-                Text(status.target.symbol)
-                  .font(.caption.bold())
-                Text(compactSummary(status))
-                  .font(.caption2.weight(.semibold))
-                  .foregroundStyle(status.target.rule.kind.side.brandColor)
-                  .lineLimit(1)
-                  .minimumScaleFactor(0.5)
+          Button {
+            isTouched = true
+            focus = status.target.symbol
+          } label: {
+            VStack(alignment: .leading, spacing: 5) {
+              HStack(spacing: 8) {
+                WidgetBadge(symbol: status.target.symbol, size: 24)
+                VStack(alignment: .leading, spacing: 0) {
+                  Text(status.target.symbol)
+                    .font(.caption.bold())
+                  Text(compactSummary(status))
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(status.target.rule.kind.side.brandColor)
+                    .fitsNumber(0.6)
+                }
+                Spacer(minLength: 4)
+                DistanceLabel(status: status)
               }
-              Spacer(minLength: 4)
-              DistanceLabel(status: status)
+              ZoneRuler(status: status)
             }
-            ZoneRuler(status: status)
+            .frame(maxHeight: .infinity)
+            .contentShape(.rect)
           }
-          .frame(maxHeight: .infinity)
+          .buttonStyle(.plain)
           .accessibilityElement(children: .combine)
         }
       }
@@ -273,44 +309,99 @@ struct DeskModeView: View {
 
   private var flockPage: some View {
     let overview = flock.overview
-    return VStack(alignment: .leading, spacing: 8) {
-      HStack {
-        Label("\(overview.investors.formatted()) anonymous investors", systemImage: "person.3.fill")
-          .font(.caption.weight(.semibold))
-          .foregroundStyle(.white.opacity(0.75))
-          .lineLimit(1)
-          .minimumScaleFactor(0.5)
-        Spacer(minLength: 4)
-        Text(overview.mood.bullShare, format: .percent.precision(.fractionLength(0)))
-          .font(.system(.subheadline, design: .rounded).weight(.bold))
-          .foregroundStyle(overview.mood.bullShare >= 0.5 ? Brand.buy : Brand.sell)
-      }
-      GeometryReader { geometry in
-        HStack(spacing: 3) {
-          Capsule().fill(Brand.buy).frame(width: max(6, (geometry.size.width - 3) * overview.mood.bullShare))
-          Capsule().fill(Brand.sell)
+    return VStack(alignment: .leading, spacing: 7) {
+      HStack(spacing: 10) {
+        if let sentiment = flock.sentiment {
+          SentimentGauge(score: sentiment.score, color: sentiment.score >= 60 ? Brand.buy : (sentiment.score < 40 ? Brand.sell : Brand.amber))
+            .frame(width: 70, height: 40)
+          VStack(alignment: .leading, spacing: 0) {
+            Text("\(Int(sentiment.score.rounded())) · \(sentiment.label)")
+              .font(.subheadline.weight(.bold))
+            Text("Flock Fear & Greed")
+              .font(.caption2)
+              .foregroundStyle(.white.opacity(0.6))
+          }
+          .fitsNumber(0.7)
+        } else {
+          Label("\(overview.investors.formatted()) anonymous investors", systemImage: "person.3.fill")
+            .font(.caption.weight(.semibold))
+            .fitsNumber(0.7)
         }
       }
-      .frame(height: 7)
       Text("In the crowd's buy zone")
         .font(.caption.weight(.bold))
         .foregroundStyle(.white.opacity(0.6))
-        .padding(.top, 2)
       ForEach(flock.radar.prefix(3)) { item in
-        HStack(spacing: 8) {
-          WidgetBadge(symbol: item.symbol, size: 22)
-          Text(item.symbol)
-            .font(.caption.bold())
-          Spacer(minLength: 4)
-          Text("\(item.watchers) waiting")
-            .font(.caption2)
-            .foregroundStyle(.white.opacity(0.6))
-          Text("\(item.conviction)%")
-            .font(.caption.weight(.bold).monospacedDigit())
-            .foregroundStyle(Brand.buy)
+        Button {
+          isTouched = true
+          focus = item.symbol
+        } label: {
+          HStack(spacing: 8) {
+            WidgetBadge(symbol: item.symbol, size: 22)
+            Text(item.symbol)
+              .font(.caption.bold())
+            Spacer(minLength: 4)
+            Text("\(item.watchers) waiting")
+              .font(.caption2)
+              .foregroundStyle(.white.opacity(0.6))
+            Text("\(item.conviction)%")
+              .font(.caption.weight(.bold).monospacedDigit())
+              .foregroundStyle(Brand.buy)
+          }
+          .frame(maxHeight: .infinity)
+          .contentShape(.rect)
         }
-        .frame(maxHeight: .infinity)
+        .buttonStyle(.plain)
       }
+    }
+    .task { await flock.loadSentiment() }
+  }
+
+  /// One stock up close: price, today's move, its last month with your zones, your plan, and the crowd.
+  private func stockDetail(symbol: String, quote: Quote) -> some View {
+    let plan = plans.first { $0.target.symbol == symbol }
+    let zones = summary.activeAlerts.filter { $0.symbol == symbol && ($0.kind.isZone || $0.kind == .priceBelow || $0.kind == .priceAbove) }.map(\.rule)
+    let report = flock.reports[symbol]
+    return VStack(alignment: .leading, spacing: 6) {
+      HStack(spacing: 8) {
+        WidgetBadge(symbol: symbol, size: 26)
+        VStack(alignment: .leading, spacing: 0) {
+          Text(symbol).font(.subheadline.bold())
+          Text(quote.formatted(quote.price))
+            .font(.caption.monospacedDigit())
+            .foregroundStyle(.white.opacity(0.7))
+            .fitsNumber()
+        }
+        Spacer(minLength: 4)
+        WidgetChangePill(change: quote.change)
+        Button("Back", systemImage: "xmark") { focus = nil }
+          .labelStyle(.iconOnly)
+          .font(.caption2.weight(.bold))
+          .frame(width: 24, height: 24)
+          .background(.white.opacity(0.12), in: .circle)
+          .buttonStyle(.plain)
+      }
+      WidgetSparkline(values: Array(quote.closes.suffix(30)), zones: zones)
+        .frame(maxHeight: .infinity)
+      if let plan {
+        HStack {
+          Text(compactSummary(plan))
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(plan.target.rule.kind.side.brandColor)
+            .fitsNumber(0.6)
+          Spacer(minLength: 4)
+          DistanceLabel(status: plan)
+        }
+      }
+      if let report, report.hasEnoughData {
+        Label("Flock: \(report.convictionLabel) · \(report.watcherCount) watching", systemImage: "person.3.fill")
+          .font(.caption2.weight(.semibold))
+          .foregroundStyle(.white.opacity(0.7))
+          .fitsNumber(0.6)
+      }
+    }
+    .task {
+      if flock.isAvailable { await flock.load(symbol: symbol, currentPrice: quote.price) }
     }
   }
 
@@ -349,5 +440,49 @@ struct DeskModeView: View {
     .frame(height: 18)
     .accessibilityElement(children: .ignore)
     .accessibilityLabel("Your stocks today")
+  }
+
+  // MARK: Helpers
+
+  private struct HeatTile: Identifiable {
+    var symbol: String
+    var weight: Double
+    var change: Double
+    var id: String { symbol }
+  }
+
+  /// Splits weighted tiles into one to three rows of similar total weight, biggest first.
+  private static func rows(of items: [HeatTile]) -> [[HeatTile]] {
+    guard !items.isEmpty else { return [] }
+    let count = items.count <= 3 ? 1 : (items.count <= 7 ? 2 : 3)
+    var rows = Array(repeating: [HeatTile](), count: count)
+    var totals = Array(repeating: 0.0, count: count)
+    for item in items {
+      let index = totals.indices.min { totals[$0] < totals[$1] } ?? 0
+      rows[index].append(item)
+      totals[index] += item.weight
+    }
+    return rows.filter { !$0.isEmpty }
+  }
+
+  /// Green for up and red for down, stronger with the size of the move, up to 3%.
+  private static func heat(_ change: Double) -> Color {
+    let strength = min(abs(change) / 0.03, 1)
+    return (change >= 0 ? Brand.buy : Brand.sell).opacity(0.22 + 0.6 * strength)
+  }
+}
+
+/// Reads where the outer camera sits on iPhone Duo, so only the content beside it steps aside.
+private struct CameraReader: ViewModifier {
+  @Binding var camera: CGRect?
+
+  func body(content: Content) -> some View {
+    if #available(iOS 27.1, *) {
+      content.onGeometryChange(for: CGRect?.self) { proxy in
+        proxy.reservedRegions(kind: .occlusion).first?.frame
+      } action: { camera = $0 }
+    } else {
+      content
+    }
   }
 }
