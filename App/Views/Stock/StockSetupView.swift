@@ -30,9 +30,11 @@ struct StockSetupView: View {
                   Text(quote.formatted(quote.price))
                     .monospacedDigit()
                     .lineLimit(1)
+                    .minimumScaleFactor(0.5)
                     .fixedSize()
                   ChangeBadge(change: quote.change)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.5)
                 }
                 .font(.subheadline)
               } else {

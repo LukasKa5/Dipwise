@@ -290,6 +290,7 @@ private struct ImportRow: View {
           }
         }
         .lineLimit(1)
+        .minimumScaleFactor(0.5)
         .fixedSize()
       }
       .contentShape(.rect)

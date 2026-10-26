@@ -14,18 +14,9 @@ struct HeroCard: View {
   var earliest: Date
   var openDetails: (() -> Void)?
   var mood: OwlMood = .calm
+  var status: DippyStatus?
 
   @State private var selectedIndex: Int?
-
-  private var moodSymbol: String {
-    switch mood {
-    case .sleeping: "moon.zzz.fill"
-    case _ where !MarketClock.isOpen(): "binoculars.fill"
-    case .celebrating: "sun.max.fill"
-    case .reassuring: "heart.fill"
-    case .calm: "binoculars.fill"
-    }
-  }
 
   private var isIntraday: Bool {
     guard let first = dates.first, let last = dates.last else { return false }
@@ -53,9 +44,22 @@ struct HeroCard: View {
         .padding(.vertical, 20)
       }
 
-      Label(mood.message(change: change), systemImage: moodSymbol)
-        .font(.footnote.weight(.semibold))
-        .contentTransition(.opacity)
+      if let status {
+        Button {
+          if status.canWake { OwlWake.shared.wake() }
+        } label: {
+          Label(status.text, systemImage: status.systemImage)
+            .font(.footnote.weight(.semibold))
+            .multilineTextAlignment(.leading)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentTransition(.opacity)
+        }
+        .buttonStyle(.plain)
+        .disabled(!status.canWake)
+        .accessibilityHint(status.canWake ? "Wakes Dippy" : "")
+        .animation(.smooth, value: status)
+      }
 
       PeriodPicker(period: $period, presets: [.day, .week, .month, .threeMonths, .year], earliest: earliest)
 
@@ -85,7 +89,7 @@ struct HeroCard: View {
             Text(format(selection.value))
               .font(.system(size: 40, weight: .bold, design: .rounded))
               .monospacedDigit()
-              .minimumScaleFactor(0.6)
+              .minimumScaleFactor(0.5)
               .lineLimit(1)
             if let last = values.last, selection.value > 0 {
               ChangeBadge(change: last / selection.value - 1, caption: "since then", positiveColor: Palette.gain, negativeColor: Palette.loss)
@@ -96,7 +100,7 @@ struct HeroCard: View {
             Text(value)
               .font(.system(size: 40, weight: .bold, design: .rounded))
               .monospacedDigit()
-              .minimumScaleFactor(0.6)
+              .minimumScaleFactor(0.5)
               .lineLimit(1)
               .contentTransition(.numericText())
             if let change {
@@ -142,7 +146,7 @@ struct HeroStatTile: View {
       Text(stat.value)
         .font(.title3.bold())
         .lineLimit(1)
-        .minimumScaleFactor(0.6)
+        .minimumScaleFactor(0.5)
         .contentTransition(.numericText())
       Text(LocalizedStringKey(stat.label))
         .font(.caption.weight(.semibold))

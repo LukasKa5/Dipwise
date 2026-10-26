@@ -43,9 +43,6 @@ struct HomeView: View {
               .transition(.move(edge: .top).combined(with: .opacity))
             }
             hero
-            if let profile = InvestorProfile.make(summary: summary, holdings: holdings, quotes: quotes.quotes, flock: flock.portfolios) {
-              InvestorProfileCard(profile: profile)
-            }
             nearTargets
             dipRadar
             flockPulse
@@ -137,7 +134,8 @@ struct HomeView: View {
         period: $period,
         earliest: summary.earliestDate,
         openDetails: { router.showsPortfolio = true },
-        mood: OwlMood.current(dayChange: summary.dayChange, isAwake: OwlWake.shared.isAwake)
+        mood: OwlMood.current(dayChange: summary.dayChange, isAwake: OwlWake.shared.isAwake),
+        status: status(for: summary)
       )
     } else {
       FirstPositionCard(
@@ -153,6 +151,18 @@ struct HomeView: View {
         showsImport = true
       }
     }
+  }
+
+  /// What Dippy says under the chart: the market's moment and the user's closest plan or biggest mover.
+  private func status(for summary: PortfolioSummary) -> DippyStatus {
+    let leader = summary.positions.max { abs($0.quote.change) < abs($1.quote.change) }
+      .map { DippyStatus.Mover(symbol: $0.holding.symbol, change: $0.quote.change) }
+    let closest = summary.nearestAlerts.first.flatMap { alert in
+      quotes[alert.symbol].flatMap { quote in
+        alert.distance(for: quote).map { DippyStatus.Plan(symbol: alert.symbol, distance: $0, isSell: alert.kind.side == .sell) }
+      }
+    }
+    return DippyStatus.make(dayChange: summary.dayChange, leader: leader, closest: closest, isAwake: OwlWake.shared.isAwake)
   }
 
   @ViewBuilder
@@ -314,7 +324,7 @@ struct HoldingRow: View {
         VStack(alignment: .trailing, spacing: 2) {
           Text(holding.isOwned ? quote.formatted(holding.value(at: quote.price)) : quote.formatted(quote.price))
             .lineLimit(1)
-            .minimumScaleFactor(0.7)
+            .minimumScaleFactor(0.5)
             .font(.headline)
             .monospacedDigit()
           ChangeBadge(change: quote.change)

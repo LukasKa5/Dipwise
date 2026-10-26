@@ -465,7 +465,7 @@ private struct ProFeature {
         .font(.subheadline.weight(isPro ? .bold : .regular))
         .foregroundStyle(isPro ? AnyShapeStyle(Brand.buy) : AnyShapeStyle(.white.opacity(0.5)))
         .lineLimit(1)
-        .minimumScaleFactor(0.7)
+        .minimumScaleFactor(0.5)
     case .included:
       Image(systemName: "checkmark.circle.fill")
         .font(.title3)

@@ -120,6 +120,7 @@ struct PortfolioWidgetView: View {
               .font(.caption2.weight(.semibold).monospacedDigit())
               .foregroundStyle(.white.opacity(0.6))
               .lineLimit(1)
+              .minimumScaleFactor(0.5)
           }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -160,6 +161,7 @@ struct PortfolioWidgetView: View {
                 .font(.caption.monospacedDigit())
                 .foregroundStyle(.white.opacity(0.7))
                 .lineLimit(1)
+                .minimumScaleFactor(0.5)
               WidgetChangePill(change: quote.change)
             }
           }
@@ -177,7 +179,7 @@ struct PortfolioWidgetView: View {
       Text(portfolio.formatted(portfolio.value))
         .font(.headline.monospacedDigit())
         .lineLimit(1)
-        .minimumScaleFactor(0.6)
+        .minimumScaleFactor(0.5)
       Text("\(changeText(portfolio.dayChange)) today")
         .font(.caption.monospacedDigit())
     }
@@ -214,7 +216,7 @@ struct PortfolioWidgetView: View {
         .font(.system(size: 9, weight: .heavy))
       Text("\(changeText(portfolio.dayChange)) · \(isUp ? "+" : "")\(portfolio.formatted(portfolio.dayChangeAmount)) today")
         .lineLimit(1)
-        .minimumScaleFactor(0.6)
+        .minimumScaleFactor(0.5)
     }
     .font(.caption.weight(.semibold).monospacedDigit())
     .foregroundStyle(isUp ? Brand.buy : Brand.sell)
@@ -238,7 +240,7 @@ struct ClosestZoneRow: View {
             .font(.caption2.weight(.semibold))
             .foregroundStyle(color)
             .lineLimit(1)
-            .minimumScaleFactor(0.7)
+            .minimumScaleFactor(0.5)
         }
         Spacer(minLength: 4)
         DistanceLabel(status: status)
@@ -260,6 +262,7 @@ struct DistanceLabel: View {
         .font(.system(.subheadline, design: .rounded).weight(.bold).monospacedDigit())
         .foregroundStyle(isIn || (status.distance ?? 1) < 0.035 ? color : .white)
         .lineLimit(1)
+        .minimumScaleFactor(0.5)
       Text(isIn ? "Now" : "to go")
         .font(.caption2.weight(.medium))
         .foregroundStyle(.white.opacity(0.55))

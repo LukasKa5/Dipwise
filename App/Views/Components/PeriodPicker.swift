@@ -29,7 +29,7 @@ struct PeriodPicker: View {
           .labelStyle(period.isCustom ? AnyLabelStyle(.titleOnly) : AnyLabelStyle(.iconOnly))
           .font(.subheadline.weight(.semibold))
           .lineLimit(1)
-          .minimumScaleFactor(0.6)
+          .minimumScaleFactor(0.5)
           .frame(maxWidth: period.isCustom ? 140 : .infinity, minHeight: 32)
           .padding(.horizontal, period.isCustom ? 8 : 0)
           .background(period.isCustom ? AnyShapeStyle(.white.opacity(0.18)) : AnyShapeStyle(.clear), in: .capsule)

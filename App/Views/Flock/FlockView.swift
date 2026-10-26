@@ -91,7 +91,7 @@ struct FlockView: View {
           Text("\(overview.investors.formatted()) investors")
             .font(.system(.title, design: .rounded).bold())
             .lineLimit(1)
-            .minimumScaleFactor(0.7)
+            .minimumScaleFactor(0.5)
           Text("set \(overview.alertsThisWeek.formatted()) alerts this week")
             .font(.headline)
             .foregroundStyle(Brand.mint)

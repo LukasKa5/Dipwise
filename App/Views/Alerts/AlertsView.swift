@@ -216,7 +216,7 @@ private struct StockAlertsCard: View {
               VStack(alignment: .trailing, spacing: 2) {
                 Text(quote.formatted(quote.price))
                   .lineLimit(1)
-                  .minimumScaleFactor(0.7)
+                  .minimumScaleFactor(0.5)
                   .font(.title3.bold().monospacedDigit())
                 ChangeBadge(change: quote.change)
               }
@@ -226,10 +226,9 @@ private struct StockAlertsCard: View {
               .foregroundStyle(.tertiary)
           }
           if let quote {
+            // Straight on the card, one color throughout.
             MiniPlanChart(quote: quote, buyZone: holding.buyZone, sellZone: holding.sellZone)
               .frame(height: 76)
-              .padding(10)
-              .background(Palette.canvas.opacity(0.7), in: .rect(cornerRadius: 16))
           }
         }
         .padding(16)
@@ -289,7 +288,7 @@ private struct MiniPlanChart: View {
     Chart {
       ForEach(zones) { zone in
         RectangleMark(yStart: .value("Low", zone.targetPrice), yEnd: .value("High", max(zone.targetPrice * 1.003, zone.upperPrice)))
-          .foregroundStyle(zone.kind.side.color.opacity(0.28))
+          .foregroundStyle(zone.kind.side.color.opacity(0.18))
       }
       ForEach(Array(values.enumerated()), id: \.offset) { index, value in
         LineMark(x: .value("Day", index), y: .value("Price", value))

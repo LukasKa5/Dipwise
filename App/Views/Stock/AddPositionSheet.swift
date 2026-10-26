@@ -34,6 +34,7 @@ struct AddPositionSheet: View {
                     Text(quote.formatted(quote.price))
                       .font(.subheadline.weight(.semibold).monospacedDigit())
                       .lineLimit(1)
+                      .minimumScaleFactor(0.5)
                       .fixedSize()
                   }
                 }

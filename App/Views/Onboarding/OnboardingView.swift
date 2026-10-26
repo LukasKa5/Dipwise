@@ -336,7 +336,7 @@ private struct PickStep: View {
                 Text(symbol)
                   .font(.headline)
                   .lineLimit(1)
-                  .minimumScaleFactor(0.7)
+                  .minimumScaleFactor(0.5)
                 if let quote {
                   Text(quote.change, format: .percent.precision(.fractionLength(1)).sign(strategy: .always()))
                     .font(.caption.weight(.semibold).monospacedDigit())
@@ -387,7 +387,7 @@ private struct ScrubStep: View {
             .foregroundStyle(Brand.buy)
           Text(quote?.formatted(series.values[selectedIndex]) ?? "")
             .lineLimit(1)
-            .minimumScaleFactor(0.7)
+            .minimumScaleFactor(0.5)
             .font(.system(size: 36, weight: .bold, design: .rounded).monospacedDigit())
         } else {
           Text("\(model.focusSymbol ?? "") · slide your finger along the chart")
@@ -395,7 +395,7 @@ private struct ScrubStep: View {
             .foregroundStyle(.white.opacity(0.7))
           Text(quote.map { $0.formatted($0.price) } ?? "")
             .lineLimit(1)
-            .minimumScaleFactor(0.7)
+            .minimumScaleFactor(0.5)
             .font(.system(size: 36, weight: .bold, design: .rounded).monospacedDigit())
         }
       }

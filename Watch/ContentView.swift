@@ -211,7 +211,7 @@ private struct StockDetail: View {
           Text("\(compactPrice(quote.low52, currency: quote.currency)) – \(compactPrice(quote.high52, currency: quote.currency))")
             .font(.system(size: 13, weight: .semibold).monospacedDigit())
             .lineLimit(1)
-            .minimumScaleFactor(0.6)
+            .minimumScaleFactor(0.5)
         }
       }
       .scenePadding(.horizontal)
@@ -232,6 +232,7 @@ private struct StockDetail: View {
         .font(.system(size: 13, weight: .semibold))
         .foregroundStyle(isLatest ? .white.opacity(0.7) : Brand.buy)
         .lineLimit(1)
+        .minimumScaleFactor(0.5)
       Text(quote.formatted(shown))
         .font(.system(size: 26, weight: .bold, design: .rounded))
         .monospacedDigit()
@@ -305,12 +306,12 @@ private struct StockDetail: View {
         .font(.system(size: 16, weight: .bold, design: .rounded).monospacedDigit())
         .foregroundStyle(color)
         .lineLimit(1)
-        .minimumScaleFactor(0.6)
+        .minimumScaleFactor(0.5)
       Text(title)
         .font(.system(size: 12, weight: .semibold))
         .foregroundStyle(.white.opacity(0.7))
         .lineLimit(1)
-        .minimumScaleFactor(0.7)
+        .minimumScaleFactor(0.5)
     }
     .padding(8)
     .frame(maxWidth: .infinity, alignment: .leading)

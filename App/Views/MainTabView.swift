@@ -26,7 +26,7 @@ struct MainTabView: View {
         SettingsView()
       }
     }
-    // A clear, solid edge behind the tab bar, so it always reads as one calm block over busy content.
-    .scrollEdgeEffectStyle(.hard, for: .bottom)
+    // No blurred band behind the tab bar: content runs cleanly under the floating bar.
+    .scrollEdgeEffectHidden(true, for: .bottom)
   }
 }

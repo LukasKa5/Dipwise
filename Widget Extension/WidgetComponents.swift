@@ -51,7 +51,7 @@ struct WidgetTitle: View {
       .font(.caption.weight(.bold))
       .foregroundStyle(.white.opacity(0.65))
       .lineLimit(1)
-      .minimumScaleFactor(0.7)
+      .minimumScaleFactor(0.5)
   }
 }
 

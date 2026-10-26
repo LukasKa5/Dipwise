@@ -107,7 +107,7 @@ struct PlansWidgetView: View {
               Text(status.target.symbol)
                 .font(.subheadline.bold())
                 .lineLimit(1)
-                .minimumScaleFactor(0.6)
+                .minimumScaleFactor(0.5)
               if let quote = status.quote {
                 Text(changeText(quote.change))
                   .font(.caption2.weight(.bold).monospacedDigit())
@@ -126,18 +126,18 @@ struct PlansWidgetView: View {
           .font(.system(size: 32, weight: .bold, design: .rounded).monospacedDigit())
           .foregroundStyle(status.distance == 0 ? color : .white)
           .lineLimit(1)
-          .minimumScaleFactor(0.6)
+          .minimumScaleFactor(0.5)
           .contentTransition(.numericText())
         Text(zoneLabel(status))
           .font(.caption.weight(.semibold))
           .foregroundStyle(color)
           .lineLimit(1)
-          .minimumScaleFactor(0.7)
+          .minimumScaleFactor(0.5)
         Text(compactSummary(status))
           .font(.caption2.weight(.medium))
           .foregroundStyle(.white.opacity(0.6))
           .lineLimit(1)
-          .minimumScaleFactor(0.6)
+          .minimumScaleFactor(0.5)
         Spacer(minLength: 4)
         ZoneRuler(status: status)
         HStack(spacing: 4) {
@@ -146,7 +146,7 @@ struct PlansWidgetView: View {
               .font(.caption2.weight(.semibold).monospacedDigit())
               .foregroundStyle(.white.opacity(0.7))
               .lineLimit(1)
-              .minimumScaleFactor(0.6)
+              .minimumScaleFactor(0.5)
           }
           Spacer(minLength: 2)
           if entry.statuses.count > 1 {
@@ -220,7 +220,7 @@ struct PlansWidgetView: View {
           .font(.caption2.weight(.semibold))
           .foregroundStyle(status.target.rule.kind.side.brandColor)
           .lineLimit(1)
-          .minimumScaleFactor(0.7)
+          .minimumScaleFactor(0.5)
       }
       Spacer(minLength: 4)
       DistanceLabel(status: status)
@@ -245,13 +245,14 @@ struct PlansWidgetView: View {
                 .font(.caption.monospacedDigit())
                 .foregroundStyle(.white.opacity(0.65))
                 .lineLimit(1)
+                .minimumScaleFactor(0.5)
             }
           }
           Text(compactSummary(status))
             .font(.caption.weight(.semibold))
             .foregroundStyle(status.target.rule.kind.side.brandColor)
             .lineLimit(1)
-            .minimumScaleFactor(0.7)
+            .minimumScaleFactor(0.5)
         }
         Spacer(minLength: 4)
         DistanceLabel(status: status)

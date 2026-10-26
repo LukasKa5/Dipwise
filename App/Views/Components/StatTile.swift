@@ -14,11 +14,13 @@ struct StatTile: View {
       Text(value)
         .font(.title3.bold())
         .monospacedDigit()
-        .lineLimit(1)
-        .minimumScaleFactor(0.7)
+        .fitsNumber()
+      // Two lines reserved for every label, so every tile in a grid is exactly the same size.
       Text(title)
         .font(.caption.weight(.medium))
         .foregroundStyle(.secondary)
+        .lineLimit(2, reservesSpace: true)
+        .minimumScaleFactor(0.8)
     }
     .frame(maxWidth: .infinity, alignment: .leading)
     .padding(16)

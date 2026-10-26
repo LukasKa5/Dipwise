@@ -210,7 +210,7 @@ private struct PortfolioComplicationView: View {
           Text(portfolio.formatted(portfolio.value))
             .font(.headline)
             .monospacedDigit()
-            .minimumScaleFactor(0.6)
+            .minimumScaleFactor(0.5)
           if portfolio.history.count > 1 {
             Chart(Array(portfolio.history.enumerated()), id: \.offset) { index, value in
               LineMark(x: .value("Day", index), y: .value("Value", value))

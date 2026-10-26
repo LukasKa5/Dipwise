@@ -83,6 +83,7 @@ struct FoldedAlertList<Row: View>: View {
             .font(.caption.weight(.semibold).monospacedDigit())
             .foregroundStyle(nearest == 0 ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
             .lineLimit(1)
+            .minimumScaleFactor(0.5)
             .fixedSize()
         }
         Image(systemName: "chevron.down")

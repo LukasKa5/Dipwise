@@ -114,7 +114,7 @@ struct DailyBriefView: View {
                 Text(holding.symbol).font(.headline)
                 Text(quote.formatted(quote.price))
                   .lineLimit(1)
-                  .minimumScaleFactor(0.7)
+                  .minimumScaleFactor(0.5)
                   .font(.subheadline.monospacedDigit())
                   .foregroundStyle(.secondary)
               }

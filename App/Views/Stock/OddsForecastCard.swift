@@ -49,7 +49,7 @@ struct OddsForecastCard: View {
               .font(.caption.weight(.semibold))
               .foregroundStyle(color)
               .lineLimit(1)
-              .minimumScaleFactor(0.7)
+              .minimumScaleFactor(0.5)
           }
           Spacer(minLength: 0)
         }
@@ -136,7 +136,7 @@ private struct OddsFact: View {
       Text(value)
         .font(.system(.subheadline, design: .rounded).weight(.bold).monospacedDigit())
         .lineLimit(1)
-        .minimumScaleFactor(0.7)
+        .minimumScaleFactor(0.5)
     }
     .padding(12)
     .frame(maxWidth: .infinity, alignment: .leading)
@@ -243,7 +243,7 @@ private struct OddsRing: View {
           .rotationEffect(.degrees(-90))
         Text(chance, format: .percent.precision(.fractionLength(0)))
           .font(.system(.subheadline, design: .rounded).weight(.bold).monospacedDigit())
-          .minimumScaleFactor(0.6)
+          .minimumScaleFactor(0.5)
       }
       .frame(width: 52, height: 52)
       VStack(alignment: .leading, spacing: 1) {
@@ -253,7 +253,7 @@ private struct OddsRing: View {
         Text(title)
           .font(.subheadline.weight(.bold))
           .lineLimit(2)
-          .minimumScaleFactor(0.7)
+          .minimumScaleFactor(0.5)
       }
       Spacer(minLength: 0)
     }

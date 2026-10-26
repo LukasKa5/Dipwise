@@ -36,6 +36,32 @@ enum MarketClock {
   }
 }
 
+extension MarketClock {
+  /// Where the US market is in its day, in New York time.
+  enum Phase: Equatable {
+    /// 4:00 to 9:30 on a weekday.
+    case preMarket
+    case open
+    /// 4:00 to 8:00 in the evening on a weekday.
+    case afterHours
+    /// Overnight on a weekday.
+    case overnight
+    case weekend
+  }
+
+  static func phase(at date: Date = .now) -> Phase {
+    if isOpen(at: date) { return .open }
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = TimeZone(identifier: "America/New_York") ?? .current
+    let weekday = calendar.component(.weekday, from: date)
+    guard (2...6).contains(weekday) else { return .weekend }
+    let minutes = calendar.component(.hour, from: date) * 60 + calendar.component(.minute, from: date)
+    if minutes >= 4 * 60 && minutes < 9 * 60 + 30 { return .preMarket }
+    if minutes >= 16 * 60 && minutes < 20 * 60 { return .afterHours }
+    return .overnight
+  }
+}
+
 /// Dippy's mood, from the market and the user's day.
 enum OwlMood: Equatable {
   case sleeping

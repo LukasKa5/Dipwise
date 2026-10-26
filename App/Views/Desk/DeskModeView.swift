@@ -163,7 +163,7 @@ struct DeskModeView: View {
         .font(.subheadline.weight(.semibold).monospacedDigit())
         .foregroundStyle(isUp ? Brand.buy : Brand.sell)
         .lineLimit(1)
-        .minimumScaleFactor(0.7)
+        .minimumScaleFactor(0.5)
       InteractiveChart(values: history.values, dates: history.dates,
                        lineColor: (history.values.last ?? 0) >= (history.values.first ?? 0) ? Brand.buy : Brand.sell,
                        gridColor: .white.opacity(0.08), owlSize: 30, selectedIndex: $selectedIndex)
@@ -257,7 +257,7 @@ struct DeskModeView: View {
                   .font(.caption2.weight(.semibold))
                   .foregroundStyle(status.target.rule.kind.side.brandColor)
                   .lineLimit(1)
-                  .minimumScaleFactor(0.7)
+                  .minimumScaleFactor(0.5)
               }
               Spacer(minLength: 4)
               DistanceLabel(status: status)
@@ -279,7 +279,7 @@ struct DeskModeView: View {
           .font(.caption.weight(.semibold))
           .foregroundStyle(.white.opacity(0.75))
           .lineLimit(1)
-          .minimumScaleFactor(0.7)
+          .minimumScaleFactor(0.5)
         Spacer(minLength: 4)
         Text(overview.mood.bullShare, format: .percent.precision(.fractionLength(0)))
           .font(.system(.subheadline, design: .rounded).weight(.bold))

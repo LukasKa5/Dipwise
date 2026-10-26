@@ -195,7 +195,7 @@ private struct HabitTile: View {
       Text(value)
         .font(.title2.bold().monospacedDigit())
         .lineLimit(1)
-        .minimumScaleFactor(0.6)
+        .minimumScaleFactor(0.5)
       Text(title)
         .font(.subheadline.weight(.semibold))
       Text(caption)

@@ -56,7 +56,7 @@ struct RadarCard: View {
           Text(item.symbol).font(.headline)
           Text(format(item.price))
             .lineLimit(1)
-            .minimumScaleFactor(0.7)
+            .minimumScaleFactor(0.5)
             .font(.subheadline.monospacedDigit())
             .foregroundStyle(.secondary)
         }

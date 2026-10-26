@@ -371,7 +371,7 @@ private struct DividendFigure: View {
       Text(value)
         .font(.headline.monospacedDigit())
         .lineLimit(1)
-        .minimumScaleFactor(0.6)
+        .minimumScaleFactor(0.5)
       Text(title)
         .font(.caption)
         .foregroundStyle(.secondary)

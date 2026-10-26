@@ -138,7 +138,7 @@ private struct SummaryPill: View {
         .foregroundStyle(.secondary)
     }
     .lineLimit(1)
-    .minimumScaleFactor(0.7)
+    .minimumScaleFactor(0.5)
     .frame(maxWidth: .infinity)
     .padding(.vertical, 12)
     .padding(.horizontal, 6)
@@ -169,6 +169,7 @@ private struct WatchlistRow: View {
             .font(.subheadline)
             .foregroundStyle(.secondary)
             .lineLimit(1)
+            .minimumScaleFactor(0.5)
         }
         Spacer(minLength: 4)
         if let quote {
@@ -181,9 +182,11 @@ private struct WatchlistRow: View {
             Text(quote.formatted(quote.price))
               .font(.headline.monospacedDigit())
               .lineLimit(1)
+              .minimumScaleFactor(0.5)
             Text(quote.change, format: .percent.precision(.fractionLength(2)).sign(strategy: .always()))
               .font(.caption.weight(.bold).monospacedDigit())
               .lineLimit(1)
+              .minimumScaleFactor(0.5)
               .foregroundStyle(.white)
               .padding(.horizontal, 8)
               .padding(.vertical, 3)

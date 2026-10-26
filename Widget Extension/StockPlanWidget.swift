@@ -158,7 +158,7 @@ struct StockPlanWidgetView: View {
         Text(compactPrice(quote.price, currency: quote.currency))
           .font(.system(.subheadline, design: .rounded).weight(.bold).monospacedDigit())
           .lineLimit(1)
-          .minimumScaleFactor(0.6)
+          .minimumScaleFactor(0.5)
         WidgetChangePill(change: quote.change)
       }
     } else {
@@ -197,7 +197,7 @@ struct StockPlanWidgetView: View {
           .font(.caption2.weight(.semibold))
           .foregroundStyle(nearest.rule.kind.side.brandColor)
           .lineLimit(1)
-          .minimumScaleFactor(0.7)
+          .minimumScaleFactor(0.5)
       } else {
         Text("No plan yet")
           .font(.caption2)

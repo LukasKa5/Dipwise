@@ -91,12 +91,12 @@ struct FlockZonesWidgetView: View {
         .font(.system(size: 30, weight: .bold, design: .rounded).monospacedDigit())
         .foregroundStyle(pick.isInZone ? Brand.buy : .white)
         .lineLimit(1)
-        .minimumScaleFactor(0.6)
+        .minimumScaleFactor(0.5)
       Text(pick.isInZone ? "Inside the flock's buy zone" : "to the flock's buy zone")
         .font(.caption2.weight(.semibold))
         .foregroundStyle(Brand.buy)
         .lineLimit(2)
-        .minimumScaleFactor(0.7)
+        .minimumScaleFactor(0.5)
       Spacer(minLength: 4)
       FlockZoneRuler(pick: pick)
       Text("\(pick.watchers) waiting")
@@ -139,7 +139,7 @@ struct FlockZonesWidgetView: View {
             .font(.caption2.weight(.semibold))
             .foregroundStyle(Brand.buy)
             .lineLimit(1)
-            .minimumScaleFactor(0.7)
+            .minimumScaleFactor(0.5)
         }
         Spacer(minLength: 4)
         VStack(alignment: .trailing, spacing: 0) {
@@ -147,10 +147,12 @@ struct FlockZonesWidgetView: View {
             .font(.system(.subheadline, design: .rounded).weight(.bold).monospacedDigit())
             .foregroundStyle(pick.isInZone ? Brand.buy : .white)
             .lineLimit(1)
+            .minimumScaleFactor(0.5)
           Text("\(pick.conviction)% eager")
             .font(.caption2.weight(.medium))
             .foregroundStyle(.white.opacity(0.55))
             .lineLimit(1)
+            .minimumScaleFactor(0.5)
         }
         .fixedSize()
       }
@@ -219,12 +221,12 @@ struct FlockMoodWidgetView: View {
         .font(.system(size: 34, weight: .bold, design: .rounded).monospacedDigit())
         .foregroundStyle(snapshot.bullShare >= 0.5 ? Brand.buy : Brand.sell)
         .lineLimit(1)
-        .minimumScaleFactor(0.6)
+        .minimumScaleFactor(0.5)
       Text(snapshot.bullShare >= 0.5 ? "of the flock is bullish" : "of the flock is bearish")
         .font(.caption2.weight(.semibold))
         .foregroundStyle(.white.opacity(0.75))
         .lineLimit(2)
-        .minimumScaleFactor(0.7)
+        .minimumScaleFactor(0.5)
       Spacer(minLength: 6)
       GeometryReader { geometry in
         HStack(spacing: 3) {
@@ -255,6 +257,7 @@ struct FlockMoodWidgetView: View {
               .font(.caption2)
               .foregroundStyle(.white.opacity(0.6))
               .lineLimit(1)
+              .minimumScaleFactor(0.5)
           }
           Spacer(minLength: 2)
           Text(trend.buyShare, format: .percent.precision(.fractionLength(0)))
