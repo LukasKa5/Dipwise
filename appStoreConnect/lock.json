@@ -1,0 +1,68 @@
+{
+  "appId": "6827305805",
+  "derived": {
+    "pricing": {
+      "automaticPrices": [
+
+      ]
+    }
+  },
+  "formatVersion": 2,
+  "gitignore": "created",
+  "resources": {
+    "ageRatingDeclaration": {
+      "fields": {
+        "ageRatingOverrideV2": "NONE",
+        "koreaAgeRatingOverride": "NONE"
+      },
+      "id": "9a71c910-f22d-4543-97de-d76b54eedb4f",
+      "type": "ageRatingDeclarations"
+    },
+    "app": {
+      "fields": {
+        "primaryLocale": "en-US"
+      },
+      "id": "6827305805",
+      "type": "apps"
+    },
+    "appInfo": {
+      "fields": {
+
+      },
+      "id": "9a71c910-f22d-4543-97de-d76b54eedb4f",
+      "type": "appInfos"
+    },
+    "appInfoLocalization:en-US": {
+      "fields": {
+        "name": "Dipwise"
+      },
+      "id": "0dde820d-c785-4d02-a03c-7daccb64a485",
+      "type": "appInfoLocalizations"
+    },
+    "appStoreVersion:IOS:1.0": {
+      "fields": {
+        "releaseType": "AFTER_APPROVAL",
+        "versionString": "1.0"
+      },
+      "id": "02e7203d-8b42-46be-b312-232e61ce90af",
+      "type": "appStoreVersions"
+    },
+    "appStoreVersionLocalization:IOS:1.0:en-US": {
+      "fields": {
+
+      },
+      "id": "c88831fb-142c-426e-ab48-2518d89b409b",
+      "type": "appStoreVersionLocalizations"
+    },
+    "pricing": {
+      "fields": {
+        "baseTerritory": "USA",
+        "manualPrices": [
+
+        ]
+      },
+      "id": "6827305805",
+      "type": "appPriceSchedules"
+    }
+  }
+}
