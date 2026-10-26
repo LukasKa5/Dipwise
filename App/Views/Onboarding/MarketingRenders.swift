@@ -58,6 +58,7 @@ struct MarketingRenders: View {
       await renderDesk()
       renderOdds()
       renderHint()
+      await renderCallouts()
     }
   }
 
@@ -198,13 +199,31 @@ struct MarketingRenders: View {
     guard let holding = holdings.first(where: { $0.symbol == "NVDA" }), let zone = holding.buyZone, let quote = quotes["NVDA"] else { return }
     let renderer = ImageRenderer(content:
       OddsForecastCard(symbol: "NVDA", quote: quote, buyZone: zone.rule, sellZone: holding.sellZone?.rule, isPro: true)
-        .frame(width: 402)
+        .frame(width: 400)
     )
     renderer.scale = 3
     guard let data = renderer.uiImage?.pngData() else { return }
     let url = URL.documentsDirectory.appending(path: "odds-card.png")
     try? data.write(to: url)
     saved.append(url.lastPathComponent)
+  }
+
+  /// The pieces the App Store screenshots lift out of the screen, rendered whole and crisp: the flock's fear and greed
+  /// card at the Flock's width, and the buy-zone notification as iOS shows it on the lock screen.
+  private func renderCallouts() async {
+    await flock.loadSentiment()
+    var images: [(String, AnyView, CGFloat)] = [("notification-card", AnyView(MarketingNotificationCard()), 412)]
+    if let sentiment = flock.sentiment {
+      images.append(("sentiment-card", AnyView(FlockSentimentCard(sentiment: sentiment, mine: nil)), 400))
+    }
+    for (name, view, width) in images {
+      let renderer = ImageRenderer(content: view.frame(width: width))
+      renderer.scale = 3
+      guard let data = renderer.uiImage?.pngData() else { continue }
+      let url = URL.documentsDirectory.appending(path: "\(name).png")
+      try? data.write(to: url)
+      saved.append(url.lastPathComponent)
+    }
   }
 
   private func render() {
@@ -258,6 +277,36 @@ struct MarketingRenders: View {
       try? data.write(to: url)
       saved.append(url.lastPathComponent)
     }
+  }
+}
+/// The buy-zone alert exactly as it lands on the lock screen: app icon, title, "now", and the plan, on iOS's light
+/// notification platter.
+private struct MarketingNotificationCard: View {
+  var body: some View {
+    HStack(alignment: .top, spacing: 12) {
+      Image(.appIconPreview)
+        .resizable()
+        .frame(width: 38, height: 38)
+        .clipShape(.rect(cornerRadius: 9, style: .continuous))
+      VStack(alignment: .leading, spacing: 1) {
+        HStack(spacing: 5) {
+          Text("NVDA entered your buy zone")
+            .font(.system(size: 15, weight: .semibold))
+          Spacer(minLength: 4)
+          Text("now")
+            .font(.system(size: 13))
+            .foregroundStyle(Color(white: 0.45))
+        }
+        Text("Now $211.38, inside $205.65–$217.10. Your plan: buy 3 shares.")
+          .font(.system(size: 15))
+          .fixedSize(horizontal: false, vertical: true)
+      }
+    }
+    .foregroundStyle(Color(white: 0.06))
+    .padding(.horizontal, 14)
+    .padding(.vertical, 12)
+    .background(Color(red: 0.95, green: 0.95, blue: 0.97), in: .rect(cornerRadius: 24, style: .continuous))
+    .environment(\.colorScheme, .light)
   }
 }
 #endif

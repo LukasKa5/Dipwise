@@ -50,7 +50,6 @@ struct MarketingHomeScreen: View {
             }
           }
           Spacer(minLength: 10)
-          searchPill
         }
         .padding(.top, 72)
         .padding(.bottom, 34)
@@ -117,13 +116,5 @@ struct MarketingHomeScreen: View {
     }
   }
 
-  private var searchPill: some View {
-    Label("Search", systemImage: "magnifyingglass")
-      .font(.system(size: 15, weight: .semibold))
-      .foregroundStyle(.white)
-      .padding(.horizontal, 16)
-      .padding(.vertical, 8)
-      .background(.white.opacity(0.22), in: .capsule)
-  }
 }
 #endif

@@ -55,11 +55,25 @@ struct OddsForecastCard: View {
         }
 
         if buyZone != nil && sellZone != nil {
-          Picker("Zone", selection: $side.animation(.smooth)) {
-            Text("Buy zone").tag(TradeSide.buy)
-            Text("Sell zone").tag(TradeSide.sell)
+          HStack(spacing: 4) {
+            ForEach([TradeSide.buy, .sell], id: \.self) { option in
+              Button {
+                withAnimation(.smooth) { side = option }
+              } label: {
+                Text(option == .buy ? "Buy zone" : "Sell zone")
+                  .font(.subheadline.weight(.semibold))
+                  .foregroundStyle(side == option ? Brand.owlInk : .white.opacity(0.75))
+                  .frame(maxWidth: .infinity)
+                  .padding(.vertical, 7)
+                  .background(side == option ? AnyShapeStyle(option == .buy ? Brand.buy : Brand.sell) : AnyShapeStyle(.clear), in: .capsule)
+                  .contentShape(.capsule)
+              }
+              .buttonStyle(.plain)
+              .accessibilityAddTraits(side == option ? .isSelected : [])
+            }
           }
-          .pickerStyle(.segmented)
+          .padding(3)
+          .background(.white.opacity(0.08), in: .capsule)
         }
 
         VStack(alignment: .leading, spacing: 14) {

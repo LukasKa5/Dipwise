@@ -854,6 +854,43 @@ def callout(canvas, text, x, y, tip_x, tip_y, unit=1.0):
     canvas.alpha_composite(tail)
 
 
+def lift_over(canvas, card, at, k, box, scale=1.1, align="center"):
+    """Lays a crisp, whole render of a card exactly over where it sits on the device's screen, a little larger, so it
+    lifts off the glass instead of being a cropped copy."""
+    left, top = at(box[0], box[1])
+    right, bottom = at(box[2], box[3])
+    width = (right - left) * scale
+    card = card.convert("RGBA")
+    card = card.resize((round(width), round(card.height * width / card.width)), Image.LANCZOS)
+    radius = round(card.width * 0.06)
+    mask = rounded_mask(card.size, radius)
+    card.putalpha(Image.composite(card.split()[3], Image.new("L", card.size, 0), mask))
+    cx = (left + right) / 2
+    y = (top + bottom) / 2 - card.height / 2 if align == "center" else top - (card.height - (bottom - top)) * 0.15
+    shadowed(canvas, card, cx - card.width / 2, y, blur=46, offset=30, opacity=175)
+
+
+def yawed(device, depth=0.1, squeeze=0.94):
+    """Turns a device a little away from the viewer, like a product photo: the far edge shorter, the whole a touch
+    narrower."""
+    w, h = device.size
+    out_w = round(w * squeeze)
+    inset = round(h * depth / 2)
+    coefficients = perspective_coefficients([(0, 0), (out_w, inset), (out_w, h - inset), (0, h)], [(0, 0), (w, 0), (w, h), (0, h)])
+    return device.transform((out_w, h), Image.PERSPECTIVE, coefficients, Image.BICUBIC)
+
+
+def reflection(device, height_share=0.35, opacity=0.22):
+    """A soft mirror image fading into the desk under a standing device."""
+    flipped = device.transpose(Image.FLIP_TOP_BOTTOM).crop((0, 0, device.width, round(device.height * height_share)))
+    fade = Image.new("L", flipped.size, 0)
+    fd = ImageDraw.Draw(fade)
+    for y in range(flipped.height):
+        fd.line([(0, y), (flipped.width, y)], fill=round(255 * opacity * (1 - y / flipped.height) ** 1.6))
+    flipped.putalpha(Image.composite(flipped.split()[3], Image.new("L", flipped.size, 0), fade))
+    return flipped
+
+
 def iphone_story(raw, raw_dir):
     """Ten pages, one story, told by Dippy on one night sky. The icon's glowing price line runs through all of them:
     it dips under the alert, climbs through the features, and ends where Dippy falls asleep on top of your iPhone.
@@ -896,54 +933,53 @@ def iphone_story(raw, raw_dir):
     fingertip(story.canvas, hx, hy)
     callout(story.canvas, "Drag to your price", min(hx - 360, x(1, W - 140) - 620), hy - 230, hx, hy)
 
-    # 3 · The odds, lifted out of the stock screen.
-    page(2, "I'll show your\n*odds* first.", raw("iphone-odds"), "look-left")
-    popout(story.canvas, raw("iphone-odds"), (110, 1400, 1210, 1810), x(2, W / 2), 1800, 1220)
+    # 3 · The odds card, lifting off the stock screen.
+    at, k = page(2, "I'll show your\n*odds* first.", raw("iphone-odds"), "look-left")
+    lift_over(story.canvas, raw("odds-card"), at, k, (60, 384, 1260, 2205), scale=1.12)
 
     # 4 · The alert, exactly as iOS shows it, lifted off the lock screen.
     at, k = page(3, "Get alerted the\n*moment it dips*.", raw("scene-lock"), "wings")
-    _, ny = at(0, 700)
-    popout(story.canvas, raw("scene-lock"), (36, 700, 1284, 945), x(3, W / 2), ny - 40, 1240)
+    lift_over(story.canvas, raw("notification-card"), at, k, (42, 708, 1278, 936), scale=1.18)
     line.dot(x(3, 660), rings=True)
 
     # 5 · The flock's mood, lifted out of the Flock.
-    page(4, "Meet the *flock*.\nAll anonymous.", raw("iphone-flock"), "wink", owl_side=-1)
-    popout(story.canvas, raw("iphone-flock"), (60, 1705, 1260, 2380), x(4, W / 2), 1830, 1180)
+    at, k = page(4, "Meet the *flock*.\nAll anonymous.", raw("iphone-flock"), "wink", owl_side=-1)
+    lift_over(story.canvas, raw("sentiment-card"), at, k, (60, 1710, 1260, 2868), scale=1.1, align="top")
 
     page(5, "*28* alerts,\nin plain words.", fix_iphone_clock(raw("iphone-plan-smart")), "blush")
     page(6, "I live on your\n*Home Screen*.", raw("iphone-home-widgets"), "look-down", owl_side=-1)
 
-    # 8 · iPhone Duo on a desk, its outer display a live stock tracker, straight on so every number reads.
+    # 8 · iPhone Duo standing on the desk, turned a little like a product photo, reflected in the desk.
     story.title(7, "Your stocks,\n*live on your desk*.", 170, 140)
     duo = Bezel("iphone-duo-outer-landscape", upside_down=True)
-    stand, _ = duo.device(raw("desk-mode"), 880)
-    stand_bottom = line.y(x(7, W / 2)) + 8
+    front, _ = duo.device(raw("desk-mode"), 960)
+    stand = yawed(front, depth=0.08, squeeze=0.96)
+    stand_bottom = 1720
     top = stand_bottom - stand.height
-    desk_shadow(story.canvas, x(7, W / 2), stand_bottom, stand.width * 0.92)
-    story.place(7, stand, W / 2, top, shadow=0.6)
-    perch(story.canvas, raw_dir, "look-down", x(7, W / 2 - 330), top + 14, owl_height)
-    sticker(story.canvas, x(7, W / 2), stand_bottom + 170, ["Optimized for iPhone Duo"])
+    shine = reflection(stand)
+    paste_clipped(story.canvas, shine, round(x(7, (W - shine.width) / 2)), round(stand_bottom + 6))
+    story.place(7, stand, W / 2, top, shadow=0.55)
+    perch(story.canvas, raw_dir, "look-down", x(7, W / 2 - 300), top + 14, owl_height)
+    sticker(story.canvas, x(7, W / 2), stand_bottom + 380, ["Optimized for iPhone Duo"])
 
-    # 9 · iPhone and Apple Watch together: the watch in front, close up, with no band to crowd it.
+    # 9 · Apple Watch on its own: big, with its band running off the page, the app filling the display.
     story.title(8, "Or keep me\non your *wrist*.", 170, 140)
-    page(8, None, raw("iphone-home"), "look-down", owl_side=-1, top=760, height=1620, cx=W / 2 - 250)
     wrist = Bezel("watch-series-11")
-    watch_device, k = wrist.device(watch_screen(raw("watch-today")), 1500)
-    case = watch_device.crop((0, round(150 * k), watch_device.width, round(730 * k)))
-    fade = Image.new("L", case.size, 255)
-    fd = ImageDraw.Draw(fade)
-    span = round(46 * k)
+    watch_device, k = wrist.device(watch_screen(raw("watch-today")), 2050)
+    band_fade = Image.new("L", watch_device.size, 255)
+    bf = ImageDraw.Draw(band_fade)
+    span = round(watch_device.height * 0.12)
     for i in range(span):
-        fd.line([(0, i), (case.width, i)], fill=round(255 * i / span))
-        fd.line([(0, case.height - 1 - i), (case.width, case.height - 1 - i)], fill=round(255 * i / span))
-    case.putalpha(Image.composite(case.split()[3], Image.new("L", case.size, 0), fade))
-    story.place(8, case, W / 2 + 270, 1420)
+        bf.line([(0, i), (watch_device.width, i)], fill=round(255 * i / span))
+    watch_device.putalpha(Image.composite(watch_device.split()[3], Image.new("L", watch_device.size, 0), band_fade))
+    story.place(8, watch_device, W / 2 - 16, 600)
 
-    # 10 · Good night: the real app after the bell, Dippy asleep on your iPhone under the moon.
+    # 10 · Asleep under the moon, on the same glowing line.
     sky = story.canvas_sky
-    sky.moon(round(x(9, 200)), 610, 84)
-    page(9, "Sleep well.\n*I'm on watch.*", raw("iphone-night"), "sleep")
-    sleepy_zs(story.canvas, x(9, W / 2 + 400), 640)
+    sky.moon(round(x(9, W - 250)), 690, 96)
+    story.title(9, "Sleep well.\n*I'm on watch.*", 170, 140)
+    line.owl(raw_dir, "sleep", x(9, 640), 760)
+    sleepy_zs(story.canvas, x(9, 880), 1240)
 
     frames = story.frames(["01-meet-dippy", "02-buy-zone", "03-odds", "04-alert", "05-flock", "06-smart-alerts",
                            "07-widgets", "08-desk-mode", "09-apple-watch", "10-sleep-well"])
