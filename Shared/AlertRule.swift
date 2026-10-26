@@ -37,7 +37,7 @@ enum AlertKind: String, Codable, CaseIterable, Identifiable {
   case dropFromHigh, weeklyDrop, losingStreak, dailyMove, gapMove, newLow, newHigh, reboundFromLow
   case belowAverage, aboveAverage, goldenCross, deathCross, beatsMarket, lagsMarket
   case rsiOversold, rsiOverbought, macdBullish, macdBearish, bollingerLow, bollingerHigh, volumeSpike
-  case trailingStop, stopLoss, profitTarget, breakEven
+  case trailingStop, stopLoss, profitTarget, breakEven, averageDown
   case dividendSoon, yieldAbove
   case crowdBuyZone, crowdBuying, topInvestorBuys
 
@@ -49,7 +49,7 @@ enum AlertKind: String, Codable, CaseIterable, Identifiable {
     case .dropFromHigh, .weeklyDrop, .losingStreak, .dailyMove, .gapMove, .newLow, .newHigh, .reboundFromLow: .moves
     case .belowAverage, .aboveAverage, .goldenCross, .deathCross, .beatsMarket, .lagsMarket: .trend
     case .rsiOversold, .rsiOverbought, .macdBullish, .macdBearish, .bollingerLow, .bollingerHigh, .volumeSpike: .momentum
-    case .trailingStop, .stopLoss, .profitTarget, .breakEven: .position
+    case .trailingStop, .stopLoss, .profitTarget, .breakEven, .averageDown: .position
     case .dividendSoon, .yieldAbove: .income
     case .crowdBuyZone, .crowdBuying, .topInvestorBuys: .crowd
     }
@@ -87,6 +87,7 @@ enum AlertKind: String, Codable, CaseIterable, Identifiable {
     case .stopLoss: String(localized: "Stop loss")
     case .profitTarget: String(localized: "Profit target")
     case .breakEven: String(localized: "Back to break-even")
+    case .averageDown: String(localized: "Average-down chance")
     case .dividendSoon: String(localized: "Dividend coming")
     case .crowdBuyZone: String(localized: "Enters the crowd's buy zone")
     case .crowdBuying: String(localized: "Flock buying surge")
@@ -126,6 +127,7 @@ enum AlertKind: String, Codable, CaseIterable, Identifiable {
     case .stopLoss: String(localized: "Your position falls a set amount below what you paid.")
     case .profitTarget: String(localized: "Your position rises a set amount above what you paid.")
     case .breakEven: String(localized: "The price climbs back to what you paid.")
+    case .averageDown: String(localized: "The price falls a set amount below what you paid, a chance to lower your average cost.")
     case .dividendSoon: String(localized: "A dividend is expected within a week.")
     case .crowdBuyZone: String(localized: "The price drops into the range where most Dipwise investors plan to buy.")
     case .crowdBuying: String(localized: "Most members who moved this week are buying it, not selling.")
@@ -165,6 +167,7 @@ enum AlertKind: String, Codable, CaseIterable, Identifiable {
     case .stopLoss: "hand.raised.fill"
     case .profitTarget: "flag.checkered"
     case .breakEven: "equal.circle"
+    case .averageDown: "cart.badge.plus"
     case .dividendSoon: "leaf.fill"
     case .crowdBuyZone: "person.3.fill"
     case .crowdBuying: "arrow.left.arrow.right.circle.fill"
@@ -174,7 +177,7 @@ enum AlertKind: String, Codable, CaseIterable, Identifiable {
 
   var side: TradeSide {
     switch self {
-    case .buyZone, .priceBelow, .dropFromHigh, .weeklyDrop, .losingStreak, .newLow, .goldenCross, .rsiOversold, .macdBullish, .bollingerLow, .reboundFromLow, .beatsMarket, .yieldAbove: .buy
+    case .buyZone, .priceBelow, .dropFromHigh, .weeklyDrop, .losingStreak, .newLow, .goldenCross, .rsiOversold, .macdBullish, .bollingerLow, .reboundFromLow, .beatsMarket, .yieldAbove, .averageDown: .buy
     case .crowdBuyZone, .crowdBuying, .topInvestorBuys: .buy
     case .sellZone, .priceAbove, .newHigh, .deathCross, .rsiOverbought, .macdBearish, .bollingerHigh, .trailingStop, .stopLoss, .profitTarget, .breakEven, .lagsMarket: .sell
     case .dailyMove, .gapMove, .belowAverage, .aboveAverage, .volumeSpike, .dividendSoon: .watch
@@ -182,7 +185,7 @@ enum AlertKind: String, Codable, CaseIterable, Identifiable {
   }
 
   var isZone: Bool { self == .buyZone || self == .sellZone }
-  var usesPercent: Bool { [.dropFromHigh, .weeklyDrop, .dailyMove, .gapMove, .trailingStop, .stopLoss, .profitTarget, .reboundFromLow, .beatsMarket, .lagsMarket, .yieldAbove].contains(self) }
+  var usesPercent: Bool { [.dropFromHigh, .weeklyDrop, .dailyMove, .gapMove, .trailingStop, .stopLoss, .profitTarget, .reboundFromLow, .beatsMarket, .lagsMarket, .yieldAbove, .averageDown].contains(self) }
   /// Alerts measured over a number of trading days.
   var usesDays: Bool { [.weeklyDrop, .losingStreak, .beatsMarket, .lagsMarket].contains(self) }
   var usesAverage: Bool { self == .belowAverage || self == .aboveAverage }
@@ -190,10 +193,10 @@ enum AlertKind: String, Codable, CaseIterable, Identifiable {
   /// Alerts that need the flock's data, not just prices.
   var needsCrowd: Bool { category == .crowd }
   /// Alerts measured from what the user paid.
-  var needsCost: Bool { [.stopLoss, .profitTarget, .breakEven].contains(self) }
+  var needsCost: Bool { [.stopLoss, .profitTarget, .breakEven, .averageDown].contains(self) }
   /// Conditions that describe a state, so they should only fire when they newly become true.
   var firesOnChangeOnly: Bool {
-    ![.buyZone, .sellZone, .priceBelow, .priceAbove, .dropFromHigh, .trailingStop, .stopLoss, .profitTarget, .breakEven].contains(self)
+    ![.buyZone, .sellZone, .priceBelow, .priceAbove, .dropFromHigh, .trailingStop, .stopLoss, .profitTarget, .breakEven, .averageDown].contains(self)
   }
 
   /// Smart alerts are part of Dipwise Pro.
@@ -229,7 +232,7 @@ struct AlertRule: Codable, Hashable {
     case .dropFromHigh: quote.high52 * (1 - percent)
     case .trailingStop: max(peak, quote.price) * (1 - percent)
     case .belowAverage, .aboveAverage: quote.movingAverage(days: averageDays)
-    case .stopLoss: lower * (1 - percent)
+    case .stopLoss, .averageDown: lower * (1 - percent)
     case .profitTarget: lower * (1 + percent)
     case .newLow: quote.previousLow
     case .newHigh: quote.previousHigh
@@ -243,7 +246,7 @@ struct AlertRule: Codable, Hashable {
   /// Level-based rules fire when the price falls to (true) or rises to (false) the level.
   private var triggersBelow: Bool {
     switch kind {
-    case .buyZone, .priceBelow, .dropFromHigh, .trailingStop, .belowAverage, .stopLoss, .newLow, .bollingerLow: true
+    case .buyZone, .priceBelow, .dropFromHigh, .trailingStop, .belowAverage, .stopLoss, .newLow, .bollingerLow, .averageDown: true
     default: false
     }
   }
@@ -376,6 +379,7 @@ struct AlertRule: Codable, Hashable {
     case .stopLoss: return String(localized: "Sell if it falls \(p) below \(format(lower))")
     case .profitTarget: return String(localized: "Take profit at +\(p) (\(format(lower * (1 + percent))))")
     case .breakEven: return String(localized: "Back to your cost of \(format(lower))")
+    case .averageDown: return String(localized: "Buy more if it falls \(p) below \(format(lower))")
     case .dividendSoon: return String(localized: "Dividend expected within a week")
     case .crowdBuyZone: return String(localized: "Enters the crowd's buy zone")
     case .crowdBuying: return String(localized: "\(level.formatted(.percent.precision(.fractionLength(0)))) of the flock is buying")
@@ -399,6 +403,7 @@ struct AlertRule: Codable, Hashable {
     case .stopLoss: rule.percent = 0.1; rule.lower = cost > 0 ? cost : price
     case .profitTarget: rule.percent = 0.25; rule.lower = cost > 0 ? cost : price
     case .breakEven: rule.lower = cost > 0 ? cost : price
+    case .averageDown: rule.percent = 0.15; rule.lower = cost > 0 ? cost : price
     case .belowAverage, .aboveAverage: rule.averageDays = 200
     case .rsiOversold: rule.level = 30
     case .rsiOverbought: rule.level = 70
@@ -423,4 +428,74 @@ struct CrowdFacts: Hashable {
   var movers: Int
   /// Top investors who added to it in the last day.
   var topInvestorBuysToday: Int
+}
+
+/// The one threshold a smart alert lets people set themselves, like the RSI level or the size of a dip.
+struct AlertTuning {
+  enum Parameter {
+    case percent
+    case level
+    case days
+    case averageDays
+  }
+
+  var parameter: Parameter
+  var range: ClosedRange<Double>
+  var step: Double
+
+  func value(of rule: AlertRule) -> Double {
+    switch parameter {
+    case .percent: rule.percent
+    case .level: rule.level
+    case .days: Double(rule.days)
+    case .averageDays: Double(rule.averageDays)
+    }
+  }
+
+  func apply(_ value: Double, to rule: inout AlertRule) {
+    let value = min(max(value, range.lowerBound), range.upperBound)
+    switch parameter {
+    case .percent: rule.percent = value
+    case .level: rule.level = value
+    case .days: rule.days = Int(value)
+    case .averageDays: rule.averageDays = Int(value)
+    }
+  }
+}
+
+extension AlertKind {
+  /// What people can tune on this alert, if anything.
+  var tuning: AlertTuning? {
+    switch self {
+    case .dropFromHigh, .reboundFromLow, .stopLoss, .averageDown: AlertTuning(parameter: .percent, range: 0.03...0.6, step: 0.01)
+    case .weeklyDrop, .dailyMove, .beatsMarket, .lagsMarket: AlertTuning(parameter: .percent, range: 0.02...0.3, step: 0.01)
+    case .gapMove: AlertTuning(parameter: .percent, range: 0.02...0.15, step: 0.01)
+    case .trailingStop: AlertTuning(parameter: .percent, range: 0.03...0.3, step: 0.01)
+    case .profitTarget: AlertTuning(parameter: .percent, range: 0.05...2, step: 0.05)
+    case .yieldAbove: AlertTuning(parameter: .percent, range: 0.01...0.12, step: 0.0025)
+    case .rsiOversold: AlertTuning(parameter: .level, range: 10...45, step: 1)
+    case .rsiOverbought: AlertTuning(parameter: .level, range: 55...90, step: 1)
+    case .volumeSpike: AlertTuning(parameter: .level, range: 1.5...6, step: 0.5)
+    case .crowdBuying: AlertTuning(parameter: .level, range: 0.5...0.95, step: 0.05)
+    case .losingStreak: AlertTuning(parameter: .days, range: 3...12, step: 1)
+    case .belowAverage, .aboveAverage: AlertTuning(parameter: .averageDays, range: 20...200, step: 10)
+    default: nil
+    }
+  }
+
+  /// A threshold value in the words people use for it: "20%", "RSI 30", "2×", "5 days", "200-day".
+  func thresholdText(_ value: Double) -> String {
+    switch tuning?.parameter {
+    case .percent: value.formatted(.percent.precision(.fractionLength(self == .yieldAbove ? 1 : 0)))
+    case .level:
+      switch self {
+      case .volumeSpike: "\(value.formatted(.number.precision(.fractionLength(0...1))))×"
+      case .crowdBuying: value.formatted(.percent.precision(.fractionLength(0)))
+      default: String(localized: "RSI \(Int(value))")
+      }
+    case .days: String(localized: "\(Int(value)) days")
+    case .averageDays: String(localized: "\(Int(value))-day")
+    case nil: ""
+    }
+  }
 }

@@ -67,6 +67,19 @@ struct OddsForecastCard: View {
             .frame(height: 180)
             .animation(.smooth(duration: 0.6), value: horizon)
 
+          // What the shapes mean, in words.
+          HStack(spacing: 14) {
+            OddsLegend(color: OddsCone.likely, title: "Most likely")
+            OddsLegend(color: OddsCone.possible, title: "Possible")
+            OddsLegend(color: color.opacity(0.5), title: isSell ? "Sell zone" : "Buy zone")
+          }
+          let chance = horizon == .month ? odds.monthChance : odds.quarterChance
+          Text(isSell
+               ? "Out of 100 likely paths, \(Int((chance * 100).rounded())) reach your sell zone \(Text(horizon.title))."
+               : "Out of 100 likely paths, \(Int((chance * 100).rounded())) reach your buy zone \(Text(horizon.title)).")
+            .font(.subheadline.weight(.semibold))
+            .fixedSize(horizontal: false, vertical: true)
+
           HStack(spacing: 12) {
             ForEach(Horizon.allCases) { option in
               Button {
@@ -122,6 +135,23 @@ struct OddsForecastCard: View {
   }
 }
 
+/// One entry in the chart's key: a swatch and what it means.
+private struct OddsLegend: View {
+  var color: Color
+  var title: LocalizedStringKey
+
+  var body: some View {
+    HStack(spacing: 5) {
+      RoundedRectangle(cornerRadius: 3).fill(color).frame(width: 14, height: 10)
+      Text(title)
+        .font(.caption.weight(.semibold))
+        .foregroundStyle(.white.opacity(0.75))
+        .lineLimit(1)
+        .minimumScaleFactor(0.7)
+    }
+  }
+}
+
 /// One more thing worth knowing about the odds, on a small tile.
 private struct OddsFact: View {
   var title: LocalizedStringKey
@@ -148,6 +178,11 @@ private struct OddsFact: View {
 /// The last two months of closes, then a widening cone of likely prices: the inner band holds half of the
 /// outcomes, the outer one eight in ten. The buy zone runs across both.
 private struct OddsCone: View {
+  /// Half of the likely paths end inside this band.
+  static let likely = Color.white.opacity(0.26)
+  /// Eight in ten likely paths end inside this band.
+  static let possible = Color.white.opacity(0.1)
+
   var quote: Quote
   var rule: AlertRule
   var sigma: Double
@@ -181,13 +216,36 @@ private struct OddsCone: View {
       RectangleMark(xStart: .value("Start", 0), xEnd: .value("End", today + days),
                     yStart: .value("Zone low", rule.lower), yEnd: .value("Zone high", upper))
         .foregroundStyle(color.opacity(0.24))
+        .annotation(position: .overlay, alignment: .leading) {
+          Text(rule.kind.side == .sell ? "Your sell zone" : "Your buy zone")
+            .font(.caption2.weight(.bold))
+            .foregroundStyle(color)
+            .padding(.leading, 4)
+        }
       ForEach(bands) { band in
         AreaMark(x: .value("Day", band.day), yStart: .value("Low", band.low), yEnd: .value("High", band.high), series: .value("Band", "outer"))
-          .foregroundStyle(.white.opacity(0.08))
+          .foregroundStyle(OddsCone.possible)
           .interpolationMethod(.monotone)
         AreaMark(x: .value("Day", band.day), yStart: .value("Low", band.innerLow), yEnd: .value("High", band.innerHigh), series: .value("Band", "inner"))
-          .foregroundStyle(.white.opacity(0.12))
+          .foregroundStyle(OddsCone.likely)
           .interpolationMethod(.monotone)
+      }
+      if let end = bands.last {
+        // Where the cone ends: the high and low of eight in ten likely paths.
+        PointMark(x: .value("Day", end.day), y: .value("High", end.high))
+          .symbolSize(0)
+          .annotation(position: .topLeading, spacing: 2) {
+            Text(compactPrice(end.high, currency: quote.currency))
+              .font(.caption2.weight(.bold).monospacedDigit())
+              .foregroundStyle(.white.opacity(0.85))
+          }
+        PointMark(x: .value("Day", end.day), y: .value("Low", end.low))
+          .symbolSize(0)
+          .annotation(position: .bottomLeading, spacing: 2) {
+            Text(compactPrice(end.low, currency: quote.currency))
+              .font(.caption2.weight(.bold).monospacedDigit())
+              .foregroundStyle(.white.opacity(0.85))
+          }
       }
       ForEach(Array(history.enumerated()), id: \.offset) { index, value in
         LineMark(x: .value("Day", index), y: .value("Price", value), series: .value("Line", "price"))
@@ -208,18 +266,7 @@ private struct OddsCone: View {
         .symbolSize(70)
     }
     .chartXAxis(.hidden)
-    .chartYAxis {
-      AxisMarks(position: .trailing, values: .automatic(desiredCount: 4)) { value in
-        AxisGridLine().foregroundStyle(.white.opacity(0.07))
-        AxisValueLabel {
-          if let price = value.as(Double.self) {
-            Text(compactPrice(price, currency: quote.currency))
-              .font(.caption2)
-              .foregroundStyle(.white.opacity(0.5))
-          }
-        }
-      }
-    }
+    .chartYAxis(.hidden)
     .chartXScale(domain: 0...(today + days))
     .chartYScale(domain: (low - pad)...(high + pad))
     .accessibilityLabel("Price chart with a cone of likely prices over the next \(days) trading days and your zone")

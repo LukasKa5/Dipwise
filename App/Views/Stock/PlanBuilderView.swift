@@ -110,6 +110,40 @@ struct PlanBuilderForm: View {
           }
         }
 
+        if let quote {
+          let recommended = PlanDraft.recommendedSmart(isOwned: holding.isOwned, paysDividends: !quote.dividends.isEmpty)
+          let isAllOn = draft.buyZone && recommended.allSatisfy { draft.smart.contains($0) }
+          Section {
+            Button {
+              withAnimation(.snappy) {
+                draft.buyZone = true
+                if holding.isOwned { draft.sellZone = true }
+                draft.smart.formUnion(recommended)
+              }
+            } label: {
+              HStack(spacing: 12) {
+                LivelyOwl(mood: .calm)
+                  .frame(width: 34, height: 40)
+                VStack(alignment: .leading, spacing: 2) {
+                  Text(isAllOn ? "Dippy's set is on" : "Add Dippy's recommended set")
+                    .font(.headline)
+                  Text("A buy zone\(holding.isOwned ? ", a sell zone" : ""), and \(recommended.count) smart alerts dip buyers rely on, in one tap.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: isAllOn ? "checkmark.circle.fill" : "plus.circle.fill")
+                  .font(.title2)
+                  .foregroundStyle(.tint)
+              }
+              .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .disabled(isAllOn)
+          }
+        }
+
         Section {
           Toggle(isOn: $draft.buyZone.animation(.snappy)) {
             Label("Buy zone", systemImage: "arrow.down.to.line.compact")
@@ -165,7 +199,7 @@ struct PlanBuilderForm: View {
               .listRowInsets(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12))
             // What each picked alert does, right where it was picked.
             ForEach(kinds.filter { draft.smart.contains($0) }) { kind in
-              SelectedAlertRow(kind: kind) {
+              SelectedAlertRow(kind: kind, threshold: threshold(for: kind)) {
                 withAnimation(.snappy) { _ = draft.smart.remove(kind) }
               }
             }
@@ -200,6 +234,9 @@ struct PlanBuilderForm: View {
       guard !didLoad else { return }
       didLoad = true
       draft.smart = Set(holding.smartAlerts.map(\.kind))
+      for alert in holding.smartAlerts {
+        if let tuning = alert.kind.tuning { draft.thresholds[alert.kind] = tuning.value(of: alert.rule) }
+      }
       // With no alerts yet, start with a buy zone. Otherwise show exactly what's set.
       let hasAlerts = !holding.activeAlerts.isEmpty
       draft.buyZone = hasAlerts ? holding.buyZone != nil : true
@@ -222,6 +259,13 @@ struct PlanBuilderForm: View {
       }
       if let suggestion { apply(suggestion) }
     }
+  }
+
+  /// The threshold for a picked smart alert, starting at Dippy's default.
+  private func threshold(for kind: AlertKind) -> Binding<Double>? {
+    guard let tuning = kind.tuning else { return nil }
+    let fallback = tuning.value(of: AlertRule.defaults(for: kind, price: quote?.price ?? 0, cost: holding.averageCost))
+    return Binding(get: { draft.thresholds[kind] ?? fallback }, set: { draft.thresholds[kind] = $0 })
   }
 
   /// Turns on the suggested alert, keeping everything already planned.
@@ -277,6 +321,8 @@ struct PlanBuilderForm: View {
 /// A picked smart alert with what it does, and a quick way to remove it.
 private struct SelectedAlertRow: View {
   var kind: AlertKind
+  /// The alert's own threshold, when people can set it.
+  var threshold: Binding<Double>?
   var remove: () -> Void
 
   var body: some View {
@@ -293,6 +339,14 @@ private struct SelectedAlertRow: View {
         .font(.footnote)
         .foregroundStyle(.secondary)
         .fixedSize(horizontal: false, vertical: true)
+      if let threshold, let tuning = kind.tuning {
+        Stepper(value: threshold, in: tuning.range, step: tuning.step) {
+          Text("Alert at \(Text(kind.thresholdText(threshold.wrappedValue)).bold().foregroundStyle(kind.side.color))")
+            .font(.subheadline)
+            .monospacedDigit()
+        }
+        .padding(.top, 4)
+      }
     }
     Spacer(minLength: 0)
     Button("Remove \(kind.title)", systemImage: "xmark.circle.fill", action: remove)
