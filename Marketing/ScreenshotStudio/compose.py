@@ -855,7 +855,7 @@ def iphone_story(raw, raw_dir):
     page(3, "Get alerted the\n*moment it dips*.", raw("scene-lock"), "wings")
     line.dot(x(3, 660), rings=True)
     page(4, "Meet the *flock*.\nAll anonymous.", raw("iphone-flock"), "wink", owl_side=-1)
-    page(5, "*27* alerts,\nin plain words.", fix_iphone_clock(raw("iphone-plan-smart")), "blush")
+    page(5, "*28* alerts,\nin plain words.", fix_iphone_clock(raw("iphone-plan-smart")), "blush")
     page(6, "I live on your\n*Home Screen*.", raw("iphone-home-widgets"), "look-down", owl_side=-1)
 
     # 8 · iPhone Duo on a desk, its outer display a live stock tracker, straight on so every number reads.

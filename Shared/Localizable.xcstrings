@@ -50816,48 +50816,48 @@
         }
       }
     },
-    "Unlimited alerts, 27 smart alert types & odds": {
+    "Unlimited alerts, 28 smart alert types & odds": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Unbegrenzte Alarme, 27 smarte Alarmtypen & Chancen"
+            "value": "Unbegrenzte Alarme, 28 smarte Alarmtypen & Chancen"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Alertas ilimitadas, 27 tipos de alertas inteligentes y probabilidades"
+            "value": "Alertas ilimitadas, 28 tipos de alertas inteligentes y probabilidades"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Alertes illimitées, 27 types d'alertes intelligentes et probabilités"
+            "value": "Alertes illimitées, 28 types d'alertes intelligentes et probabilités"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Avvisi illimitati, 27 tipi di avvisi smart e probabilità"
+            "value": "Avvisi illimitati, 28 tipi di avvisi smart e probabilità"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "アラート無制限、27種のスマートアラートと確率"
+            "value": "アラート無制限、28種のスマートアラートと確率"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "무제한 알림, 27가지 스마트 알림과 확률"
+            "value": "무제한 알림, 28가지 스마트 알림과 확률"
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Alertas ilimitados, 27 tipos de alertas inteligentes e chances"
+            "value": "Alertas ilimitados, 28 tipos de alertas inteligentes e chances"
           }
         }
       }

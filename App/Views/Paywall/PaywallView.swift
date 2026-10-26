@@ -445,7 +445,7 @@ private struct ProFeature {
   static let all: [ProFeature] = [
     ProFeature(title: "Real-time prices and alerts", systemImage: "bolt.fill", free: .text("15 min"), pro: .text("Live"), needsRealTime: true),
     ProFeature(title: "Price alerts", systemImage: "bell.fill", free: .text("3"), pro: .text("Unlimited")),
-    ProFeature(title: "Smart alerts like RSI, MACD, and trend crosses", systemImage: "sparkles", free: .missing, pro: .text("27 types")),
+    ProFeature(title: "Smart alerts like RSI, MACD, and trend crosses", systemImage: "sparkles", free: .missing, pro: .text("28 types")),
     ProFeature(title: "Odds for buy and sell zones, wait time, and price range", systemImage: "dice.fill", free: .text("30 days"), pro: .text("All")),
     ProFeature(title: "Your Profile: investor DNA and blind spots", systemImage: "person.text.rectangle.fill", free: .text("Preview"), pro: .included),
     ProFeature(title: "Passive income planner", systemImage: "leaf.circle.fill", free: .missing, pro: .included),

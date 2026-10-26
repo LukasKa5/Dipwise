@@ -14,7 +14,7 @@ price,portfolio,watchlist,dividend,rsi,invest,market,etf,crypto,signal,widget,di
 Words already in the name and subtitle (stock, alert, tracker, login) are indexed automatically, so they aren't repeated here. "Stock alert" and "stock tracker" are among the most searched finance phrases, which is why they lead the name.
 
 ## Promotional text (143/170)
-Buy the dip with a plan. Draw your buy zone and Dippy taps you the second a stock gets there. No login, no ads. Widgets, Apple Watch, and Desk Mode for iPhone Duo.
+Buy the dip with a plan. Draw your buy zone and Dippy taps you the second a stock gets there. No login, no ads. Widgets, Apple Watch, optimized for iPhone Duo.
 
 ## Description
 Buy the dip. Calmly. No account, no login: open the app and start.
@@ -27,11 +27,11 @@ DRAW YOUR ZONES
 • Know your odds: how likely each plan is to trigger in the next 30 or 90 days
 
 NEVER MISS YOUR MOMENT
-• An alert the second a stock enters your zone, with your plan inside
+• An alert the minute a stock enters your zone, pushed from Dipwise's servers so it never waits for your iPhone to check
 • A gentle heads-up when a stock gets close
 • Every plan in one place: buy zone, sell zone, and smart alerts set together
 
-27 SMART ALERTS, IN PLAIN ENGLISH
+28 SMART ALERTS, IN PLAIN ENGLISH
 • Sharp drops, new 52-week lows, and big daily moves
 • Moving averages, golden crosses, and death crosses
 • RSI, MACD, and Bollinger Bands
@@ -42,22 +42,24 @@ Every alert comes with a one-line explanation from Dippy, so you always know wha
 YOUR PORTFOLIO, IN ONE CALM PLACE
 • Import positions from Robinhood, Fidelity, Charles Schwab, Vanguard, E*TRADE, Interactive Brokers, Trading 212, DEGIRO, or any spreadsheet
 • Value, today's move, total return, and dividend income in your own currency
-• See whether you're beating the S&P 500 over any period (Pro)
-• Risk Analysis: your risk score, investing style, and habits, worked out the way a broker would (Pro)
+• Compare your portfolio with any ETF, index, stock, or crypto over any period (Pro)
+• Your Profile: your investor DNA scored against the flock, the blind spots brokers watch for, and how often you go against the crowd (Pro)
+• Passive income planner: set a monthly income goal and see the year you reach it and what to invest each month (Pro)
 • Your Odds: a cone of where the price could go and the chance it reaches your buy or sell zone within 30 and 90 days, with the typical wait and the likely price range a month out (30-day buy odds free, everything else Pro)
 • Flock alerts: when a stock enters the crowd's buy zone, the flock starts buying, or a top investor adds it (Pro)
 • A watchlist with prices, trends, and how close each plan is
 
 LIVING WIDGETS AND APPLE WATCH
 • Six widgets, each with Dippy in the same corner: Portfolio, Your Plans (how far each stock is from your zone), Stock Plan, Flock Buy Zones (where every Dipwise investor plans to buy), Flock Mood, and Market (open or closed, with a countdown to the bell)
-• Desk Mode for iPhone Duo: stand it like a tent and the outer display becomes a live portfolio tracker: the time and today's market, your portfolio with a chart you can scrub, and pages for your movers, your closest plans, and the flock, with your stocks running along the bottom
+• Optimized for iPhone Duo: stand it on your desk and the outer display becomes a live stock tracker, edge to edge: the big indexes, your portfolio with a chart you can scrub, a heatmap of your stocks, your closest plans, and the flock's fear and greed. Tap any stock to zoom in
 • On Apple Watch: your portfolio, closest plans, and charts you scrub with the Digital Crown, plus complications for your portfolio and market hours
 
 A ONE-MINUTE DAILY HABIT
-• A short daily brief, streaks, and achievements that reward calm, steady investing
+• A short daily brief: how your stocks moved, your closest plans, and how you feel about the market, answered right back with the whole flock's anonymous fear and greed
+• Streaks and achievements that unlock outfits for Dippy, worn everywhere he appears
 
 DIPWISE PRO
-Free includes 3 price alerts. Pro unlocks unlimited alerts, all 27 smart alerts, odds for every plan, live signals on all your stocks, heads-up alerts before a zone, your portfolio vs the S&P 500, and the dividend calendar.
+Free includes 3 price alerts. Pro unlocks unlimited alerts, all 28 smart alerts with your own thresholds, odds for buy and sell zones, Your Profile, the passive income planner, comparisons with any ETF, heads-up alerts before a zone, and the dividend calendar.
 
 Payment is charged to your Apple Account at confirmation of purchase. Subscriptions renew automatically unless canceled at least 24 hours before the end of the current period. Manage or cancel any time in your App Store account settings.
 
@@ -101,7 +103,7 @@ The app is translated into German, Spanish, French, Italian, Brazilian Portugues
 
 ## Screenshots
 
-One night sky runs through the whole set. The app icon's glowing price line crosses every image without a break: it dips under the alert, climbs through the features, and ends where Dippy falls asleep under the moon. Dippy tells the story in his own words, one line per image, perched on top of each device. Every device is Apple's own product bezel (iPhone 18 Pro Max, iPhone Duo, Apple Watch Series 11, iPad Pro), from `ScreenshotStudio/Bezels/`, and the app's intro uses the same iPhone and Apple Watch. Home and lock screens use the Dipwise wallpaper, the same one as in the intro.
+One night sky runs through the whole set. The app icon's glowing price line crosses every image without a break: it dips under the alert, climbs through the features, and ends where Dippy falls asleep under the moon. Dippy tells the story in his own words, one line per image, perched on top of each device. Every device is Apple's own product bezel (iPhone 18 Pro Max, iPhone Duo, Apple Watch Series 11 in silver with a Purple Fog band, iPad Pro), from `ScreenshotStudio/Bezels/`, and the app's intro uses the same iPhone and Apple Watch. Home and lock screens use the Dipwise wallpaper, the same one as in the intro.
 
 The captures show the app as it ships with the Flock live. **Before submitting, connect the Flock's iCloud container (`FlockConfiguration.containerID`), or replace the Flock image, because App Review rejects screenshots of features the build doesn't have.** U.S. English, dollars, New York time, and prices and clocks frozen on one day so every screen agrees. `preview-iphone.png` and `preview-ipad.png` show each whole strip; `preview-watch.png` shows the watch set.
 
@@ -112,11 +114,11 @@ The captures show the app as it ships with the Flock live. **Before submitting, 
 | 1 | 01-meet-dippy.png | Hi, I'm Dippy. I watch the dips. | No login · No ads · Any broker, then Home |
 | 2 | 02-buy-zone.png | Show me where you'd buy. | Dragging a buy zone, with the intro's "Try it" chip |
 | 3 | 03-odds.png | I'll show your odds first. | The stock screen's Your Odds card, buy and sell |
-| 4 | 04-alert.png | It dips. I tap you. | The lock screen with the alert: "buy 3 shares" |
+| 4 | 04-alert.png | Get alerted the moment it dips. | The lock screen with the alert: "buy 3 shares" |
 | 5 | 05-flock.png | Meet the flock. All anonymous. | The Flock |
-| 6 | 06-smart-alerts.png | 27 alerts, in plain words. | Smart alerts, Dippy blushing |
+| 6 | 06-smart-alerts.png | 28 alerts, in plain words. | Smart alerts, Dippy blushing |
 | 7 | 07-widgets.png | I live on your Home Screen. | Six widgets |
-| 8 | 08-desk-mode.png | Stand me up as your desk tracker. | iPhone Duo standing like a tent, Desk Mode |
+| 8 | 08-desk-mode.png | Your stocks, live on your desk. | iPhone Duo's outer display, "Optimized for iPhone Duo" |
 | 9 | 09-apple-watch.png | Or keep me on your wrist. | Apple Watch Series 11 |
 | 10 | 10-sleep-well.png | Sleep well. I'm on watch. | Dippy asleep under the moon |
 
@@ -129,7 +131,7 @@ Apple scales the 6.9-inch set down for every smaller iPhone. `iPhone-6.5/` has t
 | 1 | 01-meet-dippy.png | Hi, I'm Dippy. I watch the dips. |
 | 2 | 02-buy-zone.png | Show me where you'd buy. |
 | 3 | 03-odds.png | I'll show your odds first. |
-| 4 | 04-alert.png | It dips. I tap you. |
+| 4 | 04-alert.png | Get alerted the moment it dips. |
 | 5 | 05-sleep-well.png | Sleep well. I'm on watch. |
 
 ### Apple Watch Series 11 (416 × 496), from `AppleWatch-Series-11/`
