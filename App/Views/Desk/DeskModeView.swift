@@ -60,22 +60,25 @@ struct DeskModeView: View {
     TimelineView(.everyMinute) { context in
       let now = frozenDate ?? context.date
       GeometryReader { geometry in
-        let cameraFrame = simulatedCamera ?? camera
-        // Only the ticker runs along the camera's edge, so only it steps around it.
-        let tickerInset = cameraFrame.map { $0.maxY > geometry.size.height - 60 ? max(0, geometry.size.width - $0.minX + 8) : 0 } ?? 0
-        VStack(spacing: 10) {
+        let size = geometry.size
+        // With the camera in the bottom corner, the panels run right down to its top edge, and the ticker fills the
+        // strip beside it, its stocks streaming out from the camera toward the left.
+        let bottomCamera = (simulatedCamera ?? camera).flatMap { $0.minY > size.height / 2 ? $0 : nil }
+        VStack(spacing: 8) {
           topBar(now)
-          HStack(alignment: .top, spacing: 10) {
+          HStack(alignment: .top, spacing: 8) {
             portfolio
-              .frame(width: geometry.size.width * 0.42)
+              .frame(width: size.width * 0.42)
             panel
           }
           .frame(maxHeight: .infinity)
           ticker
-            .padding(.trailing, tickerInset)
+            .frame(height: bottomCamera.map { $0.height } ?? 22)
+            .padding(.trailing, bottomCamera.map { max(0, size.width - 12 - $0.minX + 10) } ?? 0)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
+        .padding(.horizontal, 12)
+        .padding(.top, 10)
+        .padding(.bottom, bottomCamera.map { max(4, size.height - $0.maxY) } ?? 8)
       }
       .ignoresSafeArea()
     }
@@ -119,16 +122,16 @@ struct DeskModeView: View {
     let countdown = countdownText(to: MarketClock.nextChange(after: now), from: now, isLive: frozenDate == nil)
     return HStack(spacing: 8) {
       Text(now, format: .dateTime.hour().minute())
-        .font(.system(.title2, design: .rounded).weight(.bold).monospacedDigit())
+        .font(.system(size: 26, weight: .bold, design: .rounded).monospacedDigit())
         .fitsNumber(0.7)
       HStack(spacing: 5) {
         Circle().fill(isOpen ? Brand.buy : .white.opacity(0.4)).frame(width: 7, height: 7)
         Text(isOpen ? "Closes in \(countdown)" : "Opens in \(countdown)")
           .fitsNumber(0.5)
       }
-      .font(.caption.weight(.semibold))
-      .padding(.horizontal, 9)
-      .padding(.vertical, 5)
+      .font(.footnote.weight(.semibold))
+      .padding(.horizontal, 10)
+      .padding(.vertical, 6)
       .background(.white.opacity(0.08), in: .capsule)
       .layoutPriority(1)
       Spacer(minLength: 4)
@@ -139,15 +142,13 @@ struct DeskModeView: View {
             Text(quote.change.formatted(.percent.precision(.fractionLength(2)).sign(strategy: .always())))
               .foregroundStyle(quote.change >= 0 ? Brand.buy : Brand.sell)
           }
-          .font(.caption.weight(.bold).monospacedDigit())
-          .fitsNumber(0.7)
-          .padding(.horizontal, 9)
-          .padding(.vertical, 5)
+          .font(.footnote.weight(.bold).monospacedDigit())
+          .fitsNumber(0.6)
+          .padding(.horizontal, 10)
+          .padding(.vertical, 6)
           .background(.white.opacity(0.08), in: .capsule)
         }
       }
-      LivelyOwl(mood: isOpen ? .calm : .sleeping)
-        .frame(width: 26, height: 30)
       Button("Close Desk Mode", systemImage: "xmark") { dismiss() }
         .labelStyle(.iconOnly)
         .font(.caption.weight(.bold))
@@ -170,11 +171,11 @@ struct DeskModeView: View {
         .font(.caption.weight(.bold))
         .foregroundStyle(selected == nil ? .white.opacity(0.6) : Brand.mint)
       Text(quotes.formatBase(selected.map { history.values[$0] } ?? summary.totalValue))
-        .font(.system(size: 32, weight: .bold, design: .rounded).monospacedDigit())
+        .font(.system(size: 38, weight: .bold, design: .rounded).monospacedDigit())
         .fitsNumber()
         .contentTransition(.numericText())
       Text("\(changeText(summary.dayChange)) · \(isUp ? "+" : "")\(quotes.formatBase(summary.dayChangeAmount)) today")
-        .font(.subheadline.weight(.semibold).monospacedDigit())
+        .font(.headline.monospacedDigit())
         .foregroundStyle(isUp ? Brand.buy : Brand.sell)
         .fitsNumber()
       InteractiveChart(values: history.values, dates: history.dates,
@@ -255,9 +256,9 @@ struct DeskModeView: View {
               } label: {
                 VStack(spacing: 1) {
                   Text(item.symbol)
-                    .font(.subheadline.weight(.heavy))
+                    .font(.headline.weight(.heavy))
                   Text(changeText(item.change))
-                    .font(.caption.weight(.bold).monospacedDigit())
+                    .font(.subheadline.weight(.bold).monospacedDigit())
                 }
                 .fitsNumber(0.6)
                 .padding(4)
@@ -412,37 +413,43 @@ struct DeskModeView: View {
 
   // MARK: Ticker
 
-  /// Every stock you follow, drifting slowly along the bottom like a ticker.
+  /// Every stock you follow, drifting slowly from the camera side to the left like a ticker. The row repeats as often
+  /// as it takes to fill the strip, so a short list loops seamlessly too.
   private var ticker: some View {
     let items = summary.positions.map(\.quote)
     return TimelineView(.animation(minimumInterval: 1 / 30, paused: frozenDate != nil)) { context in
       GeometryReader { geometry in
-        let row = HStack(spacing: 18) {
+        let row = HStack(spacing: 20) {
           ForEach(items, id: \.symbol) { quote in
-            HStack(spacing: 5) {
-              Text(quote.symbol).font(.caption.weight(.bold))
+            HStack(spacing: 6) {
+              Text(quote.symbol).font(.subheadline.weight(.bold))
               Text(quote.formatted(quote.price))
-                .font(.caption.monospacedDigit())
+                .font(.subheadline.monospacedDigit())
                 .foregroundStyle(.white.opacity(0.7))
               Text(changeText(quote.change))
-                .font(.caption.weight(.semibold).monospacedDigit())
+                .font(.subheadline.weight(.semibold).monospacedDigit())
                 .foregroundStyle(quote.change >= 0 ? Brand.buy : Brand.sell)
             }
           }
         }
         .fixedSize()
+        let copies = tickerWidth > 0 ? Int((geometry.size.width / tickerWidth).rounded(.up)) + 1 : 2
         let offset = frozenDate == nil && tickerWidth > 0
           ? -CGFloat(context.date.timeIntervalSinceReferenceDate * 24).truncatingRemainder(dividingBy: tickerWidth) : 0
-        HStack(spacing: 18) {
-          row.onGeometryChange(for: CGFloat.self) { $0.size.width + 18 } action: { tickerWidth = $0 }
-          row
+        HStack(spacing: 20) {
+          ForEach(0..<max(copies, 2), id: \.self) { copy in
+            if copy == 0 {
+              row.onGeometryChange(for: CGFloat.self) { $0.size.width + 20 } action: { tickerWidth = $0 }
+            } else {
+              row
+            }
+          }
         }
         .offset(x: offset)
-        .frame(width: geometry.size.width, alignment: .leading)
+        .frame(width: geometry.size.width, height: geometry.size.height, alignment: .leading)
         .clipped()
       }
     }
-    .frame(height: 18)
     .accessibilityElement(children: .ignore)
     .accessibilityLabel("Your stocks today")
   }

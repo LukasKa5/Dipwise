@@ -490,7 +490,8 @@ struct NotifyStep: View {
       lockScreen
         .task {
           visible = alerts
-          expanded = alerts.first?.id
+          // A real lock screen shows every notification collapsed.
+          expanded = nil
         }
     } else {
       showcase
@@ -573,25 +574,22 @@ struct NotifyStep: View {
         HStack(alignment: .top, spacing: 12) {
           Image(.appIconPreview)
             .resizable()
-            .frame(width: 40, height: 40)
-            .clipShape(.rect(cornerRadius: 10, style: .continuous))
-          VStack(alignment: .leading, spacing: 2) {
+            .frame(width: 38, height: 38)
+            .clipShape(.rect(cornerRadius: 9, style: .continuous))
+          VStack(alignment: .leading, spacing: 1) {
             HStack(spacing: 5) {
-              Image(systemName: alert.symbol)
-                .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(alert.color)
               Text(alert.title)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(size: 15, weight: .semibold, design: .default))
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
               Spacer(minLength: 4)
               Text("now")
-                .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.6))
+                .font(.system(size: 13, design: .default))
+                .foregroundStyle(.secondary)
             }
             Text(alert.message)
-              .font(.system(size: 15))
-              .foregroundStyle(.white.opacity(0.85))
+              .font(.system(size: 15, design: .default))
+              .foregroundStyle(.primary)
               .lineLimit(isExpanded ? 4 : 2)
               .multilineTextAlignment(.leading)
               .fixedSize(horizontal: false, vertical: true)
@@ -610,14 +608,13 @@ struct NotifyStep: View {
           }
         }
       }
-      .foregroundStyle(.white)
-      .padding(14)
+      .foregroundStyle(.primary)
+      .padding(.horizontal, 14)
+      .padding(.vertical, 12)
       .frame(maxWidth: .infinity, alignment: .leading)
-      // A dark, solid card so the alert reads clearly on any wallpaper.
-      .background(Color.black.opacity(0.42), in: .rect(cornerRadius: 26, style: .continuous))
-      .overlay {
-        RoundedRectangle(cornerRadius: 26, style: .continuous).strokeBorder(.white.opacity(0.12), lineWidth: 1)
-      }
+      // Exactly like iOS: a light frosted platter with dark text, which reads on any wallpaper.
+      .background(.regularMaterial, in: .rect(cornerRadius: 24, style: .continuous))
+      .environment(\.colorScheme, .light)
     }
     .buttonStyle(ShowcasePressStyle())
     .accessibilityElement(children: .combine)

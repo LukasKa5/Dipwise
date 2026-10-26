@@ -206,14 +206,14 @@ def fix_iphone_clock(screen):
     return screen
 
 
-def fix_ipad_status(screen):
+def fix_ipad_status(screen, time="9:41 AM"):
     """US date format in the status bar, no window title, and no window-resize corner."""
     screen = screen.convert("RGB")
     draw = ImageDraw.Draw(screen)
     background = screen.getpixel((30, 30))
     draw.rectangle((30, 6, 560, 62), fill=background)
     status = font(TEXT, 30, "Semibold")
-    draw.text((50, 16), "9:41 AM   Wed Oct 14", font=status, fill=(0, 0, 0) if sum(background) / 3 > 128 else WHITE)
+    draw.text((50, 16), f"{time}   Wed Oct 14", font=status, fill=(0, 0, 0) if sum(background) / 3 > 128 else WHITE)
     corner = screen.getpixel((screen.width - 110, screen.height - 20))
     draw.rectangle((screen.width - 96, screen.height - 96, screen.width, screen.height), fill=corner)
     return screen
@@ -630,7 +630,7 @@ class Bezel:
         return layer.resize((round(layer.width * k), round(height)), Image.LANCZOS), k
 
 
-def watch_screen(content, title="Dipwise", time="10:09", size=(416, 496)):
+def watch_screen(content, title="Dipwise", time="9:41", size=(416, 496)):
     """A watch page as it shows on the display, under the watchOS title bar, at Series 11's 416 × 496 shape × 4."""
     k = 4
     dw, dh = size[0] * k, size[1] * k
@@ -809,12 +809,56 @@ class Story:
         return [(name, self.canvas.crop((self.W * i, 0, self.W * (i + 1), self.H))) for i, name in enumerate(names)]
 
 
+def popout(canvas, screen, box, cx, top, width, unit=1.0):
+    """Lifts one part of a real screen out of the device, larger, so it reads even in a small App Store thumbnail."""
+    crop = screen.convert("RGB").crop(box)
+    crop = crop.resize((round(width), round(crop.height * width / crop.width)), Image.LANCZOS)
+    radius = round(44 * width / 1200)
+    tile = Image.new("RGBA", crop.size, (0, 0, 0, 0))
+    tile.paste(crop, (0, 0), rounded_mask(crop.size, radius))
+    edge = Image.new("RGBA", crop.size, (0, 0, 0, 0))
+    ImageDraw.Draw(edge).rounded_rectangle((1, 1, crop.width - 2, crop.height - 2), radius=radius, outline=(255, 255, 255, 120), width=max(2, round(3 * unit)))
+    tile.alpha_composite(edge)
+    shadowed(canvas, tile, cx - tile.width / 2, top, blur=round(50 * unit), offset=round(30 * unit), opacity=170)
+    return tile.height
+
+
+def fingertip(canvas, x, y, unit=1.0):
+    """A finger on the glass, the way iOS shows touches: a soft white disc with a gentle shadow."""
+    shade = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+    ImageDraw.Draw(shade).ellipse((x - 64 * unit, y - 58 * unit, x + 64 * unit, y + 70 * unit), fill=(10, 27, 46, 90))
+    canvas.alpha_composite(shade.filter(ImageFilter.GaussianBlur(16 * unit)))
+    disc = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+    ImageDraw.Draw(disc).ellipse((x - 58 * unit, y - 58 * unit, x + 58 * unit, y + 58 * unit), fill=(255, 255, 255, 150),
+                                 outline=(255, 255, 255, 235), width=round(5 * unit))
+    canvas.alpha_composite(disc)
+
+
+def callout(canvas, text, x, y, tip_x, tip_y, unit=1.0):
+    """A navy speech callout in the app's own style, with a short tail pointing at what it explains."""
+    draw = ImageDraw.Draw(canvas)
+    label_font = font(ROUNDED, 50 * unit, "Bold")
+    w = round(draw.textlength(text, font=label_font) + 84 * unit)
+    h = round(108 * unit)
+    layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    layer.paste(NIGHT_MIDDLE + (255,), (0, 0), rounded_mask((w, h), h // 2))
+    ld = ImageDraw.Draw(layer)
+    ld.rounded_rectangle((2, 2, w - 3, h - 3), radius=h // 2, outline=MINT + (255,), width=round(4 * unit))
+    ld.ellipse((30 * unit, h / 2 - 9 * unit, 48 * unit, h / 2 + 9 * unit), fill=MINT)
+    ld.text((62 * unit, h * 0.2), text, font=label_font, fill=WHITE)
+    # A short tail under the callout, pointing down at the finger.
+    tail = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+    bx, by = min(max(tip_x, x + h / 2 + 30 * unit), x + w - h / 2 - 30 * unit), y + h
+    ImageDraw.Draw(tail).polygon([(bx - 26 * unit, by - 6), (bx + 26 * unit, by - 6), (bx, by + 34 * unit)], fill=NIGHT_MIDDLE + (255,))
+    shadowed(canvas, layer, x, y, blur=round(26 * unit), offset=round(14 * unit), opacity=150)
+    canvas.alpha_composite(tail)
+
+
 def iphone_story(raw, raw_dir):
-    """Ten pages Dippy narrates on one night sky. The icon's glowing price line runs through all of them: it dips
-    under the alert, climbs through the features, and ends where Dippy falls asleep under the moon. Every device is
-    Apple's real one, the same frames the app's intro uses, with Dippy perched on top reacting to what's on it."""
+    """Ten pages, one story, told by Dippy on one night sky. The icon's glowing price line runs through all of them:
+    it dips under the alert, climbs through the features, and ends where Dippy falls asleep on top of your iPhone.
+    Every page holds Apple's real device, and the moment that matters lifts out of the screen, larger."""
     W, H = 1320, 2868
-    icon = Image.open(raw_dir / "app-icon.png")
     story = Story((W, H), 10)
     phone = Bezel("iphone-18-pro-max")
     phone_height, phone_top, owl_height = 1990, 740, 230
@@ -832,29 +876,40 @@ def iphone_story(raw, raw_dir):
         (12100, 2020), (12520, 1985), (12920, 2010), (13500, 2110),
     ])
 
-    def page(index, text, screen, pose, owl_side=1, top=phone_top, height=phone_height, after=None):
-        story.title(index, text, 170, 140)
+    def page(index, text, screen, pose, owl_side=1, top=phone_top, height=phone_height, cx=W / 2, owl=True):
+        if text:
+            story.title(index, text, 170, 140)
         device, k = phone.device(screen, height)
-        left = story.place(index, device, W / 2, top)
-        perch(story.canvas, raw_dir, pose, x(index, W / 2 + owl_side * (device.width / 2 - 190)), top + 8, owl_height)
-        if after:
-            bx, by = phone.box[0], phone.box[1]
-            after(index, lambda px, py: (left + (bx + px) * k, top + (by + py) * k))
+        left = story.place(index, device, cx, top)
+        if owl:
+            perch(story.canvas, raw_dir, pose, x(index, cx + owl_side * (device.width / 2 - 190)), top + 8, owl_height)
+        bx, by = phone.box[0], phone.box[1]
+        return lambda px, py: (left + (bx + px) * k, top + (by + py) * k), k
 
     # 1 · Hello, with the promises right under the headline.
     page(0, "Hi, I'm *Dippy*.\nI watch the dips.", raw("iphone-home"), "wave", top=900, height=1900)
     promises(story.canvas, x(0, W / 2), 520, ["No login", "No ads", "Any broker"], unit=0.86)
 
-    def drag(index, at):
-        hx, hy = at(1040, 1680)
-        finger(story.canvas, hx, hy)
-        hint(story.canvas, raw_dir, x(index, W / 2), hy - 640, 860)
+    # 2 · Drag the zone: a finger on the handle and a callout in the app's own style.
+    at, _ = page(1, "Show me where\nyou'd *buy*.", fix_iphone_clock(raw("iphone-plan")), "look-down", owl_side=-1)
+    hx, hy = at(1041, 2049)
+    fingertip(story.canvas, hx, hy)
+    callout(story.canvas, "Drag to your price", min(hx - 360, x(1, W - 140) - 620), hy - 230, hx, hy)
 
-    page(1, "Show me where\nyou'd *buy*.", fix_iphone_clock(raw("iphone-plan")), "look-down", owl_side=-1, after=drag)
+    # 3 · The odds, lifted out of the stock screen.
     page(2, "I'll show your\n*odds* first.", raw("iphone-odds"), "look-left")
-    page(3, "Get alerted the\n*moment it dips*.", raw("scene-lock"), "wings")
+    popout(story.canvas, raw("iphone-odds"), (110, 1400, 1210, 1810), x(2, W / 2), 1800, 1220)
+
+    # 4 · The alert, exactly as iOS shows it, lifted off the lock screen.
+    at, k = page(3, "Get alerted the\n*moment it dips*.", raw("scene-lock"), "wings")
+    _, ny = at(0, 700)
+    popout(story.canvas, raw("scene-lock"), (36, 700, 1284, 945), x(3, W / 2), ny - 40, 1240)
     line.dot(x(3, 660), rings=True)
+
+    # 5 · The flock's mood, lifted out of the Flock.
     page(4, "Meet the *flock*.\nAll anonymous.", raw("iphone-flock"), "wink", owl_side=-1)
+    popout(story.canvas, raw("iphone-flock"), (60, 1705, 1260, 2380), x(4, W / 2), 1830, 1180)
+
     page(5, "*28* alerts,\nin plain words.", fix_iphone_clock(raw("iphone-plan-smart")), "blush")
     page(6, "I live on your\n*Home Screen*.", raw("iphone-home-widgets"), "look-down", owl_side=-1)
 
@@ -869,22 +924,26 @@ def iphone_story(raw, raw_dir):
     perch(story.canvas, raw_dir, "look-down", x(7, W / 2 - 330), top + 14, owl_height)
     sticker(story.canvas, x(7, W / 2), stand_bottom + 170, ["Optimized for iPhone Duo"])
 
-    # 9 · Apple Watch Series 11, the same watch as the app's intro.
+    # 9 · iPhone and Apple Watch together: the watch in front, close up, with no band to crowd it.
     story.title(8, "Or keep me\non your *wrist*.", 170, 140)
+    page(8, None, raw("iphone-home"), "look-down", owl_side=-1, top=760, height=1620, cx=W / 2 - 250)
     wrist = Bezel("watch-series-11")
-    watch_device, _ = wrist.device(watch_screen(raw("watch-today")), 1900)
-    story.place(8, watch_device, W / 2, 720)
+    watch_device, k = wrist.device(watch_screen(raw("watch-today")), 1500)
+    case = watch_device.crop((0, round(150 * k), watch_device.width, round(730 * k)))
+    fade = Image.new("L", case.size, 255)
+    fd = ImageDraw.Draw(fade)
+    span = round(46 * k)
+    for i in range(span):
+        fd.line([(0, i), (case.width, i)], fill=round(255 * i / span))
+        fd.line([(0, case.height - 1 - i), (case.width, case.height - 1 - i)], fill=round(255 * i / span))
+    case.putalpha(Image.composite(case.split()[3], Image.new("L", case.size, 0), fade))
+    story.place(8, case, W / 2 + 270, 1420)
 
-    # 10 · Asleep under the moon, on the same line.
+    # 10 · Good night: the real app after the bell, Dippy asleep on your iPhone under the moon.
     sky = story.canvas_sky
-    sky.moon(round(x(9, W - 250)), 690, 96)
-    story.title(9, "Sleep well.\n*I'm on watch.*", 170, 140)
-    line.owl(raw_dir, "sleep", x(9, 640), 760)
-    sleepy_zs(story.canvas, x(9, 880), 1240)
-    draw = ImageDraw.Draw(story.canvas)
-    sub = font(ROUNDED, 54, "Medium")
-    text = "Import from any broker in seconds."
-    draw.text((x(9, (W - draw.textlength(text, font=sub)) / 2), 2300), text, font=sub, fill=SOFT)
+    sky.moon(round(x(9, 200)), 610, 84)
+    page(9, "Sleep well.\n*I'm on watch.*", raw("iphone-night"), "sleep")
+    sleepy_zs(story.canvas, x(9, W / 2 + 400), 640)
 
     frames = story.frames(["01-meet-dippy", "02-buy-zone", "03-odds", "04-alert", "05-flock", "06-smart-alerts",
                            "07-widgets", "08-desk-mode", "09-apple-watch", "10-sleep-well"])
@@ -909,9 +968,9 @@ def ipad_story(raw, raw_dir):
         (8600, 2300), (9180, 2240), (9800, 2270), (10600, 2360),
     ])
 
-    def page(index, text, screen, pose, owl_side=1, top=top, height=height):
+    def page(index, text, screen, pose, owl_side=1, top=top, height=height, time="9:41 AM"):
         story.title(index, text, 160, 170)
-        device, _ = tablet.device(fix_ipad_status(screen), height)
+        device, _ = tablet.device(fix_ipad_status(screen, time), height)
         story.place(index, device, W / 2, top)
         perch(story.canvas, raw_dir, pose, x(index, W / 2 + owl_side * (device.width / 2 - 260)), top + 10, owl_height)
 
@@ -922,16 +981,10 @@ def ipad_story(raw, raw_dir):
     alert = banner_on(raw("ipad-alerts"), icon, 1160, 90, ALERT_TITLE, ALERT_BODY)
     page(3, "Get alerted the\n*moment it dips*.", alert, "wings")
     line.dot(x(3, W / 2 + 200), rings=True)
-
     sky = story.canvas_sky
-    sky.moon(round(x(4, W - 380)), 760, 130)
-    story.title(4, "Sleep well.\n*I'm on watch.*", 160, 170)
-    line.owl(raw_dir, "sleep", x(4, 1000), 860)
-    sleepy_zs(story.canvas, x(4, 1340), 1420, unit=1.3)
-    draw = ImageDraw.Draw(story.canvas)
-    sub = font(ROUNDED, 70, "Medium")
-    text = "Import from any broker in seconds."
-    draw.text((x(4, (W - draw.textlength(text, font=sub)) / 2), 2470), text, font=sub, fill=SOFT)
+    sky.moon(round(x(4, 260)), 640, 110)
+    page(4, "Sleep well.\n*I'm on watch.*", raw("ipad-night"), "sleep", time="10:42 PM")
+    sleepy_zs(story.canvas, x(4, W / 2 + 640), 680, unit=1.2)
 
     frames = story.frames(["01-meet-dippy", "02-buy-zone", "03-odds", "04-alert", "05-sleep-well"])
     return frames, story.canvas

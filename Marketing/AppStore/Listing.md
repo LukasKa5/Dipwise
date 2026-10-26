@@ -112,15 +112,15 @@ The captures show the app as it ships with the Flock live. **Before submitting, 
 | # | File | Dippy says | Shows |
 |---|------|------------|-------|
 | 1 | 01-meet-dippy.png | Hi, I'm Dippy. I watch the dips. | No login · No ads · Any broker, then Home |
-| 2 | 02-buy-zone.png | Show me where you'd buy. | Dragging a buy zone, with the intro's "Try it" chip |
-| 3 | 03-odds.png | I'll show your odds first. | The stock screen's Your Odds card, buy and sell |
-| 4 | 04-alert.png | Get alerted the moment it dips. | The lock screen with the alert: "buy 3 shares" |
-| 5 | 05-flock.png | Meet the flock. All anonymous. | The Flock |
+| 2 | 02-buy-zone.png | Show me where you'd buy. | A finger on the zone's handle, "Drag to your price" |
+| 3 | 03-odds.png | I'll show your odds first. | The stock screen, with the odds sentence and rings lifted out, larger |
+| 4 | 04-alert.png | Get alerted the moment it dips. | The lock screen, the alert ("buy 3 shares") lifted out exactly as iOS shows it |
+| 5 | 05-flock.png | Meet the flock. All anonymous. | The Flock, its Fear & Greed gauge lifted out |
 | 6 | 06-smart-alerts.png | 28 alerts, in plain words. | Smart alerts, Dippy blushing |
 | 7 | 07-widgets.png | I live on your Home Screen. | Six widgets |
 | 8 | 08-desk-mode.png | Your stocks, live on your desk. | iPhone Duo's outer display, "Optimized for iPhone Duo" |
-| 9 | 09-apple-watch.png | Or keep me on your wrist. | Apple Watch Series 11 |
-| 10 | 10-sleep-well.png | Sleep well. I'm on watch. | Dippy asleep under the moon |
+| 9 | 09-apple-watch.png | Or keep me on your wrist. | iPhone and Apple Watch Series 11 together |
+| 10 | 10-sleep-well.png | Sleep well. I'm on watch. | The app after the bell, Dippy asleep on the iPhone under the moon |
 
 Apple scales the 6.9-inch set down for every smaller iPhone. `iPhone-6.5/` has the same images at 1284 × 2778.
 

@@ -25,7 +25,11 @@ struct DippyStatus: Equatable {
     let bell = MarketClock.nextChange(after: date)
     let wait = Duration.seconds(max(0, bell.timeIntervalSince(date))).formatted(.units(allowed: [.hours, .minutes], width: .abbreviated))
 
-    switch MarketClock.phase(at: date) {
+    var phase = MarketClock.phase(at: date)
+    #if DEBUG
+    if ProcessInfo.processInfo.arguments.contains("-marketClosed") { phase = .overnight }
+    #endif
+    switch phase {
     case .open:
       if let closest, closest.distance == 0 {
         let zone = closest.isSell ? String(localized: "sell zone") : String(localized: "buy zone")
@@ -57,7 +61,7 @@ struct DippyStatus: Equatable {
       if isAwake {
         return DippyStatus(text: String(localized: "You woke Dippy! He'll keep watch until the market opens in \(wait)."), systemImage: "binoculars.fill")
       }
-      let isWeekend = MarketClock.phase(at: date) == .weekend
+      let isWeekend = phase == .weekend
       return DippyStatus(text: isWeekend
                            ? String(localized: "It's the weekend and Dippy is asleep. Tap him to wake him up.")
                            : String(localized: "Markets are closed and Dippy is asleep. Tap him to wake him up."),
