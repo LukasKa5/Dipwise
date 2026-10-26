@@ -14,6 +14,8 @@ struct PortfolioView: View {
   @State private var allocation: AllocationMode = .holding
   @State private var sort: PositionSort = .value
   @State private var showsCashEditor = false
+  @AppStorage(BenchmarkChoice.symbolKey) private var benchmark = "^GSPC"
+  @AppStorage(BenchmarkChoice.nameKey) private var benchmarkName = "S&P 500"
 
   private var summary: PortfolioSummary {
     PortfolioSummary(holdings: holdings, quotes: quotes.quotes, baseCurrency: quotes.baseCurrency, convert: quotes.toBase, intraday: quotes.intraday)
@@ -101,21 +103,38 @@ struct PortfolioView: View {
         InteractiveChart(values: history.values, dates: history.dates, showsOwl: true, owlSize: 40, selectedIndex: $selectedIndex)
           .frame(height: 200)
         PeriodPicker(period: $period, presets: [.day, .week, .month, .threeMonths, .year], earliest: summary.earliestDate)
-        if let comparison = marketComparison(history) {
-          MarketComparisonRow(comparison: comparison)
-            .proLocked(!subscription.isPro, message: "See if you're beating the market with Pro")
+        VStack(alignment: .leading, spacing: 10) {
+          HStack {
+            Text("Compare")
+              .font(.subheadline.weight(.semibold))
+              .foregroundStyle(.white.opacity(0.7))
+            Spacer()
+            BenchmarkMenu()
+              .tint(Brand.mint)
+          }
+          if let comparison = marketComparison(history) {
+            MarketComparisonRow(comparison: comparison, name: benchmarkName)
+            ComparisonChart(portfolio: history, benchmark: quotes[benchmark])
+              .frame(height: 90)
+          } else {
+            Text("Loading \(benchmarkName)…")
+              .font(.caption)
+              .foregroundStyle(.white.opacity(0.6))
+          }
         }
+        .proLocked(!subscription.isPro, message: "Compare your portfolio with any ETF, index, or stock with Pro")
+        .task(id: benchmark) { await quotes.refresh(symbols: [benchmark]) }
       }
       .padding(18)
       .heroCardStyle()
     }
   }
 
-  /// The portfolio's change over the shown period next to the S&P 500's over the same days.
+  /// The portfolio's change over the shown period next to the chosen benchmark's over the same days.
   private func marketComparison(_ history: (values: [Double], dates: [Date])) -> MarketComparison? {
     guard let first = history.values.first, first > 0, let last = history.values.last,
           let start = history.dates.first, let end = history.dates.last,
-          let market = quotes[Benchmark.symbol], market.closes.count == market.dates.count else { return nil }
+          let market = quotes[benchmark], market.closes.count == market.dates.count else { return nil }
     let calendar = Calendar.current
     guard let from = market.dates.firstIndex(where: { calendar.startOfDay(for: $0) >= calendar.startOfDay(for: start) }),
           let to = market.dates.lastIndex(where: { calendar.startOfDay(for: $0) <= calendar.startOfDay(for: end) }),
@@ -201,6 +220,7 @@ struct PortfolioView: View {
           InfoButton(topic: .dividends)
         }
       }
+      IncomeGoalCard(currentPerMonth: summary.annualDividendIncome / 12, currency: quotes.baseCurrency)
       VStack(alignment: .leading, spacing: 18) {
         HStack(spacing: 12) {
           DividendFigure(title: "Per year", value: money(summary.annualDividendIncome))
@@ -483,7 +503,7 @@ private struct CashEditorView: View {
   }
 }
 
-/// How the portfolio did against the S&P 500 over the same days.
+/// How the portfolio did against a benchmark over the same days.
 struct MarketComparison {
   var portfolio: Double
   var market: Double
@@ -494,6 +514,7 @@ struct MarketComparison {
 /// "You +8.2% · S&P 500 +5.1%", and whether the portfolio is ahead.
 private struct MarketComparisonRow: View {
   var comparison: MarketComparison
+  var name: String
 
   var body: some View {
     let isAhead = comparison.difference >= 0
@@ -504,9 +525,9 @@ private struct MarketComparisonRow: View {
         .frame(width: 36, height: 36)
         .background(.white.opacity(0.1), in: .circle)
       VStack(alignment: .leading, spacing: 2) {
-        Text(isAhead ? "Beating the market" : "Behind the market")
+        Text(isAhead ? "Ahead of \(name)" : "Behind \(name)")
           .font(.subheadline.weight(.semibold))
-        Text("You \(comparison.portfolio.formatted(.percent.precision(.fractionLength(1)).sign(strategy: .always()))) · S&P 500 \(comparison.market.formatted(.percent.precision(.fractionLength(1)).sign(strategy: .always())))")
+        Text("You \(comparison.portfolio.formatted(.percent.precision(.fractionLength(1)).sign(strategy: .always()))) · \(name) \(comparison.market.formatted(.percent.precision(.fractionLength(1)).sign(strategy: .always())))")
           .font(.caption.monospacedDigit())
           .foregroundStyle(.white.opacity(0.7))
       }
@@ -518,5 +539,42 @@ private struct MarketComparisonRow: View {
     .padding(12)
     .background(.white.opacity(0.08), in: .rect(cornerRadius: 16, style: .continuous))
     .accessibilityElement(children: .combine)
+  }
+}
+
+/// The portfolio and the benchmark over the same days, both starting at zero, so the gap between them reads at a glance.
+private struct ComparisonChart: View {
+  var portfolio: (values: [Double], dates: [Date])
+  var benchmark: Quote?
+
+  private struct Point: Identifiable {
+    var date: Date
+    var change: Double
+    var series: String
+    var id: String { "\(series)-\(date.timeIntervalSince1970)" }
+  }
+
+  var body: some View {
+    let points = self.points
+    Chart(points) { point in
+      LineMark(x: .value("Date", point.date), y: .value("Change", point.change), series: .value("Series", point.series))
+        .foregroundStyle(point.series == "you" ? Brand.mint : .white.opacity(0.55))
+        .lineStyle(StrokeStyle(lineWidth: point.series == "you" ? 2.5 : 1.8, lineCap: .round, dash: point.series == "you" ? [] : [4, 4]))
+        .interpolationMethod(.monotone)
+    }
+    .chartXAxis(.hidden)
+    .chartYAxis(.hidden)
+    .accessibilityLabel("Your portfolio and the benchmark over the same period")
+  }
+
+  private var points: [Point] {
+    guard let first = portfolio.values.first, first > 0, let start = portfolio.dates.first else { return [] }
+    var result = zip(portfolio.dates, portfolio.values).map { Point(date: $0, change: $1 / first - 1, series: "you") }
+    if let benchmark, benchmark.closes.count == benchmark.dates.count,
+       let from = benchmark.dates.firstIndex(where: { $0 >= Calendar.current.startOfDay(for: start) }), benchmark.closes[from] > 0 {
+      let base = benchmark.closes[from]
+      result += benchmark.dates[from...].indices.map { Point(date: benchmark.dates[$0], change: benchmark.closes[$0] / base - 1, series: "benchmark") }
+    }
+    return result
   }
 }
