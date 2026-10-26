@@ -5,14 +5,14 @@
   },
   "name": "Project",
   "options": {
+    "developmentLanguage": "en",
     "groupSortPosition": "bottom",
-    "transitivelyLinkDependencies": false,
-    "developmentLanguage": "en"
+    "transitivelyLinkDependencies": false
   },
   "settings": {
     "CODE_SIGN_IDENTITY": "-",
-    "SWIFT_EMIT_LOC_STRINGS": "YES",
-    "LOCALIZATION_PREFERS_STRING_CATALOGS": "YES"
+    "LOCALIZATION_PREFERS_STRING_CATALOGS": "YES",
+    "SWIFT_EMIT_LOC_STRINGS": "YES"
   },
   "targets": {
     "Dipwise": {
@@ -27,13 +27,36 @@
         }
       ],
       "deploymentTarget": "26.0",
-      "info": {
-        "path": "App/Info.plist",
+      "entitlements": {
+        "path": "App\/App.entitlements",
         "properties": {
+          "com.apple.security.application-groups": [
+            "group.app.bitrig.lukaskaniansky.dipwise"
+          ]
+        }
+      },
+      "info": {
+        "path": "App\/Info.plist",
+        "properties": {
+          "BGTaskSchedulerPermittedIdentifiers": [
+            "dipwise.refresh"
+          ],
           "CFBundleDisplayName": "Dipwise",
           "CFBundleShortVersionString": "1.0",
+          "CFBundleURLTypes": [
+            {
+              "CFBundleURLName": "app.dipwise",
+              "CFBundleURLSchemes": [
+                "dipwise"
+              ]
+            }
+          ],
           "CFBundleVersion": "1",
           "ITSAppUsesNonExemptEncryption": false,
+          "LSApplicationCategoryType": "public.app-category.finance",
+          "UIBackgroundModes": [
+            "fetch"
+          ],
           "UILaunchScreen": {
             "UIColorName": "LaunchNavy"
           },
@@ -42,26 +65,11 @@
             "UIInterfaceOrientationLandscapeLeft",
             "UIInterfaceOrientationLandscapeRight"
           ],
-          "UIBackgroundModes": [
-            "fetch"
-          ],
-          "BGTaskSchedulerPermittedIdentifiers": [
-            "dipwise.refresh"
-          ],
           "UISupportedInterfaceOrientations~ipad": [
             "UIInterfaceOrientationPortrait",
             "UIInterfaceOrientationPortraitUpsideDown",
             "UIInterfaceOrientationLandscapeLeft",
             "UIInterfaceOrientationLandscapeRight"
-          ],
-          "LSApplicationCategoryType": "public.app-category.finance",
-          "CFBundleURLTypes": [
-            {
-              "CFBundleURLName": "app.dipwise",
-              "CFBundleURLSchemes": [
-                "dipwise"
-              ]
-            }
           ]
         }
       },
@@ -71,7 +79,7 @@
         "ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME": "AccentColor",
         "CURRENT_PROJECT_VERSION": "1",
         "MARKETING_VERSION": "1.0",
-        "PRODUCT_BUNDLE_IDENTIFIER": "app.bitrig.new.15b8fdf3-82a6-4223-97a2-c5cc5f8ba55e",
+        "PRODUCT_BUNDLE_IDENTIFIER": "app.bitrig.lukaskaniansky.dipwise",
         "PRODUCT_NAME": "$(TARGET_NAME)",
         "SWIFT_VERSION": "5.0",
         "TARGETED_DEVICE_FAMILY": "1,2"
@@ -84,48 +92,54 @@
           "path": "Shared"
         },
         {
-          "path": "Widget Extension/WidgetComponents.swift"
+          "path": "Widget Extension\/WidgetComponents.swift"
         },
         {
-          "path": "Widget Extension/PlansWidget.swift"
+          "path": "Widget Extension\/PlansWidget.swift"
         },
         {
-          "path": "Widget Extension/PortfolioWidget.swift"
+          "path": "Widget Extension\/PortfolioWidget.swift"
         },
         {
-          "path": "Widget Extension/StockPlanWidget.swift"
+          "path": "Widget Extension\/StockPlanWidget.swift"
         },
         {
-          "path": "Widget Extension/WidgetIntents.swift"
+          "path": "Widget Extension\/WidgetIntents.swift"
         },
         {
-          "path": "Widget Extension/FlockWidgets.swift"
+          "path": "Widget Extension\/FlockWidgets.swift"
         },
         {
-          "path": "Widget Extension/MarketWidget.swift"
+          "path": "Widget Extension\/MarketWidget.swift"
         }
       ],
-      "type": "application",
-      "entitlements": {
-        "path": "App/App.entitlements",
-        "properties": {
-          "com.apple.security.application-groups": [
-            "group.app.bitrig.new.15b8fdf3-82a6-4223-97a2-c5cc5f8ba55e"
-          ]
-        }
-      }
+      "type": "application"
     },
     "Dipwise Watch": {
+      "dependencies": [
+        {
+          "embed": true,
+          "target": "Dipwise Watch Widget Extension"
+        }
+      ],
       "deploymentTarget": "26.0",
+      "entitlements": {
+        "path": "Watch\/Watch.entitlements",
+        "properties": {
+          "com.apple.security.application-groups": [
+            "group.app.bitrig.lukaskaniansky.dipwise"
+          ]
+        }
+      },
       "info": {
-        "path": "Watch/Info.plist",
+        "path": "Watch\/Info.plist",
         "properties": {
           "CFBundleDisplayName": "Dipwise",
           "CFBundleShortVersionString": "1.0",
           "CFBundleVersion": "1",
           "ITSAppUsesNonExemptEncryption": false,
           "WKApplication": true,
-          "WKCompanionAppBundleIdentifier": "app.bitrig.new.15b8fdf3-82a6-4223-97a2-c5cc5f8ba55e"
+          "WKCompanionAppBundleIdentifier": "app.bitrig.lukaskaniansky.dipwise"
         }
       },
       "platform": "watchOS",
@@ -134,7 +148,7 @@
         "ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME": "AccentColor",
         "CURRENT_PROJECT_VERSION": "1",
         "MARKETING_VERSION": "1.0",
-        "PRODUCT_BUNDLE_IDENTIFIER": "app.bitrig.new.15b8fdf3-82a6-4223-97a2-c5cc5f8ba55e.watchkitapp",
+        "PRODUCT_BUNDLE_IDENTIFIER": "app.bitrig.lukaskaniansky.dipwise.watchkitapp",
         "PRODUCT_NAME": "$(TARGET_NAME)",
         "SWIFT_VERSION": "5.0"
       },
@@ -143,82 +157,26 @@
           "path": "Watch"
         },
         {
-          "path": "App/Assets.xcassets"
+          "path": "App\/Assets.xcassets"
         },
         {
           "path": "Shared"
         }
       ],
-      "type": "application",
-      "dependencies": [
-        {
-          "embed": true,
-          "target": "Dipwise Watch Widget Extension"
-        }
-      ],
-      "entitlements": {
-        "path": "Watch/Watch.entitlements",
-        "properties": {
-          "com.apple.security.application-groups": [
-            "group.app.bitrig.new.15b8fdf3-82a6-4223-97a2-c5cc5f8ba55e"
-          ]
-        }
-      }
-    },
-    "Dipwise Widget Extension": {
-      "type": "app-extension",
-      "platform": "iOS",
-      "deploymentTarget": "26.0",
-      "sources": [
-        {
-          "path": "Widget Extension"
-        },
-        {
-          "path": "Shared"
-        }
-      ],
-      "info": {
-        "path": "Widget Extension/Info.plist",
-        "properties": {
-          "CFBundleDisplayName": "Dipwise Widget Extension",
-          "CFBundleShortVersionString": "1.0",
-          "CFBundleVersion": "1",
-          "NSExtension": {
-            "NSExtensionPointIdentifier": "com.apple.widgetkit-extension"
-          }
-        }
-      },
-      "settings": {
-        "CURRENT_PROJECT_VERSION": "1",
-        "MARKETING_VERSION": "1.0",
-        "PRODUCT_BUNDLE_IDENTIFIER": "app.bitrig.new.15b8fdf3-82a6-4223-97a2-c5cc5f8ba55e.widget-extension",
-        "PRODUCT_NAME": "$(TARGET_NAME)",
-        "SWIFT_VERSION": "5.0",
-        "TARGETED_DEVICE_FAMILY": "1,2"
-      },
-      "entitlements": {
-        "path": "Widget Extension/Widget Extension.entitlements",
-        "properties": {
-          "com.apple.security.application-groups": [
-            "group.app.bitrig.new.15b8fdf3-82a6-4223-97a2-c5cc5f8ba55e"
-          ]
-        }
-      }
+      "type": "application"
     },
     "Dipwise Watch Widget Extension": {
-      "type": "app-extension",
-      "platform": "watchOS",
       "deploymentTarget": "26.0",
-      "sources": [
-        {
-          "path": "Watch Widget Extension"
-        },
-        {
-          "path": "Shared"
+      "entitlements": {
+        "path": "Watch Widget Extension\/Watch Widget Extension.entitlements",
+        "properties": {
+          "com.apple.security.application-groups": [
+            "group.app.bitrig.lukaskaniansky.dipwise"
+          ]
         }
-      ],
+      },
       "info": {
-        "path": "Watch Widget Extension/Info.plist",
+        "path": "Watch Widget Extension\/Info.plist",
         "properties": {
           "CFBundleDisplayName": "Dipwise Watch Widget Extension",
           "CFBundleShortVersionString": "1.0",
@@ -228,21 +186,63 @@
           }
         }
       },
+      "platform": "watchOS",
       "settings": {
         "CURRENT_PROJECT_VERSION": "1",
         "MARKETING_VERSION": "1.0",
-        "PRODUCT_BUNDLE_IDENTIFIER": "app.bitrig.new.15b8fdf3-82a6-4223-97a2-c5cc5f8ba55e.watchkitapp.widget-extension",
+        "PRODUCT_BUNDLE_IDENTIFIER": "app.bitrig.lukaskaniansky.dipwise.watchkitapp.widget-extension",
         "PRODUCT_NAME": "$(TARGET_NAME)",
         "SWIFT_VERSION": "5.0"
       },
+      "sources": [
+        {
+          "path": "Watch Widget Extension"
+        },
+        {
+          "path": "Shared"
+        }
+      ],
+      "type": "app-extension"
+    },
+    "Dipwise Widget Extension": {
+      "deploymentTarget": "26.0",
       "entitlements": {
-        "path": "Watch Widget Extension/Watch Widget Extension.entitlements",
+        "path": "Widget Extension\/Widget Extension.entitlements",
         "properties": {
           "com.apple.security.application-groups": [
-            "group.app.bitrig.new.15b8fdf3-82a6-4223-97a2-c5cc5f8ba55e"
+            "group.app.bitrig.lukaskaniansky.dipwise"
           ]
         }
-      }
+      },
+      "info": {
+        "path": "Widget Extension\/Info.plist",
+        "properties": {
+          "CFBundleDisplayName": "Dipwise Widget Extension",
+          "CFBundleShortVersionString": "1.0",
+          "CFBundleVersion": "1",
+          "NSExtension": {
+            "NSExtensionPointIdentifier": "com.apple.widgetkit-extension"
+          }
+        }
+      },
+      "platform": "iOS",
+      "settings": {
+        "CURRENT_PROJECT_VERSION": "1",
+        "MARKETING_VERSION": "1.0",
+        "PRODUCT_BUNDLE_IDENTIFIER": "app.bitrig.lukaskaniansky.dipwise.widget-extension",
+        "PRODUCT_NAME": "$(TARGET_NAME)",
+        "SWIFT_VERSION": "5.0",
+        "TARGETED_DEVICE_FAMILY": "1,2"
+      },
+      "sources": [
+        {
+          "path": "Widget Extension"
+        },
+        {
+          "path": "Shared"
+        }
+      ],
+      "type": "app-extension"
     }
   }
 }

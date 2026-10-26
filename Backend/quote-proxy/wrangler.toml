@@ -14,7 +14,7 @@ binding = "DEVICES"
 id = "REPLACE_WITH_KV_NAMESPACE_ID"
 
 [vars]
-BUNDLE_ID = "REPLACE_WITH_APP_BUNDLE_ID"
+BUNDLE_ID = "app.bitrig.lukaskaniansky.dipwise"
 
 # Secrets, never in this file:
 #   npx wrangler secret put TWELVE_DATA_KEY
