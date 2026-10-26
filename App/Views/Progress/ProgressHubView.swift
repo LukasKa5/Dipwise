@@ -19,6 +19,7 @@ struct ProgressHubView: View {
         VStack(alignment: .leading, spacing: 28) {
           streakCard
           levelCard
+          WardrobeSection(achievements: Achievement.all(progress: progress, holdings: holdings, quotes: quotes.quotes))
           achievements
           journalSection
         }

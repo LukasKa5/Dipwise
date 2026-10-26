@@ -40,7 +40,10 @@ struct OwlMark: View, Animatable {
   /// Extra room around the body so open wings aren't clipped.
   private static let margin: CGFloat = 0.8
 
+  @Environment(\.dippyOutfit) private var outfitOverride
+
   var body: some View {
+    let outfit = outfitOverride ?? DippyOutfit.equipped
     GeometryReader { geometry in
       let size = geometry.size
       let canvasSize = CGSize(width: size.width * (1 + Self.margin * 2), height: size.height * (1 + Self.margin))
@@ -52,7 +55,7 @@ struct OwlMark: View, Animatable {
         context.translateBy(x: originX, y: originY)
         context.scaleBy(x: scale, y: scale)
         context.translateBy(x: -bounds.minX, y: -bounds.minY)
-        draw(in: &context)
+        draw(in: &context, outfit: outfit)
       }
       .frame(width: canvasSize.width, height: canvasSize.height)
       .position(x: size.width / 2, y: size.height - canvasSize.height / 2)
@@ -62,7 +65,7 @@ struct OwlMark: View, Animatable {
     .accessibilityHidden(true)
   }
 
-  private func draw(in context: inout GraphicsContext) {
+  private func draw(in context: inout GraphicsContext, outfit: DippyOutfit) {
     let body = Path { path in
       path.move(to: CGPoint(x: 346, y: 296))
       path.addCurve(to: CGPoint(x: 512, y: 352), control1: CGPoint(x: 396, y: 324), control2: CGPoint(x: 452, y: 352))
@@ -208,6 +211,7 @@ struct OwlMark: View, Animatable {
     }
     context.fill(beak, with: .color(Brand.amber))
     context.stroke(beak, with: .color(Brand.amber), style: StrokeStyle(lineWidth: 14, lineJoin: .round))
+    outfit.draw(in: &context, body: body)
   }
 
   private func circle(at center: CGPoint, radius: CGFloat) -> CGRect {
