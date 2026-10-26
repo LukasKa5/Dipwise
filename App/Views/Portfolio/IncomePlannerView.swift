@@ -13,7 +13,7 @@ struct IncomePlannerView: View {
   @AppStorage("income.targetYear") private var targetYear = Calendar.current.component(.year, from: .now) + 10
   @AppStorage("income.growth") private var growth = 0.05
   @AppStorage("income.reinvests") private var reinvests = true
-  @AppStorage("income.yield") private var customYield = 0.0
+  @AppStorage("income.newYield") private var newYield = 0.035
 
   private var summary: PortfolioSummary {
     PortfolioSummary(holdings: holdings, quotes: quotes.quotes, baseCurrency: quotes.baseCurrency, convert: quotes.toBase, intraday: quotes.intraday)
@@ -21,9 +21,8 @@ struct IncomePlannerView: View {
 
   private var plan: IncomePlan {
     let summary = summary
-    let yield = customYield > 0 ? customYield : max(summary.dividendYield, 0.005)
-    return IncomePlan(value: summary.totalValue, yield: yield, monthly: monthly, growth: growth, reinvests: reinvests,
-                      goalPerMonth: goal, targetYear: targetYear)
+    return IncomePlan(value: summary.totalValue, yield: summary.dividendYield, newYield: newYield, monthly: monthly, growth: growth,
+                      reinvests: reinvests, goalPerMonth: goal, targetYear: targetYear)
   }
 
   private func money(_ value: Double) -> String {
@@ -197,8 +196,13 @@ struct IncomePlannerView: View {
         }
         .padding(16)
         Divider().padding(.leading, 16)
-        Stepper(value: Binding(get: { plan.yield }, set: { customYield = $0 }), in: 0.005...0.12, step: 0.0025) {
-          LabeledContent("Dividend yield", value: plan.yield.formatted(.percent.precision(.fractionLength(2))))
+        VStack(alignment: .leading, spacing: 4) {
+          Stepper(value: $newYield, in: 0.01...0.1, step: 0.0025) {
+            LabeledContent("Yield of new buys", value: newYield.formatted(.percent.precision(.fractionLength(2))))
+          }
+          Text("What you own today keeps its \(plan.yield.formatted(.percent.precision(.fractionLength(1)))) yield. New money goes into dividend payers.")
+            .font(.caption)
+            .foregroundStyle(.secondary)
         }
         .padding(16)
         Divider().padding(.leading, 16)

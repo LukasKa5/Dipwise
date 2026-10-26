@@ -15,7 +15,7 @@ struct StockDetailView: View {
   @State private var selectedIndex: Int?
   @State private var showsPositionEditor = false
   @State private var showsRemoveConfirmation = false
-  @State private var showsPlanBuilder = false
+  @State private var showsPlanBuilder = Router.startSheet == "plan"
   @State private var showsPaywall = false
   @State private var journalAlert: PriceAlert?
 

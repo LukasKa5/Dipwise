@@ -1,12 +1,14 @@
 import Foundation
 
 /// Projects dividend income year by year and works out what it takes to reach a monthly income goal.
-/// Simple on purpose: the portfolio grows by `growth` a year (dividends grow with it, so the yield stays the same),
-/// the user adds `monthly` every month, and dividends are reinvested or paid out.
+/// Simple on purpose, with two pots that both grow by `growth` a year (dividends grow with them): what the user owns
+/// today keeps today's yield, and new money, plus reinvested dividends, goes into dividend payers at `newYield`.
 struct IncomePlan: Equatable {
-  /// Today's portfolio value and yearly dividend income, in the base currency.
+  /// Today's portfolio value and its dividend yield, in the base currency.
   var value: Double
   var yield: Double
+  /// The yield of what the user buys from now on.
+  var newYield: Double
   var monthly: Double
   var growth: Double
   var reinvests: Bool
@@ -25,12 +27,14 @@ struct IncomePlan: Equatable {
   /// Income for every year until the goal is reached, or 40 years at most.
   func projection(monthly: Double? = nil, years: Int = 40) -> [Year] {
     let monthly = monthly ?? self.monthly
-    var value = self.value
+    var owned = value
+    var added = 0.0
     var result: [Year] = []
     for offset in 0...years {
-      let income = value * yield
-      result.append(Year(year: startYear + offset, value: value, perMonth: income / 12))
-      value = value * (1 + growth) + monthly * 12 + (reinvests ? income : 0)
+      let income = owned * yield + added * newYield
+      result.append(Year(year: startYear + offset, value: owned + added, perMonth: income / 12))
+      owned *= 1 + growth
+      added = added * (1 + growth) + monthly * 12 + (reinvests ? income : 0)
     }
     return result
   }
@@ -46,7 +50,7 @@ struct IncomePlan: Equatable {
   /// What to invest each month to reach the goal by the target year.
   var monthlyNeeded: Double? {
     let years = targetYear - startYear
-    guard years > 0, goalPerMonth > 0, yield > 0 else { return nil }
+    guard years > 0, goalPerMonth > 0, newYield > 0 else { return nil }
     let reaches = { (monthly: Double) in (projection(monthly: monthly, years: years).last?.perMonth ?? 0) >= goalPerMonth }
     if reaches(0) { return 0 }
     var low = 0.0, high = 100.0

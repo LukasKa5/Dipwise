@@ -8,7 +8,8 @@ struct HomeView: View {
   @Environment(Router.self) private var router
   @Environment(\.modelContext) private var modelContext
   @Environment(ProgressStore.self) private var progress
-  @State private var showsProgress = false
+  @State private var showsProgress = Router.startSheet == "progress"
+  @State private var showsIncome = Router.startSheet == "income"
   @AppStorage(AlertSettings.showsBriefKey) private var showsBrief = true
   @AppStorage(AlertSettings.briefHiddenDayKey) private var briefHiddenDay = ""
   @State private var showsAddStock = false
@@ -76,6 +77,7 @@ struct HomeView: View {
         }
       }
       .sheet(isPresented: $showsProgress) { ProgressHubView() }
+      .navigationDestination(isPresented: $showsIncome) { IncomePlannerView() }
       .fullScreenCover(isPresented: $showsDesk) { DeskModeView() }
       .onFoldableChange { isFoldable = $0 || HomeView.forcesFoldable }
       .fullScreenCover(isPresented: $router.showsBrief) { DailyBriefView() }

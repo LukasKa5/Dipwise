@@ -446,15 +446,18 @@ private struct ProFeature {
     ProFeature(title: "Real-time prices and alerts", systemImage: "bolt.fill", free: .text("15 min"), pro: .text("Live"), needsRealTime: true),
     ProFeature(title: "Price alerts", systemImage: "bell.fill", free: .text("3"), pro: .text("Unlimited")),
     ProFeature(title: "Smart alerts like RSI, MACD, and trend crosses", systemImage: "sparkles", free: .missing, pro: .text("27 types")),
-    ProFeature(title: "Odds that each alert fires", systemImage: "dice.fill", free: .text("1"), pro: .text("All")),
+    ProFeature(title: "Odds for buy and sell zones, wait time, and price range", systemImage: "dice.fill", free: .text("30 days"), pro: .text("All")),
+    ProFeature(title: "Your Profile: investor DNA and blind spots", systemImage: "person.text.rectangle.fill", free: .text("Preview"), pro: .included),
+    ProFeature(title: "Passive income planner", systemImage: "leaf.circle.fill", free: .missing, pro: .included),
     ProFeature(title: "Live signals on your stocks", systemImage: "dot.radiowaves.left.and.right", free: .text("2"), pro: .text("All")),
     ProFeature(title: "Top investors' portfolios and moves", systemImage: "trophy.fill", free: .text("Preview"), pro: .included, needsFlock: true),
     ProFeature(title: "Follow investors and get their moves", systemImage: "bell.and.waves.left.and.right.fill", free: .missing, pro: .included, needsFlock: true),
     ProFeature(title: "What the flock is buying and selling", systemImage: "arrow.left.arrow.right", free: .text("1"), pro: .text("All"), needsFlock: true),
     ProFeature(title: "Full crowd report and Dip Radar", systemImage: "person.3.fill", free: .text("Preview"), pro: .included, needsFlock: true),
-    ProFeature(title: "Your portfolio vs the S&P 500", systemImage: "flag.checkered", free: .missing, pro: .included),
+    ProFeature(title: "Your portfolio vs any ETF or index", systemImage: "flag.checkered", free: .missing, pro: .included),
     ProFeature(title: "Heads-up before a stock reaches your zone", systemImage: "bell.badge.fill", free: .missing, pro: .included),
     ProFeature(title: "Dividend calendar", systemImage: "leaf.fill", free: .missing, pro: .included),
+    ProFeature(title: "Dippy's top hat and monocle", systemImage: "crown.fill", free: .missing, pro: .included),
   ]
 
   @ViewBuilder

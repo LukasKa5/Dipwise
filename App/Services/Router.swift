@@ -34,7 +34,15 @@ final class Router {
     return .home
   }
   var homePath: [String] = Router.startStock.map { [$0] } ?? []
-  var showsBrief = false
+  var showsBrief = Router.startSheet == "brief"
+  /// Development only: `-show brief|progress|plan|income` opens that screen at launch, for screenshots.
+  static var startSheet: String? {
+    #if DEBUG
+    let arguments = ProcessInfo.processInfo.arguments
+    if let index = arguments.firstIndex(of: "-show"), arguments.indices.contains(index + 1) { return arguments[index + 1] }
+    #endif
+    return nil
+  }
 
   /// Development only: `-openStock NVDA` opens straight onto that stock, for screenshots.
   private static var startStock: String? {
