@@ -1160,78 +1160,93 @@ def glow_path(canvas, points, color, width, glow, unit):
     ImageDraw.Draw(canvas).line(points, fill=color + (255,), width=round(width * unit), joint="curve")
 
 
-def leaf(canvas, cx, cy, length, width, angle, color):
-    """One pointed leaf, with a lighter midrib."""
-    layer = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
-    draw = ImageDraw.Draw(layer)
+def leaf_at(draw, base, angle, length, width, color):
+    """One leaf growing from `base` along `angle`: a short stem, a pointed blade, and a lighter midrib."""
     ca, sa = math.cos(angle), math.sin(angle)
+    stem = length * 0.12
+    bx, by = base[0] + ca * stem, base[1] + sa * stem
+    draw.line([base, (bx, by)], fill=(20, 40, 46, 255), width=max(2, round(width * 0.14)))
     outline = []
     for side in (1, -1):
-        for i in range(21):
-            t = i / 20 if side == 1 else 1 - i / 20
-            along = (t - 0.5) * length
-            across = side * width / 2 * math.sin(math.pi * t) ** 0.8
-            outline.append((cx + along * ca - across * sa, cy + along * sa + across * ca))
+        for k in range(25):
+            t = k / 24 if side == 1 else 1 - k / 24
+            along = t * length
+            across = side * width / 2 * math.sin(math.pi * t ** 0.85) * (1 - 0.15 * t)
+            outline.append((bx + along * ca - across * sa, by + along * sa + across * ca))
     draw.polygon(outline, fill=color + (255,))
-    draw.line([(cx - length / 2 * ca, cy - length / 2 * sa), (cx + length / 2 * ca, cy + length / 2 * sa)],
-              fill=tuple(min(255, c + 34) for c in color) + (200,), width=max(1, round(width * 0.08)))
-    canvas.alpha_composite(layer)
+    draw.line([(bx, by), (bx + ca * length * 0.92, by + sa * length * 0.92)],
+              fill=tuple(min(255, c + 40) for c in color) + (210,), width=max(1, round(width * 0.07)))
 
 
 def branch(canvas, start, end, thickness, unit):
-    """A branch reaching in from a tree at the edge: tapered bark with a moonlit top edge, a forked twig, and leaves
-    in the icon's teal greens. Returns where the top of the branch is at any point along it, for perching."""
+    """A branch growing out of a tree at the edge: thick at the trunk, thinning toward the tip with a gentle rise,
+    bark lit by the moon along the top, side twigs, and leaves growing from the twigs on short stems, the way real
+    leaves do. Returns where the top of the branch is at any point along it, for perching."""
     (x0, y0), (x1, y1) = start, end
-    sag = 46 * unit
+    rise = 60 * unit
 
     def center(t):
-        return x0 + (x1 - x0) * t, y0 + (y1 - y0) * t - math.sin(math.pi * t) * sag
+        return x0 + (x1 - x0) * t, y0 + (y1 - y0) * t - math.sin(math.pi * t * 0.9) * rise
 
     def half(t):
-        return thickness * (1 - 0.72 * t) / 2
+        return thickness * (1 - 0.78 * t ** 0.9) / 2
 
-    rng = random.Random(5)
-    greens = [(16, 64, 66), (22, 88, 84), (30, 112, 98), (18, 76, 74)]
+    rng = random.Random(9)
+    greens = [(22, 92, 82), (30, 116, 98), (18, 76, 70), (40, 132, 108)]
+    draw = ImageDraw.Draw(canvas)
 
-    # Leaves behind the branch first, then the bark, then a few in front.
-    def leaves(count, front):
-        for _ in range(count):
-            t = rng.uniform(0.05, 0.9)
-            x, y = center(t)
-            side = rng.choice([-1, 1])
-            leaf(canvas, x + rng.uniform(-20, 20) * unit, y + side * half(t) * rng.uniform(0.6, 1.4),
-                 rng.uniform(70, 110) * unit, rng.uniform(26, 38) * unit,
-                 rng.uniform(-0.9, 0.9) + (math.pi / 2 if side > 0 else -math.pi / 2) * 0.35, rng.choice(greens))
+    def twig(t, angle, length):
+        """A side twig from the branch, with leaves alternating along it and a small cluster at its tip."""
+        bx, by = center(t)
+        by += half(t) * (0.5 if math.sin(angle) > 0 else -0.5)
+        points = []
+        for k in range(16):
+            s_ = k / 15
+            bend = math.sin(math.pi * s_) * 12 * unit
+            points.append((bx + math.cos(angle) * length * s_ - math.sin(angle) * bend,
+                           by + math.sin(angle) * length * s_ + math.cos(angle) * bend))
+        draw.line(points, fill=(16, 30, 42, 255), width=max(3, round(thickness * 0.16)), joint="curve")
+        for n, k in enumerate((5, 8, 11)):
+            side = 1 if n % 2 else -1
+            leaf_at(draw, points[k], angle + side * 0.75 + rng.uniform(-0.15, 0.15),
+                    rng.uniform(78, 96) * unit, rng.uniform(32, 40) * unit, rng.choice(greens))
+        tip = points[-1]
+        for spread in (-0.45, 0.05, 0.5):
+            leaf_at(draw, tip, angle + spread, rng.uniform(84, 104) * unit, rng.uniform(34, 42) * unit, rng.choice(greens))
 
-    leaves(9, front=False)
-    # A twig forking up and away from the branch, with its own leaves.
-    fx, fy = center(0.42)
-    twig_end = (fx - 130 * unit, fy - 150 * unit)
-    twig = [(fx + (twig_end[0] - fx) * k / 20, fy + (twig_end[1] - fy) * k / 20 - math.sin(math.pi * k / 20) * 18 * unit) for k in range(21)]
-    ImageDraw.Draw(canvas).line(twig, fill=(10, 24, 36, 255), width=round(12 * unit), joint="curve")
-    for k in range(4):
-        tx, ty = twig[5 + k * 4]
-        leaf(canvas, tx + 30 * unit * (1 if k % 2 else -1), ty - 6 * unit, 84 * unit, 30 * unit, (-0.6 if k % 2 else 0.9 - math.pi), greens[k % len(greens)])
+    # Twigs hang below the branch and reach past its tip, so the perch on top stays clear.
+    twig(0.2, math.pi * 0.78, 150 * unit)
+    twig(0.48, math.pi * 0.66, 130 * unit)
+    twig(0.74, math.pi * 0.86, 120 * unit)
+    twig(0.97, math.pi * 1.02, 110 * unit)
 
     top, bottom = [], []
-    for i in range(61):
-        t = i / 60
+    for k in range(81):
+        t = k / 80
         x, y = center(t)
         top.append((x, y - half(t)))
         bottom.append((x, y + half(t)))
     bark = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
     bd = ImageDraw.Draw(bark)
-    bd.polygon(top + bottom[::-1], fill=(14, 26, 38, 255))
-    # Moonlight along the top, shadow underneath, a few bark lines.
-    bd.line(top, fill=(70, 112, 128, 255), width=max(2, round(4 * unit)), joint="curve")
-    bd.line(bottom, fill=(6, 14, 22, 255), width=max(2, round(5 * unit)), joint="curve")
-    for _ in range(14):
-        t = rng.uniform(0.05, 0.85)
+    bd.polygon(top + bottom[::-1], fill=(22, 34, 46, 255))
+    # Shading: a darker underside, moonlight along the top, and bark grain following the branch.
+    under = [(x, y - (y - ty) * 0.45) for (x, y), (_, ty) in zip(bottom, top)]
+    bd.polygon(under + bottom[::-1], fill=(12, 20, 30, 255))
+    bd.line(top, fill=(92, 128, 140, 255), width=max(2, round(4 * unit)), joint="curve")
+    for _ in range(26):
+        t = rng.uniform(0.03, 0.9)
         x, y = center(t)
-        offset = rng.uniform(-0.4, 0.4) * half(t)
-        bd.line([(x - 26 * unit, y + offset), (x + 26 * unit, y + offset + rng.uniform(-3, 3) * unit)], fill=(28, 46, 60, 255), width=max(1, round(3 * unit)))
+        dy = rng.uniform(-0.55, 0.35) * half(t)
+        span = rng.uniform(20, 46) * unit
+        bd.line([(x - span, y + dy), (x + span, y + dy + rng.uniform(-2, 2) * unit)], fill=(36, 52, 66, 255), width=max(1, round(2.5 * unit)))
+    # A knot where a twig once grew.
+    kx, ky = center(0.34)
+    bd.ellipse((kx - 14 * unit, ky - 8 * unit, kx + 14 * unit, ky + 8 * unit), fill=(12, 20, 30, 255), outline=(40, 58, 72, 255), width=max(1, round(2 * unit)))
     canvas.alpha_composite(bark)
-    leaves(5, front=True)
+    # The tip: a last little cluster of leaves where the branch ends.
+    tx, ty = center(1.0)
+    for spread in (-0.5, 0.0, 0.55):
+        leaf_at(draw, (tx, ty), math.pi + spread, 96 * unit, 40 * unit, rng.choice(greens))
 
     def perch_point(t):
         x, y = center(t)
@@ -1281,40 +1296,48 @@ def header(raw, raw_dir, size, with_text=True):
     disc = disc.resize((moon_r * 2, moon_r * 2), Image.LANCZOS)
     canvas.paste((255, 230, 170), (round(moon_x - moon_r), round(moon_y - moon_r)), disc)
 
-    # Far ridges: price charts fading into the night.
-    step = round(H * 0.09)
-    far = chart_ridge(W, H * 0.56, H * 0.11, 21, step)
-    fill_below(canvas, far, (30, 74, 100), (14, 40, 60))
-    ImageDraw.Draw(canvas).line(far, fill=(64, 124, 144, 255), width=max(1, round(2 * u)))
-    mist = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    ImageDraw.Draw(mist).rectangle((0, H * 0.6, W, H * 0.7), fill=(120, 180, 200, 34))
-    canvas.alpha_composite(mist.filter(ImageFilter.GaussianBlur(H * 0.05)))
-    mid = chart_ridge(W, H * 0.66, H * 0.08, 34, step)
-    fill_below(canvas, mid, (18, 54, 76), (10, 30, 46))
+    # Two calm mountain ranges behind the valley, soft and rounded, each with a thin moonlit rim, and a little mist
+    # between them, so the scene has depth without noise.
+    def range_line(base, amplitude, seed, peaks):
+        rng = random.Random(seed)
+        xs = [-W * 0.1 + k * W * 1.2 / peaks for k in range(peaks + 1)]
+        points = [(x, base - amplitude * (rng.uniform(0.35, 1.0) if k % 2 else rng.uniform(-0.1, 0.25))) for k, x in enumerate(xs)]
+        return smooth_curve(points, samples=36)
 
-    # The icon's line as the main ridge: calm, then a deep dip into the valley, then the climb.
-    dip_x = (W * (0.5 if wide else 0.5)) if with_text else W * 0.42
-    ridge = smooth_curve([(-60, H * 0.72), (dip_x - W * 0.3, H * 0.68), (dip_x - W * 0.12, H * 0.74), (dip_x, H * 0.87),
-                          (dip_x + W * 0.1, H * 0.75), (dip_x + W * 0.22, H * 0.62), (W + 60, H * 0.52)])
-    fill_below(canvas, ridge, (12, 36, 54), (6, 15, 28))
+    peaks = max(6, round(W / H * 3.2))
+    far = range_line(H * 0.6, H * 0.2, 21, peaks)
+    fill_below(canvas, far, (34, 78, 104), (20, 52, 74))
+    ImageDraw.Draw(canvas).line(far, fill=(92, 142, 160, 255), width=max(1, round(2.5 * u)), joint="curve")
+    mist = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    ImageDraw.Draw(mist).rectangle((0, H * 0.6, W, H * 0.72), fill=(130, 190, 210, 40))
+    canvas.alpha_composite(mist.filter(ImageFilter.GaussianBlur(H * 0.05)))
+    mid = range_line(H * 0.7, H * 0.13, 34, peaks + 2)
+    fill_below(canvas, mid, (20, 54, 76), (12, 34, 50))
+    ImageDraw.Draw(canvas).line(mid, fill=(58, 104, 124, 255), width=max(1, round(2 * u)), joint="curve")
+
+    # The front hills are the icon's line: their ridge glows mint, calm, then dipping into the valley and climbing.
+    dip_x = (W * 0.5) if with_text else W * 0.42
+    ridge = smooth_curve([(-60, H * 0.74), (dip_x - W * 0.3, H * 0.71), (dip_x - W * 0.12, H * 0.77), (dip_x, H * 0.88),
+                          (dip_x + W * 0.1, H * 0.78), (dip_x + W * 0.22, H * 0.66), (W + 60, H * 0.58)])
+    fill_below(canvas, ridge, (10, 30, 46), (5, 13, 24))
 
     # The lantern at the bottom of the dip: the alert, glowing into the valley.
     lantern_x, dip_y = max(ridge, key=lambda point: point[1])
     pool = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    ImageDraw.Draw(pool).ellipse((lantern_x - H * 0.3, dip_y - H * 0.16, lantern_x + H * 0.3, dip_y + H * 0.16), fill=MINT + (70,))
+    ImageDraw.Draw(pool).ellipse((lantern_x - H * 0.24, dip_y - H * 0.12, lantern_x + H * 0.24, dip_y + H * 0.12), fill=MINT + (55,))
     canvas.alpha_composite(pool.filter(ImageFilter.GaussianBlur(H * 0.08)))
     glow_path(canvas, ridge, MINT, 13, 42, u)
     rings = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     rd = ImageDraw.Draw(rings)
-    for r, a in [(110, 40), (76, 90)]:
-        rd.ellipse((lantern_x - r * u, dip_y - r * u, lantern_x + r * u, dip_y + r * u), outline=MINT + (a,), width=round(5 * u))
+    for r, a in [(78, 40), (54, 90)]:
+        rd.ellipse((lantern_x - r * u, dip_y - r * u, lantern_x + r * u, dip_y + r * u), outline=MINT + (a,), width=round(4 * u))
     canvas.alpha_composite(rings)
     cd = ImageDraw.Draw(canvas)
-    cd.ellipse((lantern_x - 26 * u, dip_y - 26 * u, lantern_x + 26 * u, dip_y + 26 * u), fill=MINT)
-    cd.ellipse((lantern_x - 12 * u, dip_y - 12 * u, lantern_x + 12 * u, dip_y + 12 * u), fill=WHITE)
+    cd.ellipse((lantern_x - 20 * u, dip_y - 20 * u, lantern_x + 20 * u, dip_y + 20 * u), fill=MINT)
+    cd.ellipse((lantern_x - 9 * u, dip_y - 9 * u, lantern_x + 9 * u, dip_y + 9 * u), fill=WHITE)
 
     # Dippy's branch, reaching in from the right: Dippy waving, two of the flock keeping him company.
-    reach = H * (1.0 if wide else 0.92)
+    reach = H * (1.0 if wide else (0.76 if with_text else 0.92))
     low = 0 if wide else H * 0.1
     perch_at = branch(canvas, (W + 40 * u, H * 0.52 + low), (W - reach, H * 0.38 + low), 64 * u, u)
     for t, pose, height in [(0.3, "look-left", H * 0.16), (0.56, "wave", H * 0.3), (0.84, "wink", H * 0.14)]:
@@ -1337,6 +1360,12 @@ def header(raw, raw_dir, size, with_text=True):
         for index, part in enumerate("Your *stock-watching* owl.".split("*")):
             draw.text((x, tag_top), part, font=tag_font, fill=MINT if index % 2 else (226, 236, 244))
             x += draw.textlength(part, font=tag_font)
+        labels = ["No login", "No ads", "Optimized for iPhone Duo"]
+        pill_unit = 0.56 * u
+        pill_font = font(ROUNDED, 50 * pill_unit, "Heavy")
+        widths = [draw.textlength(label, font=pill_font) + 46 * pill_unit + 92 * pill_unit for label in labels]
+        total = sum(widths) + 20 * pill_unit * (len(labels) - 1)
+        promises(canvas, left + total / 2, tag_top + H * 0.11, labels, unit=pill_unit)
     return canvas
 
 
