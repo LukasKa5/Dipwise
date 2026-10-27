@@ -14,6 +14,7 @@ Writes iPhone-6.9 (1320 × 2868), iPhone-6.5 (1284 × 2778), iPad-13 (2064 × 27
 (416 × 496) folders into the output folder, plus a panorama preview of each set.
 """
 
+import math
 import random
 import sys
 from pathlib import Path
@@ -1096,8 +1097,225 @@ def panorama(canvas, path, height=600):
     canvas.convert("RGB").resize((round(canvas.width * height / canvas.height), height), Image.LANCZOS).save(path, optimize=True)
 
 
+# MARK: - Header
+
+def vertical_gradient(size, stops):
+    """A top-to-bottom gradient through (position, color) stops."""
+    w, h = size
+    strip = Image.new("RGB", (1, 512))
+    for y in range(512):
+        t = y / 511
+        for (p0, c0), (p1, c1) in zip(stops, stops[1:]):
+            if p0 <= t <= p1:
+                k = (t - p0) / max(p1 - p0, 1e-6)
+                strip.putpixel((0, y), tuple(int(c0[i] + (c1[i] - c0[i]) * k) for i in range(3)))
+                break
+    return strip.resize((w, h), Image.BICUBIC).convert("RGBA")
+
+
+def chart_ridge(width, base, amplitude, seed, step):
+    """A mountain ridge that is secretly a price chart: a seeded random walk, eased between its points."""
+    rng = random.Random(seed)
+    level, controls = 0.0, []
+    for x in range(-step, width + step * 2, step):
+        level = max(-1, min(1, level + rng.uniform(-0.55, 0.55)))
+        controls.append((x, base - level * amplitude))
+    points = []
+    for (x0, y0), (x1, y1) in zip(controls, controls[1:]):
+        for i in range(8):
+            t = i / 8
+            e = (1 - math.cos(math.pi * t)) / 2
+            points.append((x0 + (x1 - x0) * t, y0 + (y1 - y0) * e))
+    return points
+
+
+def fill_below(canvas, points, top_color, bottom_color):
+    """Fills the land under a ridge with its own soft gradient."""
+    w, h = canvas.size
+    mask = Image.new("L", (w, h), 0)
+    ImageDraw.Draw(mask).polygon(points + [(w + 50, h + 50), (-50, h + 50)], fill=255)
+    land = vertical_gradient((w, h), [(0, top_color), (1, bottom_color)])
+    canvas.paste(land, (0, 0), mask)
+
+
+def smooth_curve(points, samples=24):
+    """A Catmull-Rom curve through the points, left to right."""
+    out = []
+    for i in range(len(points) - 1):
+        p0, p1 = points[max(i - 1, 0)], points[i]
+        p2, p3 = points[i + 1], points[min(i + 2, len(points) - 1)]
+        for j in range(samples):
+            t = j / samples
+            out.append(tuple(
+                0.5 * (2 * p1[c] + (-p0[c] + p2[c]) * t + (2 * p0[c] - 5 * p1[c] + 4 * p2[c] - p3[c]) * t * t
+                       + (-p0[c] + 3 * p1[c] - 3 * p2[c] + p3[c]) * t ** 3) for c in range(2)))
+    out.append(points[-1])
+    return out
+
+
+def glow_path(canvas, points, color, width, glow, unit):
+    layer = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+    ImageDraw.Draw(layer).line(points, fill=color + (130,), width=round(glow * unit), joint="curve")
+    canvas.alpha_composite(layer.filter(ImageFilter.GaussianBlur(glow * 0.55 * unit)))
+    ImageDraw.Draw(canvas).line(points, fill=color + (255,), width=round(width * unit), joint="curve")
+
+
+def branch(canvas, start, end, thickness, unit):
+    """A tree branch reaching in from the edge: a tapered, gently curved silhouette with a few leaves. Returns where
+    the top of the branch is at any point along it, for perching."""
+    (x0, y0), (x1, y1) = start, end
+
+    def center(t):
+        return x0 + (x1 - x0) * t, y0 + (y1 - y0) * t - math.sin(math.pi * t) * 40 * unit
+
+    top, bottom = [], []
+    for i in range(41):
+        t = i / 40
+        x, y = center(t)
+        half = thickness * (1 - 0.7 * t) / 2
+        top.append((x, y - half))
+        bottom.append((x, y + half))
+    draw = ImageDraw.Draw(canvas)
+    rng = random.Random(3)
+    for _ in range(8):
+        t = rng.uniform(0.1, 0.95)
+        x, y = center(t)
+        y += rng.choice([-1, 1]) * thickness * 0.45
+        r = rng.uniform(18, 30) * unit
+        draw.ellipse((x - r * 1.7, y - r, x + r * 1.7, y + r), fill=(16, 58, 62, 255))
+    draw.polygon(top + bottom[::-1], fill=(9, 24, 38, 255))
+    draw.line(top, fill=(46, 96, 112, 255), width=max(2, round(3 * unit)))
+
+    def perch_point(t):
+        x, y = center(t)
+        return x, y - thickness * (1 - 0.7 * t) / 2
+
+    return perch_point
+
+
+def header(raw, raw_dir, size, with_text=True):
+    """Dip Valley, where Dippy lives: a night landscape whose mountain ridges are price charts. The icon's glowing line
+    is the main ridge, dipping into the valley where the alert pings like a lantern. Dippy keeps watch from a branch
+    with two of the flock, under the moon, with fireflies in buy-green and amber. With text, the icon, name, and promise
+    sit in the sky; the text-free version is for Apple's featuring artwork, which asks for no words."""
+    W, H = size
+    u = H / 1080
+    wide = W / H >= 2.5
+    canvas = vertical_gradient((W, H), [(0, (6, 15, 28)), (0.55, (20, 56, 80)), (1, (8, 22, 36))])
+    rng = random.Random(11)
+
+    # Stars, quiet and small, in the upper sky.
+    stars = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    sd = ImageDraw.Draw(stars)
+    for _ in range(int(W / H * 40)):
+        sx, sy = rng.uniform(0, W), rng.uniform(0, H * 0.55)
+        r = rng.choice([1.4, 1.9, 2.6, 3.2]) * u
+        sd.ellipse((sx - r, sy - r, sx + r, sy + r), fill=(255, 255, 255, rng.randint(40, 150)))
+    canvas.alpha_composite(stars)
+
+    # The moon, with its halo.
+    moon_x = (W * (0.6 if wide else 0.62)) if with_text else W * 0.18
+    moon_y, moon_r = (H * 0.2, round(H * 0.08)) if wide or not with_text else (H * 0.12, round(H * 0.06))
+    halo = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    ImageDraw.Draw(halo).ellipse((moon_x - moon_r * 3, moon_y - moon_r * 3, moon_x + moon_r * 3, moon_y + moon_r * 3), fill=(255, 232, 180, 34))
+    canvas.alpha_composite(halo.filter(ImageFilter.GaussianBlur(moon_r)))
+    disc = Image.new("L", (moon_r * 8, moon_r * 8), 0)
+    dd = ImageDraw.Draw(disc)
+    dd.ellipse((0, 0, moon_r * 8 - 1, moon_r * 8 - 1), fill=255)
+    dd.ellipse((round(moon_r * 2.5), round(-moon_r * 1.4), round(moon_r * 10.5), round(moon_r * 6.6)), fill=0)
+    disc = disc.resize((moon_r * 2, moon_r * 2), Image.LANCZOS)
+    canvas.paste((255, 230, 170), (round(moon_x - moon_r), round(moon_y - moon_r)), disc)
+
+    # Far ridges: price charts fading into the night.
+    step = round(H * 0.09)
+    far = chart_ridge(W, H * 0.56, H * 0.11, 21, step)
+    fill_below(canvas, far, (30, 74, 100), (14, 40, 60))
+    ImageDraw.Draw(canvas).line(far, fill=(64, 124, 144, 255), width=max(1, round(2 * u)))
+    mid = chart_ridge(W, H * 0.66, H * 0.08, 34, step)
+    fill_below(canvas, mid, (18, 54, 76), (10, 30, 46))
+
+    # The icon's line as the main ridge: calm, then a deep dip into the valley, then the climb.
+    dip_x = (W * (0.5 if wide else 0.5)) if with_text else W * 0.42
+    ridge = smooth_curve([(-60, H * 0.72), (dip_x - W * 0.3, H * 0.68), (dip_x - W * 0.12, H * 0.74), (dip_x, H * 0.87),
+                          (dip_x + W * 0.1, H * 0.75), (dip_x + W * 0.22, H * 0.62), (W + 60, H * 0.52)])
+    fill_below(canvas, ridge, (12, 36, 54), (6, 15, 28))
+
+    # The lantern at the bottom of the dip: the alert, glowing into the valley.
+    lantern_x, dip_y = max(ridge, key=lambda point: point[1])
+    pool = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    ImageDraw.Draw(pool).ellipse((lantern_x - H * 0.3, dip_y - H * 0.16, lantern_x + H * 0.3, dip_y + H * 0.16), fill=MINT + (70,))
+    canvas.alpha_composite(pool.filter(ImageFilter.GaussianBlur(H * 0.08)))
+    glow_path(canvas, ridge, MINT, 13, 42, u)
+    rings = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    rd = ImageDraw.Draw(rings)
+    for r, a in [(110, 40), (76, 90)]:
+        rd.ellipse((lantern_x - r * u, dip_y - r * u, lantern_x + r * u, dip_y + r * u), outline=MINT + (a,), width=round(5 * u))
+    canvas.alpha_composite(rings)
+    cd = ImageDraw.Draw(canvas)
+    cd.ellipse((lantern_x - 26 * u, dip_y - 26 * u, lantern_x + 26 * u, dip_y + 26 * u), fill=MINT)
+    cd.ellipse((lantern_x - 12 * u, dip_y - 12 * u, lantern_x + 12 * u, dip_y + 12 * u), fill=WHITE)
+
+    # Fireflies in buy-green and amber over the valley.
+    flies = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    fd = ImageDraw.Draw(flies)
+    for _ in range(int(W / H * 9)):
+        fx, fy = rng.uniform(0, W), rng.uniform(H * 0.55, H * 0.95)
+        color = MINT if rng.random() < 0.65 else (255, 196, 80)
+        r = rng.uniform(3, 6) * u
+        fd.ellipse((fx - r * 3, fy - r * 3, fx + r * 3, fy + r * 3), fill=color + (60,))
+        fd.ellipse((fx - r, fy - r, fx + r, fy + r), fill=color + (230,))
+    canvas.alpha_composite(flies.filter(ImageFilter.GaussianBlur(1.2 * u)))
+
+    # Dippy's branch, reaching in from the right: Dippy waving, two of the flock keeping him company.
+    reach = H * (1.0 if wide else 0.92)
+    low = 0 if wide else H * 0.1
+    perch_at = branch(canvas, (W + 40 * u, H * 0.52 + low), (W - reach, H * 0.38 + low), 64 * u, u)
+    for t, pose, height in [(0.3, "look-left", H * 0.16), (0.56, "wave", H * 0.3), (0.84, "wink", H * 0.14)]:
+        bx, by = perch_at(t)
+        perch(canvas, raw_dir, pose, bx, by + 10 * u, height)
+
+    if with_text:
+        draw = ImageDraw.Draw(canvas)
+        icon = Image.open(raw_dir / "app-icon.png")
+        left = W * 0.06
+        icon_size = round(H * 0.18)
+        name_font = font(ROUNDED, H * 0.14, "Bold")
+        tag_font = font(ROUNDED, H * 0.075, "Bold")
+        block_top = H * 0.13
+        shadowed(canvas, app_icon_tile(icon, icon_size), left, block_top, blur=round(24 * u), offset=round(14 * u), opacity=150)
+        draw.text((left + icon_size + H * 0.045, block_top + icon_size * 0.06), "Dipwise", font=name_font, fill=WHITE)
+        tag_top = block_top + icon_size + H * 0.06
+        x = left
+        for index, part in enumerate("Buy the dip. *Calmly.*".split("*")):
+            draw.text((x, tag_top), part, font=tag_font, fill=MINT if index % 2 else WHITE)
+            x += draw.textlength(part, font=tag_font)
+        labels = ["No login", "No ads", "Any broker"]
+        pill_unit = 0.58 * u
+        pill_font = font(ROUNDED, 50 * pill_unit, "Heavy")
+        widths = [draw.textlength(label, font=pill_font) + 46 * pill_unit + 92 * pill_unit for label in labels]
+        total = sum(widths) + 20 * pill_unit * (len(labels) - 1)
+        promises(canvas, left + total / 2, tag_top + H * 0.13, labels, unit=pill_unit)
+    return canvas
+
+
+def headers(raw, raw_dir, folder):
+    folder.mkdir(parents=True, exist_ok=True)
+    for name, size, with_text in [
+        ("header-4320x1080", (4320, 1080), True),
+        ("header-1920x1080", (1920, 1080), True),
+        ("header-social-1500x500", (1500, 500), True),
+        ("featuring-art-4320x1080-no-text", (4320, 1080), False),
+        ("featuring-art-1920x1080-no-text", (1920, 1080), False),
+    ]:
+        image = header(raw, raw_dir, size, with_text).convert("RGB")
+        path = folder / f"{name}.png"
+        image.save(path, optimize=True)
+        print(path)
+
+
 def main(raw_dir, out_dir):
     raw = Raw(raw_dir)
+    headers(raw, raw_dir, out_dir / "Header")
     phone, phone_canvas = iphone_story(raw, raw_dir)
     save(phone, out_dir / "iPhone-6.9")
     save(phone, out_dir / "iPhone-6.5", size=(1284, 2778))

@@ -153,3 +153,17 @@ The Flock isn't in the screenshots or description yet, because App Store builds 
 - [ ] Create the three Pro products above in App Store Connect, with a review screenshot of the paywall.
 - [ ] Market data: Dipwise reads Yahoo Finance's unofficial chart API. It works, but it isn't licensed for commercial apps and can change without notice. Before scaling, move `Shared/QuoteService.swift` to a licensed provider (Financial Modeling Prep, EODHD, Twelve Data, or Polygon, about $20–80 a month at launch volume).
 - [ ] The Flock: App Store builds hide it until CloudKit is connected. Set `FlockConfiguration.containerID`, add the iCloud entitlement, and deploy `CloudKitSchema.ckdb` to production. Crowd views stay hidden until enough members share (20 for ownership and buying/selling, 50 for Top Investors), so it's safe to launch early.
+
+## Header artwork (`Header/`)
+
+Dip Valley, where Dippy lives: a night landscape whose mountain ridges are price charts, the icon's glowing line as the main ridge dipping into the valley where the alert pings like a lantern, and Dippy waving from a branch with two of the flock, under the moon, with fireflies in buy-green and amber. Same navy, mint, and owl as the icon and the screenshots.
+
+| File | Use |
+|------|-----|
+| header-4320x1080.png | Wide banner: website hero, press kit, featuring pitch |
+| header-1920x1080.png | 16:9: In-App Event cards, presentations, YouTube |
+| header-social-1500x500.png | X / LinkedIn header |
+| featuring-art-4320x1080-no-text.png | Apple featuring nomination artwork (Apple asks for no text) |
+| featuring-art-1920x1080-no-text.png | Apple featuring, 16:9 |
+
+Regenerate with the same command as the screenshots; `compose.py` writes `Header/` alongside them.
