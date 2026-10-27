@@ -1160,35 +1160,82 @@ def glow_path(canvas, points, color, width, glow, unit):
     ImageDraw.Draw(canvas).line(points, fill=color + (255,), width=round(width * unit), joint="curve")
 
 
+def leaf(canvas, cx, cy, length, width, angle, color):
+    """One pointed leaf, with a lighter midrib."""
+    layer = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+    ca, sa = math.cos(angle), math.sin(angle)
+    outline = []
+    for side in (1, -1):
+        for i in range(21):
+            t = i / 20 if side == 1 else 1 - i / 20
+            along = (t - 0.5) * length
+            across = side * width / 2 * math.sin(math.pi * t) ** 0.8
+            outline.append((cx + along * ca - across * sa, cy + along * sa + across * ca))
+    draw.polygon(outline, fill=color + (255,))
+    draw.line([(cx - length / 2 * ca, cy - length / 2 * sa), (cx + length / 2 * ca, cy + length / 2 * sa)],
+              fill=tuple(min(255, c + 34) for c in color) + (200,), width=max(1, round(width * 0.08)))
+    canvas.alpha_composite(layer)
+
+
 def branch(canvas, start, end, thickness, unit):
-    """A tree branch reaching in from the edge: a tapered, gently curved silhouette with a few leaves. Returns where
-    the top of the branch is at any point along it, for perching."""
+    """A branch reaching in from a tree at the edge: tapered bark with a moonlit top edge, a forked twig, and leaves
+    in the icon's teal greens. Returns where the top of the branch is at any point along it, for perching."""
     (x0, y0), (x1, y1) = start, end
+    sag = 46 * unit
 
     def center(t):
-        return x0 + (x1 - x0) * t, y0 + (y1 - y0) * t - math.sin(math.pi * t) * 40 * unit
+        return x0 + (x1 - x0) * t, y0 + (y1 - y0) * t - math.sin(math.pi * t) * sag
+
+    def half(t):
+        return thickness * (1 - 0.72 * t) / 2
+
+    rng = random.Random(5)
+    greens = [(16, 64, 66), (22, 88, 84), (30, 112, 98), (18, 76, 74)]
+
+    # Leaves behind the branch first, then the bark, then a few in front.
+    def leaves(count, front):
+        for _ in range(count):
+            t = rng.uniform(0.05, 0.9)
+            x, y = center(t)
+            side = rng.choice([-1, 1])
+            leaf(canvas, x + rng.uniform(-20, 20) * unit, y + side * half(t) * rng.uniform(0.6, 1.4),
+                 rng.uniform(70, 110) * unit, rng.uniform(26, 38) * unit,
+                 rng.uniform(-0.9, 0.9) + (math.pi / 2 if side > 0 else -math.pi / 2) * 0.35, rng.choice(greens))
+
+    leaves(9, front=False)
+    # A twig forking up and away from the branch, with its own leaves.
+    fx, fy = center(0.42)
+    twig_end = (fx - 130 * unit, fy - 150 * unit)
+    twig = [(fx + (twig_end[0] - fx) * k / 20, fy + (twig_end[1] - fy) * k / 20 - math.sin(math.pi * k / 20) * 18 * unit) for k in range(21)]
+    ImageDraw.Draw(canvas).line(twig, fill=(10, 24, 36, 255), width=round(12 * unit), joint="curve")
+    for k in range(4):
+        tx, ty = twig[5 + k * 4]
+        leaf(canvas, tx + 30 * unit * (1 if k % 2 else -1), ty - 6 * unit, 84 * unit, 30 * unit, (-0.6 if k % 2 else 0.9 - math.pi), greens[k % len(greens)])
 
     top, bottom = [], []
-    for i in range(41):
-        t = i / 40
+    for i in range(61):
+        t = i / 60
         x, y = center(t)
-        half = thickness * (1 - 0.7 * t) / 2
-        top.append((x, y - half))
-        bottom.append((x, y + half))
-    draw = ImageDraw.Draw(canvas)
-    rng = random.Random(3)
-    for _ in range(8):
-        t = rng.uniform(0.1, 0.95)
+        top.append((x, y - half(t)))
+        bottom.append((x, y + half(t)))
+    bark = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+    bd = ImageDraw.Draw(bark)
+    bd.polygon(top + bottom[::-1], fill=(14, 26, 38, 255))
+    # Moonlight along the top, shadow underneath, a few bark lines.
+    bd.line(top, fill=(70, 112, 128, 255), width=max(2, round(4 * unit)), joint="curve")
+    bd.line(bottom, fill=(6, 14, 22, 255), width=max(2, round(5 * unit)), joint="curve")
+    for _ in range(14):
+        t = rng.uniform(0.05, 0.85)
         x, y = center(t)
-        y += rng.choice([-1, 1]) * thickness * 0.45
-        r = rng.uniform(18, 30) * unit
-        draw.ellipse((x - r * 1.7, y - r, x + r * 1.7, y + r), fill=(16, 58, 62, 255))
-    draw.polygon(top + bottom[::-1], fill=(9, 24, 38, 255))
-    draw.line(top, fill=(46, 96, 112, 255), width=max(2, round(3 * unit)))
+        offset = rng.uniform(-0.4, 0.4) * half(t)
+        bd.line([(x - 26 * unit, y + offset), (x + 26 * unit, y + offset + rng.uniform(-3, 3) * unit)], fill=(28, 46, 60, 255), width=max(1, round(3 * unit)))
+    canvas.alpha_composite(bark)
+    leaves(5, front=True)
 
     def perch_point(t):
         x, y = center(t)
-        return x, y - thickness * (1 - 0.7 * t) / 2
+        return x, y - half(t)
 
     return perch_point
 
@@ -1201,8 +1248,16 @@ def header(raw, raw_dir, size, with_text=True):
     W, H = size
     u = H / 1080
     wide = W / H >= 2.5
-    canvas = vertical_gradient((W, H), [(0, (6, 15, 28)), (0.55, (20, 56, 80)), (1, (8, 22, 36))])
+    canvas = vertical_gradient((W, H), [(0, (5, 12, 26)), (0.5, (16, 44, 72)), (0.7, (24, 62, 88)), (1, (8, 20, 34))])
     rng = random.Random(11)
+
+    # A soft aurora ribbon across the sky, in the icon's mint and a hint of blue.
+    aurora = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    ad = ImageDraw.Draw(aurora)
+    ribbon = [(x, H * (0.26 + 0.07 * math.sin(x / W * math.pi * 2.2 + 0.6))) for x in range(-50, W + 60, 20)]
+    ad.line(ribbon, fill=(47, 230, 160, 46), width=round(H * 0.16), joint="curve")
+    ad.line([(x, y + H * 0.06) for x, y in ribbon], fill=(80, 150, 255, 30), width=round(H * 0.1), joint="curve")
+    canvas.alpha_composite(aurora.filter(ImageFilter.GaussianBlur(H * 0.08)))
 
     # Stars, quiet and small, in the upper sky.
     stars = Image.new("RGBA", (W, H), (0, 0, 0, 0))
@@ -1231,6 +1286,9 @@ def header(raw, raw_dir, size, with_text=True):
     far = chart_ridge(W, H * 0.56, H * 0.11, 21, step)
     fill_below(canvas, far, (30, 74, 100), (14, 40, 60))
     ImageDraw.Draw(canvas).line(far, fill=(64, 124, 144, 255), width=max(1, round(2 * u)))
+    mist = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    ImageDraw.Draw(mist).rectangle((0, H * 0.6, W, H * 0.7), fill=(120, 180, 200, 34))
+    canvas.alpha_composite(mist.filter(ImageFilter.GaussianBlur(H * 0.05)))
     mid = chart_ridge(W, H * 0.66, H * 0.08, 34, step)
     fill_below(canvas, mid, (18, 54, 76), (10, 30, 46))
 
@@ -1255,17 +1313,6 @@ def header(raw, raw_dir, size, with_text=True):
     cd.ellipse((lantern_x - 26 * u, dip_y - 26 * u, lantern_x + 26 * u, dip_y + 26 * u), fill=MINT)
     cd.ellipse((lantern_x - 12 * u, dip_y - 12 * u, lantern_x + 12 * u, dip_y + 12 * u), fill=WHITE)
 
-    # Fireflies in buy-green and amber over the valley.
-    flies = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    fd = ImageDraw.Draw(flies)
-    for _ in range(int(W / H * 9)):
-        fx, fy = rng.uniform(0, W), rng.uniform(H * 0.55, H * 0.95)
-        color = MINT if rng.random() < 0.65 else (255, 196, 80)
-        r = rng.uniform(3, 6) * u
-        fd.ellipse((fx - r * 3, fy - r * 3, fx + r * 3, fy + r * 3), fill=color + (60,))
-        fd.ellipse((fx - r, fy - r, fx + r, fy + r), fill=color + (230,))
-    canvas.alpha_composite(flies.filter(ImageFilter.GaussianBlur(1.2 * u)))
-
     # Dippy's branch, reaching in from the right: Dippy waving, two of the flock keeping him company.
     reach = H * (1.0 if wide else 0.92)
     low = 0 if wide else H * 0.1
@@ -1275,26 +1322,21 @@ def header(raw, raw_dir, size, with_text=True):
         perch(canvas, raw_dir, pose, bx, by + 10 * u, height)
 
     if with_text:
+        # Just the name and what it is: the scene does the rest.
         draw = ImageDraw.Draw(canvas)
-        icon = Image.open(raw_dir / "app-icon.png")
         left = W * 0.06
-        icon_size = round(H * 0.18)
-        name_font = font(ROUNDED, H * 0.14, "Bold")
-        tag_font = font(ROUNDED, H * 0.075, "Bold")
-        block_top = H * 0.13
-        shadowed(canvas, app_icon_tile(icon, icon_size), left, block_top, blur=round(24 * u), offset=round(14 * u), opacity=150)
-        draw.text((left + icon_size + H * 0.045, block_top + icon_size * 0.06), "Dipwise", font=name_font, fill=WHITE)
-        tag_top = block_top + icon_size + H * 0.06
+        name_font = font(ROUNDED, H * 0.17, "Bold")
+        tag_font = font(ROUNDED, H * 0.062, "Semibold")
+        name_top = H * 0.17
+        shadow = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        ImageDraw.Draw(shadow).text((left, name_top + 6 * u), "Dipwise", font=name_font, fill=(0, 0, 0, 120))
+        canvas.alpha_composite(shadow.filter(ImageFilter.GaussianBlur(10 * u)))
+        draw.text((left, name_top), "Dipwise", font=name_font, fill=WHITE)
+        tag_top = name_top + H * 0.21
         x = left
-        for index, part in enumerate("Buy the dip. *Calmly.*".split("*")):
-            draw.text((x, tag_top), part, font=tag_font, fill=MINT if index % 2 else WHITE)
+        for index, part in enumerate("Your *stock-watching* owl.".split("*")):
+            draw.text((x, tag_top), part, font=tag_font, fill=MINT if index % 2 else (226, 236, 244))
             x += draw.textlength(part, font=tag_font)
-        labels = ["No login", "No ads", "Any broker"]
-        pill_unit = 0.58 * u
-        pill_font = font(ROUNDED, 50 * pill_unit, "Heavy")
-        widths = [draw.textlength(label, font=pill_font) + 46 * pill_unit + 92 * pill_unit for label in labels]
-        total = sum(widths) + 20 * pill_unit * (len(labels) - 1)
-        promises(canvas, left + total / 2, tag_top + H * 0.13, labels, unit=pill_unit)
     return canvas
 
 

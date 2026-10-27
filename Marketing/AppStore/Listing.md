@@ -156,7 +156,7 @@ The Flock isn't in the screenshots or description yet, because App Store builds 
 
 ## Header artwork (`Header/`)
 
-Dip Valley, where Dippy lives: a night landscape whose mountain ridges are price charts, the icon's glowing line as the main ridge dipping into the valley where the alert pings like a lantern, and Dippy waving from a branch with two of the flock, under the moon, with fireflies in buy-green and amber. Same navy, mint, and owl as the icon and the screenshots.
+Dip Valley, where Dippy lives: a night landscape under a soft aurora, mountain ridges drawn as price charts, the icon's glowing line as the main ridge dipping into the valley where the alert pings like a lantern, and Dippy waving from a leafy branch with two of the flock, under the moon. The text versions carry only the name and "Your stock-watching owl." Same navy, mint, and owl as the icon and the screenshots.
 
 | File | Use |
 |------|-----|
