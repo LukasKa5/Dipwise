@@ -1255,26 +1255,86 @@ def branch(canvas, start, end, thickness, unit):
     return perch_point
 
 
-def header(raw, raw_dir, size, with_text=True):
-    """Dip Valley, where Dippy lives: a night landscape whose mountain ridges are price charts. The icon's glowing line
-    is the main ridge, dipping into the valley where the alert pings like a lantern. Dippy keeps watch from a branch
-    with two of the flock, under the moon, with fireflies in buy-green and amber. With text, the icon, name, and promise
-    sit in the sky; the text-free version is for Apple's featuring artwork, which asks for no words."""
+LANGUAGES = ["en", "de", "es", "fr", "it", "pt-BR", "ja", "ko"]
+
+# One short phrase per asset, as Apple asks, in every language the app speaks. *Stars* mark the mint words.
+TAGLINES = {
+    "en": "Your *stock-watching* owl.",
+    "de": "Deine Eule für die *Börse*.",
+    "es": "Tu búho que *vigila la bolsa*.",
+    "fr": "Ta chouette qui *veille sur la Bourse*.",
+    "it": "Il tuo gufo che *veglia sulla Borsa*.",
+    "pt-BR": "Sua coruja que *vigia a bolsa*.",
+    "ja": "*株価*を見守るフクロウ。",
+    "ko": "*주식*을 지켜보는 부엉이.",
+}
+
+SEARCH_LINES = {
+    "en": "Get alerted when\nyour stocks *dip*.",
+    "de": "Ein Alarm, wenn deine\nAktien *fallen*.",
+    "es": "Un aviso cuando tus\nacciones *bajan*.",
+    "fr": "Une alerte quand tes\nactions *baissent*.",
+    "it": "Un avviso quando le\ntue azioni *scendono*.",
+    "pt-BR": "Um alerta quando suas\nações *caem*.",
+    "ja": "株価が*下がったら*、\nすぐにお知らせ。",
+    "ko": "주가가 *떨어지면*\n바로 알려드려요.",
+}
+
+
+def lang_font(lang, size, weight="Bold"):
+    """SF Rounded for the Latin languages; Hiragino and Apple SD Gothic Neo, Apple's own, for Japanese and Korean."""
+    if lang == "ja":
+        return ImageFont.truetype("/System/Library/Fonts/ヒラギノ角ゴシック W7.ttc", round(size))
+    if lang == "ko":
+        return ImageFont.truetype("/System/Library/Fonts/AppleSDGothicNeo.ttc", round(size), index=14)
+    return font(ROUNDED, size, weight)
+
+
+def rich_text(canvas, text, cx, top, lang, size, max_width, unit, line_gap=1.12):
+    """Centered lines with the *starred* words in mint and a soft shadow, shrunk until the widest line fits."""
+    draw = ImageDraw.Draw(canvas)
+    lines = text.split("\n")
+    while True:
+        text_font = lang_font(lang, size)
+        widths = [draw.textlength(line.replace("*", ""), font=text_font) for line in lines]
+        if max(widths) <= max_width or size < 10:
+            break
+        size *= 0.95
+    shadow = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+    layers = [(shadow, (0, 0, 0, 130), 7 * unit), (canvas, None, 0)]
+    for layer, shade, dy in layers:
+        ld = ImageDraw.Draw(layer)
+        # A starred phrase can run across a line break, so the color carries over from line to line.
+        mint = False
+        for row, (line, width) in enumerate(zip(lines, widths)):
+            x = cx - width / 2
+            y = top + row * size * line_gap + dy
+            for index, part in enumerate(line.split("*")):
+                if index:
+                    mint = not mint
+                ld.text((x, y), part, font=text_font, fill=shade or (MINT if mint else WHITE))
+                x += ld.textlength(part, font=text_font)
+        if layer is shadow:
+            canvas.alpha_composite(shadow.filter(ImageFilter.GaussianBlur(12 * unit)))
+    return top + len(lines) * size * line_gap
+
+
+def night_valley(size, dip_x, dip_y, moon):
+    """Dip Valley at night: the app's navy sky, a soft mint aurora, quiet stars, the moon, two calm mountain ranges with
+    moonlit rims and mist, and the front hills, whose ridge is the icon's glowing line dipping to the alert. Returns
+    the canvas and the ridge."""
     W, H = size
     u = H / 1080
-    wide = W / H >= 2.5
     canvas = vertical_gradient((W, H), [(0, (5, 12, 26)), (0.5, (16, 44, 72)), (0.7, (24, 62, 88)), (1, (8, 20, 34))])
     rng = random.Random(11)
 
-    # A soft aurora ribbon across the sky, in the icon's mint and a hint of blue.
     aurora = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     ad = ImageDraw.Draw(aurora)
-    ribbon = [(x, H * (0.26 + 0.07 * math.sin(x / W * math.pi * 2.2 + 0.6))) for x in range(-50, W + 60, 20)]
-    ad.line(ribbon, fill=(47, 230, 160, 46), width=round(H * 0.16), joint="curve")
-    ad.line([(x, y + H * 0.06) for x, y in ribbon], fill=(80, 150, 255, 30), width=round(H * 0.1), joint="curve")
+    ribbon = [(x, H * (0.3 + 0.06 * math.sin(x / W * math.pi * 2.2 + 0.6))) for x in range(-50, W + 60, 20)]
+    ad.line(ribbon, fill=(47, 230, 160, 40), width=round(H * 0.16), joint="curve")
+    ad.line([(x, y + H * 0.06) for x, y in ribbon], fill=(80, 150, 255, 26), width=round(H * 0.1), joint="curve")
     canvas.alpha_composite(aurora.filter(ImageFilter.GaussianBlur(H * 0.08)))
 
-    # Stars, quiet and small, in the upper sky.
     stars = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     sd = ImageDraw.Draw(stars)
     for _ in range(int(W / H * 40)):
@@ -1283,21 +1343,18 @@ def header(raw, raw_dir, size, with_text=True):
         sd.ellipse((sx - r, sy - r, sx + r, sy + r), fill=(255, 255, 255, rng.randint(40, 150)))
     canvas.alpha_composite(stars)
 
-    # The moon, with its halo.
-    moon_x = (W * (0.6 if wide else 0.62)) if with_text else W * 0.18
-    moon_y, moon_r = (H * 0.2, round(H * 0.08)) if wide or not with_text else (H * 0.12, round(H * 0.06))
-    halo = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    ImageDraw.Draw(halo).ellipse((moon_x - moon_r * 3, moon_y - moon_r * 3, moon_x + moon_r * 3, moon_y + moon_r * 3), fill=(255, 232, 180, 34))
-    canvas.alpha_composite(halo.filter(ImageFilter.GaussianBlur(moon_r)))
-    disc = Image.new("L", (moon_r * 8, moon_r * 8), 0)
-    dd = ImageDraw.Draw(disc)
-    dd.ellipse((0, 0, moon_r * 8 - 1, moon_r * 8 - 1), fill=255)
-    dd.ellipse((round(moon_r * 2.5), round(-moon_r * 1.4), round(moon_r * 10.5), round(moon_r * 6.6)), fill=0)
-    disc = disc.resize((moon_r * 2, moon_r * 2), Image.LANCZOS)
-    canvas.paste((255, 230, 170), (round(moon_x - moon_r), round(moon_y - moon_r)), disc)
+    if moon:
+        moon_x, moon_y, moon_r = moon[0], moon[1], round(moon[2])
+        halo = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        ImageDraw.Draw(halo).ellipse((moon_x - moon_r * 3, moon_y - moon_r * 3, moon_x + moon_r * 3, moon_y + moon_r * 3), fill=(255, 232, 180, 34))
+        canvas.alpha_composite(halo.filter(ImageFilter.GaussianBlur(moon_r)))
+        disc = Image.new("L", (moon_r * 8, moon_r * 8), 0)
+        dd = ImageDraw.Draw(disc)
+        dd.ellipse((0, 0, moon_r * 8 - 1, moon_r * 8 - 1), fill=255)
+        dd.ellipse((round(moon_r * 2.5), round(-moon_r * 1.4), round(moon_r * 10.5), round(moon_r * 6.6)), fill=0)
+        disc = disc.resize((moon_r * 2, moon_r * 2), Image.LANCZOS)
+        canvas.paste((255, 230, 170), (round(moon_x - moon_r), round(moon_y - moon_r)), disc)
 
-    # Two calm mountain ranges behind the valley, soft and rounded, each with a thin moonlit rim, and a little mist
-    # between them, so the scene has depth without noise.
     def range_line(base, amplitude, seed, peaks):
         rng = random.Random(seed)
         xs = [-W * 0.1 + k * W * 1.2 / peaks for k in range(peaks + 1)]
@@ -1305,83 +1362,115 @@ def header(raw, raw_dir, size, with_text=True):
         return smooth_curve(points, samples=36)
 
     peaks = max(6, round(W / H * 3.2))
-    far = range_line(H * 0.6, H * 0.2, 21, peaks)
+    far = range_line(dip_y - H * 0.16, H * 0.18, 21, peaks)
     fill_below(canvas, far, (34, 78, 104), (20, 52, 74))
     ImageDraw.Draw(canvas).line(far, fill=(92, 142, 160, 255), width=max(1, round(2.5 * u)), joint="curve")
     mist = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    ImageDraw.Draw(mist).rectangle((0, H * 0.6, W, H * 0.72), fill=(130, 190, 210, 40))
+    ImageDraw.Draw(mist).rectangle((0, dip_y - H * 0.16, W, dip_y - H * 0.04), fill=(130, 190, 210, 40))
     canvas.alpha_composite(mist.filter(ImageFilter.GaussianBlur(H * 0.05)))
-    mid = range_line(H * 0.7, H * 0.13, 34, peaks + 2)
+    mid = range_line(dip_y - H * 0.07, H * 0.12, 34, peaks + 2)
     fill_below(canvas, mid, (20, 54, 76), (12, 34, 50))
     ImageDraw.Draw(canvas).line(mid, fill=(58, 104, 124, 255), width=max(1, round(2 * u)), joint="curve")
 
-    # The front hills are the icon's line: their ridge glows mint, calm, then dipping into the valley and climbing.
-    dip_x = (W * 0.5) if with_text else W * 0.42
-    ridge = smooth_curve([(-60, H * 0.74), (dip_x - W * 0.3, H * 0.71), (dip_x - W * 0.12, H * 0.77), (dip_x, H * 0.88),
-                          (dip_x + W * 0.1, H * 0.78), (dip_x + W * 0.22, H * 0.66), (W + 60, H * 0.58)])
+    span = H * 0.9
+    ridge = smooth_curve([(-60, dip_y - H * 0.12), (dip_x - span * 0.75, dip_y - H * 0.15), (dip_x - span * 0.3, dip_y - H * 0.1),
+                          (dip_x, dip_y), (dip_x + span * 0.25, dip_y - H * 0.09), (dip_x + span * 0.6, dip_y - H * 0.14),
+                          (W + 60, dip_y - H * 0.17)])
     fill_below(canvas, ridge, (10, 30, 46), (5, 13, 24))
+    return canvas, ridge
 
-    # The lantern at the bottom of the dip: the alert, glowing into the valley.
-    lantern_x, dip_y = max(ridge, key=lambda point: point[1])
+
+def dip_alert(canvas, ridge, unit):
+    """The ridge lit in the icon's mint, with a small, calm ping where it dips."""
+    W, H = canvas.size
+    x, y = max(ridge, key=lambda point: point[1])
     pool = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    ImageDraw.Draw(pool).ellipse((lantern_x - H * 0.24, dip_y - H * 0.12, lantern_x + H * 0.24, dip_y + H * 0.12), fill=MINT + (55,))
+    ImageDraw.Draw(pool).ellipse((x - H * 0.22, y - H * 0.11, x + H * 0.22, y + H * 0.11), fill=MINT + (55,))
     canvas.alpha_composite(pool.filter(ImageFilter.GaussianBlur(H * 0.08)))
-    glow_path(canvas, ridge, MINT, 13, 42, u)
+    glow_path(canvas, ridge, MINT, 13, 42, unit)
     rings = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     rd = ImageDraw.Draw(rings)
     for r, a in [(78, 40), (54, 90)]:
-        rd.ellipse((lantern_x - r * u, dip_y - r * u, lantern_x + r * u, dip_y + r * u), outline=MINT + (a,), width=round(4 * u))
+        rd.ellipse((x - r * unit, y - r * unit, x + r * unit, y + r * unit), outline=MINT + (a,), width=round(4 * unit))
     canvas.alpha_composite(rings)
     cd = ImageDraw.Draw(canvas)
-    cd.ellipse((lantern_x - 20 * u, dip_y - 20 * u, lantern_x + 20 * u, dip_y + 20 * u), fill=MINT)
-    cd.ellipse((lantern_x - 9 * u, dip_y - 9 * u, lantern_x + 9 * u, dip_y + 9 * u), fill=WHITE)
+    cd.ellipse((x - 20 * unit, y - 20 * unit, x + 20 * unit, y + 20 * unit), fill=MINT)
+    cd.ellipse((x - 9 * unit, y - 9 * unit, x + 9 * unit, y + 9 * unit), fill=WHITE)
+    return x, y
 
-    # Dippy's branch, reaching in from the right: Dippy waving, two of the flock keeping him company.
-    reach = H * (1.0 if wide else (0.76 if with_text else 0.92))
-    low = 0 if wide else H * 0.1
-    perch_at = branch(canvas, (W + 40 * u, H * 0.52 + low), (W - reach, H * 0.38 + low), 64 * u, u)
-    for t, pose, height in [(0.3, "look-left", H * 0.16), (0.56, "wave", H * 0.3), (0.84, "wink", H * 0.14)]:
-        bx, by = perch_at(t)
-        perch(canvas, raw_dir, pose, bx, by + 10 * u, height)
+
+def header(raw, raw_dir, size, lang="en", with_text=True):
+    """The product page header, built on Apple's guidance: one clear idea, Dippy keeping watch over the dip, with
+    everything that matters in the middle, so any crop on any device keeps it. One short phrase sits above him; the
+    app's name and icon already appear right next to the header on the product page, so the art doesn't repeat them."""
+    W, H = size
+    u = H / 1080
+    cx = W / 2
+    dip_x, dip_y = cx - H * 0.3, H * 0.78
+    canvas, ridge = night_valley(size, dip_x, dip_y, moon=(cx - H * 0.78, H * 0.34, H * 0.065))
+    dip_alert(canvas, ridge, u)
+
+    # Dippy's branch reaches in from the right and ends just past the middle; he sits near its tip, looking down at
+    # the dip below.
+    start, end = (W + 40 * u, H * 0.58), (cx - H * 0.14, H * 0.52)
+    perch_at = branch(canvas, start, end, 64 * u, u)
+    t = (cx + H * 0.16 - start[0]) / (end[0] - start[0])
+    bx, by = perch_at(t)
+    perch(canvas, raw_dir, "look-left", bx, by + 10 * u, H * 0.25)
 
     if with_text:
-        # Just the name and what it is: the scene does the rest.
-        draw = ImageDraw.Draw(canvas)
-        left = W * 0.06
-        name_font = font(ROUNDED, H * 0.17, "Bold")
-        tag_font = font(ROUNDED, H * 0.062, "Semibold")
-        name_top = H * 0.17
-        shadow = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-        ImageDraw.Draw(shadow).text((left, name_top + 6 * u), "Dipwise", font=name_font, fill=(0, 0, 0, 120))
-        canvas.alpha_composite(shadow.filter(ImageFilter.GaussianBlur(10 * u)))
-        draw.text((left, name_top), "Dipwise", font=name_font, fill=WHITE)
-        tag_top = name_top + H * 0.21
-        x = left
-        for index, part in enumerate("Your *stock-watching* owl.".split("*")):
-            draw.text((x, tag_top), part, font=tag_font, fill=MINT if index % 2 else (226, 236, 244))
-            x += draw.textlength(part, font=tag_font)
-        labels = ["No login", "No ads", "Optimized for iPhone Duo"]
-        pill_unit = 0.56 * u
-        pill_font = font(ROUNDED, 50 * pill_unit, "Heavy")
-        widths = [draw.textlength(label, font=pill_font) + 46 * pill_unit + 92 * pill_unit for label in labels]
-        total = sum(widths) + 20 * pill_unit * (len(labels) - 1)
-        promises(canvas, left + total / 2, tag_top + H * 0.11, labels, unit=pill_unit)
+        rich_text(canvas, TAGLINES[lang], cx, H * 0.085, lang, H * 0.1, min(W * 0.9, H * 1.5), u)
     return canvas
 
 
+def search_asset(raw, raw_dir, size, lang="en"):
+    """The search results asset, built on Apple's guidance: say what the app does at a glance and show it firsthand.
+    The real iPhone holds the lock screen with the dip alert lifting off it, Dippy on top, the valley behind."""
+    W, H = size
+    u = H / 1080
+    cx = W / 2
+    canvas, ridge = night_valley(size, cx - H * 0.62, H * 0.84, moon=(cx + H * 0.56, H * 0.4, H * 0.045))
+    dip_alert(canvas, ridge, u)
+
+    bottom = rich_text(canvas, SEARCH_LINES[lang], cx, H * 0.06, lang, H * 0.1, min(W * 0.9, H * 1.4), u)
+    phone = Bezel("iphone-18-pro-max")
+    top = bottom + H * 0.17
+    device, k = phone.device(raw("scene-lock"), H * 1.05)
+    left = round(cx - device.width / 2)
+    shadowed(canvas, device, left, top, blur=round(40 * u), offset=round(26 * u), opacity=160)
+    bx, by = phone.box[0], phone.box[1]
+    at = lambda px, py: (left + (bx + px) * k, top + (by + py) * k)
+    lift_over(canvas, raw("notification-card"), at, k, (42, 708, 1278, 936), scale=1.24)
+    perch(canvas, raw_dir, "wings", cx + device.width / 2 - 130 * u, top + 6 * u, H * 0.13)
+    return canvas
+
+
+def _render(job):
+    kind, raw_dir, folder, name, size, lang, with_text = job
+    raw = Raw(raw_dir)
+    image = (header(raw, raw_dir, size, lang, with_text) if kind == "header" else search_asset(raw, raw_dir, size, lang))
+    path = folder / f"{name}.png"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    image.convert("RGB").save(path, optimize=True)
+    return path
+
+
 def headers(raw, raw_dir, folder):
-    folder.mkdir(parents=True, exist_ok=True)
-    for name, size, with_text in [
-        ("header-5244x2950", (5244, 2950), True),
-        ("header-3840x1646", (3840, 1646), True),
-        ("header-social-1500x500", (1500, 500), True),
-        ("featuring-art-5244x2950-no-text", (5244, 2950), False),
-        ("featuring-art-3840x1646-no-text", (3840, 1646), False),
-    ]:
-        image = header(raw, raw_dir, size, with_text).convert("RGB")
-        path = folder / f"{name}.png"
-        image.save(path, optimize=True)
-        print(path)
+    """Every creative asset at App Store Connect's exact sizes, in every language: the header (21:9 and the
+    universal 16:9), the search results asset (3:2 and 16:9), a text-free header for featuring, and a social banner."""
+    from multiprocessing import Pool
+    store = folder.parent
+    jobs = [("header", raw_dir, folder, "featuring-art-5244x2950-no-text", (5244, 2950), "en", False),
+            ("header", raw_dir, folder, "featuring-art-3840x1646-no-text", (3840, 1646), "en", False),
+            ("header", raw_dir, folder, "header-social-1500x500", (1500, 500), "en", True)]
+    for lang in LANGUAGES:
+        jobs += [("header", raw_dir, folder / lang, "header-5244x2950", (5244, 2950), lang, True),
+                 ("header", raw_dir, folder / lang, "header-3840x1646", (3840, 1646), lang, True),
+                 ("search", raw_dir, store / "Search" / lang, "search-3840x2560", (3840, 2560), lang, True),
+                 ("search", raw_dir, store / "Search" / lang, "search-5244x2950", (5244, 2950), lang, True)]
+    with Pool() as pool:
+        for path in pool.imap_unordered(_render, jobs):
+            print(path)
 
 
 def main(raw_dir, out_dir):

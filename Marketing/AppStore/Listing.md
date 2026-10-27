@@ -154,16 +154,22 @@ The Flock isn't in the screenshots or description yet, because App Store builds 
 - [ ] Market data: Dipwise reads Yahoo Finance's unofficial chart API. It works, but it isn't licensed for commercial apps and can change without notice. Before scaling, move `Shared/QuoteService.swift` to a licensed provider (Financial Modeling Prep, EODHD, Twelve Data, or Polygon, about $20–80 a month at launch volume).
 - [ ] The Flock: App Store builds hide it until CloudKit is connected. Set `FlockConfiguration.containerID`, add the iCloud entitlement, and deploy `CloudKitSchema.ckdb` to production. Crowd views stay hidden until enough members share (20 for ownership and buying/selling, 50 for Top Investors), so it's safe to launch early.
 
-## Header artwork (`Header/`)
+## Creative assets: product page header and search results (`Header/`, `Search/`)
 
-Dip Valley, where Dippy lives: two soft mountain ranges under the moon with a little mist between them, and the front hills are the icon's line: their ridge glows mint, dipping into the valley to a small alert ping. Dippy waves from a real-looking branch (twigs, leaves on stems, moonlit bark) with two of the flock. The text versions carry the name, "Your stock-watching owl.", and No login · No ads · Optimized for iPhone Duo. Same navy, mint, and owl as the icon and the screenshots.
+Built on Apple's asset best practices for iOS 27 creative assets:
+- **One clear idea:** Dippy keeps watch over the dip. That's the whole header, with one short phrase. The app name and icon already sit next to the header on the product page, so the art doesn't repeat them.
+- **Focal point in the center:** the phrase, Dippy, and the dip all sit in the middle, so any crop on iPhone or iPad keeps them. Check this with the Preview tool in App Store Connect before submitting.
+- **Localized** into every language the app supports: en, de, es, fr, it, pt-BR, ja, ko.
+- **No pricing, URLs, ©, awards, or other platforms.** No transparency, and the exact sizes App Store Connect accepts.
+- **Search results state the obvious and show the app firsthand:** "Get alerted when your stocks dip." on the real iPhone, with the dip alert lifting off the lock screen.
 
-| File | Use |
-|------|-----|
-| header-5244x2950.png | Wide banner: website hero, press kit, featuring pitch |
-| header-3840x1646.png | 16:9: In-App Event cards, presentations, YouTube |
-| header-social-1500x500.png | X / LinkedIn header |
-| featuring-art-5244x2950-no-text.png | Apple featuring nomination artwork (Apple asks for no text) |
-| featuring-art-3840x1646-no-text.png | Apple featuring, 16:9 |
+| File | Where it goes |
+|---|---|
+| Header/<lang>/header-5244x2950.png | Product page header, 16:9 universal (can also be used in search results) |
+| Header/<lang>/header-3840x1646.png | Product page header, 21:9 |
+| Search/<lang>/search-3840x2560.png | Search results, 3:2 |
+| Search/<lang>/search-5244x2950.png | Search results, 16:9 |
+| Header/featuring-art-*-no-text.png | Featuring nomination artwork, no words |
+| Header/header-social-1500x500.png | X / LinkedIn header |
 
 Regenerate with the same command as the screenshots; `compose.py` writes `Header/` alongside them.
