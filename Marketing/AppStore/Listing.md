@@ -160,10 +160,10 @@ Dip Valley, where Dippy lives: two soft mountain ranges under the moon with a li
 
 | File | Use |
 |------|-----|
-| header-4320x1080.png | Wide banner: website hero, press kit, featuring pitch |
-| header-1920x1080.png | 16:9: In-App Event cards, presentations, YouTube |
+| header-5244x2950.png | Wide banner: website hero, press kit, featuring pitch |
+| header-3840x1646.png | 16:9: In-App Event cards, presentations, YouTube |
 | header-social-1500x500.png | X / LinkedIn header |
-| featuring-art-4320x1080-no-text.png | Apple featuring nomination artwork (Apple asks for no text) |
-| featuring-art-1920x1080-no-text.png | Apple featuring, 16:9 |
+| featuring-art-5244x2950-no-text.png | Apple featuring nomination artwork (Apple asks for no text) |
+| featuring-art-3840x1646-no-text.png | Apple featuring, 16:9 |
 
 Regenerate with the same command as the screenshots; `compose.py` writes `Header/` alongside them.

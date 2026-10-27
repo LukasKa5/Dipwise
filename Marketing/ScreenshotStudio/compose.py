@@ -1372,11 +1372,11 @@ def header(raw, raw_dir, size, with_text=True):
 def headers(raw, raw_dir, folder):
     folder.mkdir(parents=True, exist_ok=True)
     for name, size, with_text in [
-        ("header-4320x1080", (4320, 1080), True),
-        ("header-1920x1080", (1920, 1080), True),
+        ("header-5244x2950", (5244, 2950), True),
+        ("header-3840x1646", (3840, 1646), True),
         ("header-social-1500x500", (1500, 500), True),
-        ("featuring-art-4320x1080-no-text", (4320, 1080), False),
-        ("featuring-art-1920x1080-no-text", (1920, 1080), False),
+        ("featuring-art-5244x2950-no-text", (5244, 2950), False),
+        ("featuring-art-3840x1646-no-text", (3840, 1646), False),
     ]:
         image = header(raw, raw_dir, size, with_text).convert("RGB")
         path = folder / f"{name}.png"
