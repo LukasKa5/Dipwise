@@ -156,7 +156,7 @@ The Flock isn't in the screenshots or description yet, because App Store builds 
 
 ## Creative assets: product page header and search results (`Header/`, `Search/`)
 
-**Header: Dippy's forest.** A flat illustration in the icon's own style: the icon's navy sky with its faint lines, and firs scattered at different depths like a real forest, darker toward you. Dippy stands in the middle on a soft knoll whose edge catches the moonlight. Above him is the phrase "Your stock-watching owl.", with a big "owl." on its own line whose "o" is the full moon. In the other languages, the phrase is translated and the moon sits in the sky beside Dippy.
+**Header: Dippy's forest.** A flat illustration in the icon's own style: the icon's navy sky with its faint lines, and firs scattered at different depths, kept low. Dippy rises large from the bottom edge, so his face and big eyes are the first thing anyone sees. Above him is one line, "Your stock-watching owl.", whose "o" is the full moon. Every language uses the moon as a letter: the "o" of the word for owl, the ö of Börse with its dots kept, or the full stop in Japanese and Korean. The top stays quiet sky, where iPhone puts the Dynamic Island and the back and share buttons.
 - **Safe area:** iPhone shows only the middle 3:2 of the 16:9 header, with the Dynamic Island and the back and share buttons along the top. Dippy and the moon sit inside that area, below the top band.
 - **Search results:** "Get alerted when your stocks dip." on the real iPhone, with the alert lifting off the lock screen, in the same forest and in all 8 languages.
 - No pricing, URLs, ©, awards, or other platforms. No transparency, and the exact sizes App Store Connect accepts.

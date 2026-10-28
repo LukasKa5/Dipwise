@@ -16,10 +16,11 @@ Writes iPhone-6.9 (1320 × 2868), iPhone-6.5 (1284 × 2778), iPad-13 (2064 × 27
 
 import math
 import random
+import re
 import sys
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from PIL import ImageChops, Image, ImageDraw, ImageFilter, ImageFont
 
 # The app's own colors: Brand.swift and the asset catalog, as they render on screen.
 NIGHT_TOP = (22, 64, 90)
@@ -1147,17 +1148,18 @@ def glow_path(canvas, points, color, width, glow, unit):
 LANGUAGES = ["en", "de", "es", "fr", "it", "pt-BR", "ja", "ko"]
 
 # One short phrase per asset, as Apple asks, in every language the app speaks. *Stars* mark the mint words.
-# The header's one phrase. *Stars* mark the mint words; {o} is an "o" drawn as the moon, in English, where it is
-# the "o" of "owl". Elsewhere a moon inside a word would only get in the way of reading it, so it stays in the sky.
+# The header's one phrase, in every language with the moon as a letter: {o} is an "o" drawn as the moon, {ö} keeps
+# its two dots above the moon, and {.} is a full stop that is the moon, for Japanese and Korean, which have no "o".
+# *Stars* mark the mint words.
 TAGLINES = {
-    "en": "Your *stock-watching*\n{o}wl.",
-    "de": "Deine Eule für die *Börse*.",
-    "es": "Tu búho que *vigila la bolsa*.",
-    "fr": "Ta chouette qui *veille sur la Bourse*.",
-    "it": "Il tuo gufo che *veglia sulla Borsa*.",
-    "pt-BR": "Sua coruja que *vigia a bolsa*.",
-    "ja": "*株価*を見守るフクロウ。",
-    "ko": "*주식*을 지켜보는 부엉이.",
+    "en": "Your *stock-watching* {o}wl.",
+    "de": "Deine Eule für die *B{ö}rse*.",
+    "es": "Tu búh{o} que *vigila la bolsa*.",
+    "fr": "Ta ch{o}uette qui *veille sur la Bourse*.",
+    "it": "Il tuo guf{o} che *veglia sulla Borsa*.",
+    "pt-BR": "Sua c{o}ruja que *vigia a bolsa*.",
+    "ja": "*株価*を見守るフクロウ{.}",
+    "ko": "*주식*을 지켜보는 부엉이{.}",
 }
 
 SEARCH_LINES = {
@@ -1273,7 +1275,7 @@ def full_moon(canvas, mx, my, mr):
                                     for a, c, b in [(-0.3, -0.2, 0.2), (0.32, 0.25, 0.14), (-0.1, 0.45, 0.1)]], (240, 214, 160))
 
 
-def forest(size, clearing, eyes=False, moon=True, moon_at=None):
+def forest(size, clearing, eyes=False, moon=True, moon_at=None, drop=0.0, front_gap=0.6):
     """Dippy's forest at night in the icon's flat style: the icon's navy with its faint lines in the sky, a moon,
     rolling hills and three layers of firs that grow darker toward you, and, if asked, two of the flock's eyes
     shining from the trees. A clearing in the middle keeps the focal point in the center, where every crop keeps it."""
@@ -1308,7 +1310,7 @@ def forest(size, clearing, eyes=False, moon=True, moon_at=None):
         fill = vertical_gradient((W, H), [(0, color_top), (1, color_bottom)])
         aa_shapes(canvas, lambda d, k: d.polygon([(x * k, y * k) for x, y in curve] + [((W + 50) * k, (H + 50) * k), (-50 * k, (H + 50) * k)], fill=255), fill)
 
-    hills(H * 0.66, H * 0.12, 3, (34, 82, 104), (26, 66, 88))
+    hills(H * (0.66 + drop), H * 0.12, 3, (34, 82, 104), (26, 66, 88))
 
     def tree_row(base, heights, spacing, gap, seed, top, bottom, scatter=0.025, steps=(0.7, 1.15)):
         # Scattered the way a forest grows: uneven gaps, some trees a little nearer (lower and taller), some farther.
@@ -1325,12 +1327,12 @@ def forest(size, clearing, eyes=False, moon=True, moon_at=None):
         aa_shapes(canvas, lambda d, k: [fir(d, k, *t) for t in trees], fill)
         return trees
 
-    tree_row(H * 0.74, (H * 0.13, H * 0.27), H * 0.1, H * 0.22, 7, (36, 84, 106), (26, 64, 86), scatter=0.04, steps=(0.35, 1.6))
-    hills(H * 0.84, H * 0.06, 9, (18, 50, 72), (12, 36, 54))
-    tree_row(H * 0.84, (H * 0.2, H * 0.32), H * 0.1, 0, 12, (24, 62, 84), (16, 46, 66), scatter=0.04, steps=(0.4, 1.7))
-    middle = tree_row(H * 0.93, (H * 0.26, H * 0.42), H * 0.16, 0, 13, (16, 44, 64), (10, 30, 46), scatter=0.05, steps=(0.45, 1.8))
-    hills(H * 0.93, H * 0.04, 21, (10, 28, 44), (6, 16, 28))
-    front = tree_row(H * 1.06, (H * 0.66, H * 0.84), H * 0.2, H * 0.6, 17, (10, 28, 44), (5, 14, 26))
+    tree_row(H * (0.74 + drop), (H * 0.13, H * 0.27), H * 0.1, H * 0.22, 7, (36, 84, 106), (26, 64, 86), scatter=0.04, steps=(0.35, 1.6))
+    hills(H * (0.84 + drop), H * 0.06, 9, (18, 50, 72), (12, 36, 54))
+    tree_row(H * (0.84 + drop), (H * 0.2, H * 0.32), H * 0.1, 0, 12, (24, 62, 84), (16, 46, 66), scatter=0.04, steps=(0.4, 1.7))
+    middle = tree_row(H * (0.93 + drop), (H * 0.26, H * 0.42), H * 0.16, 0, 13, (16, 44, 64), (10, 30, 46), scatter=0.05, steps=(0.45, 1.8))
+    hills(H * (0.93 + drop), H * 0.04, 21, (10, 28, 44), (6, 16, 28))
+    front = tree_row(H * (1.06 + drop), (H * 0.66, H * 0.84), H * 0.2, H * front_gap, 17, (10, 28, 44), (5, 14, 26))
 
     if eyes:
         # The flock, peeking out of the firs on both sides of the clearing: big near, small far, one fast asleep.
@@ -1343,72 +1345,80 @@ def forest(size, clearing, eyes=False, moon=True, moon_at=None):
 
 
 def moonlit_line(canvas, text, cx, top, lang, size, max_width, unit):
-    """One centered line with the *starred* words in mint, a soft shadow, and each {o} drawn as the full moon."""
+    """One centered line with the *starred* words in mint, a soft shadow, and the moon standing in for a letter: {o},
+    {ö} (its dots stay above the moon), or {.}, a full stop."""
     draw = ImageDraw.Draw(canvas)
-    plain = text.replace("*", "").replace("{o}", "o")
+    runs, mint = [], False
+    for index, part in enumerate(text.split("*")):
+        if index:
+            mint = not mint
+        for token in re.split(r"(\{[oö.]\}|)", part):
+            if token:
+                runs.append((token, mint))
     while True:
         text_font = lang_font(lang, size)
-        width = draw.textlength(plain, font=text_font)
+        latin = lang_font("en", size)
+        _, o_top, _, o_bottom = latin.getbbox("o")
+        moon_d = (o_bottom - o_top) * 1.2
+
+        def width_of(token):
+            if token == "{.}":
+                return moon_d * 1.25
+            if token in ("{o}", "{ö}"):
+                return draw.textlength(token[1], font=latin)
+            return draw.textlength(token, font=text_font)
+
+        width = sum(width_of(t) for t, _ in runs)
         if width <= max_width or size < 10:
             break
         size *= 0.96
-    _, o_top, _, o_bottom = text_font.getbbox("o")
     shadow = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
     sd = ImageDraw.Draw(shadow)
-    moons, x, mint = [], cx - width / 2, False
-    for index, part in enumerate(text.split("*")):
-        if index:
-            mint = not mint
-        for piece_index, piece in enumerate(part.split("{o}")):
-            if piece_index:
-                o_width = draw.textlength("o", font=text_font)
-                moons.append((x + o_width / 2, top + (o_top + o_bottom) / 2, (o_bottom - o_top) * 0.56))
-                x += o_width
-            sd.text((x, top + 7 * unit), piece, font=text_font, fill=(0, 0, 0, 130))
-            draw.text((x, top), piece, font=text_font, fill=MINT if mint else WHITE)
-            x += draw.textlength(piece, font=text_font)
-    canvas.alpha_composite(shadow.filter(ImageFilter.GaussianBlur(12 * unit)), (0, 0))
-    # The shadow went on after the text, so draw the words once more on top of it.
-    x, mint = cx - width / 2, False
-    for index, part in enumerate(text.split("*")):
-        if index:
-            mint = not mint
-        for piece_index, piece in enumerate(part.split("{o}")):
-            if piece_index:
-                x += draw.textlength("o", font=text_font)
-            draw.text((x, top), piece, font=text_font, fill=MINT if mint else WHITE)
-            x += draw.textlength(piece, font=text_font)
+    x = cx - width / 2
+    for token, _ in runs:
+        if not token.startswith("{"):
+            sd.text((x, top + 7 * unit), token, font=text_font, fill=(0, 0, 0, 130))
+        x += width_of(token)
+    canvas.alpha_composite(shadow.filter(ImageFilter.GaussianBlur(12 * unit)))
+    draw = ImageDraw.Draw(canvas)
+    moons, x = [], cx - width / 2
+    for token, is_mint in runs:
+        color = MINT if is_mint else WHITE
+        w = width_of(token)
+        if token == "{ö}":
+            draw.text((x, top), "ö", font=latin, fill=color)
+        if token.startswith("{"):
+            moons.append((x + w / 2, top + (o_top + o_bottom) / 2, moon_d / 2))
+        else:
+            draw.text((x, top), token, font=text_font, fill=color)
+        x += w
     for mx, my, mr in moons:
         full_moon(canvas, mx, my, mr)
-    return bool(moons)
+    # The dots of an ö go back on top of its moon: the glyph minus its plain "o".
+    x = cx - width / 2
+    for token, is_mint in runs:
+        if token == "{ö}":
+            dots = Image.new("L", canvas.size, 0)
+            ImageDraw.Draw(dots).text((x, top), "ö", font=latin, fill=255)
+            bowl = Image.new("L", canvas.size, 0)
+            ImageDraw.Draw(bowl).text((x, top), "o", font=latin, fill=255)
+            dots = ImageChops.subtract(dots, bowl.filter(ImageFilter.MaxFilter(5)))
+            canvas.paste(Image.new("RGBA", canvas.size, (MINT if is_mint else WHITE) + (255,)), (0, 0), dots)
+        x += width_of(token)
 
 
 def header(raw, raw_dir, size, lang="en"):
     """The product page header: Dippy's night forest, drawn flat in the icon's own navy, white, mint, and amber. Dippy
-    stands on a soft, moonlit knoll in the middle, and above him is the one phrase, in English with a big "owl." whose
-    "o" is the full moon. Everything sits in the middle, below the Dynamic Island and between the back and share
-    buttons, where iPhone's crop keeps it."""
+    rises large from the bottom edge, his face and big eyes the first thing anyone sees, with the forest low behind
+    him. Above him is one line whose letter "o" (or full stop) is the full moon. The top stays quiet sky, since that is
+    where iPhone puts the Dynamic Island and the back and share buttons."""
     W, H = size
     u = H / 1080
     cx = W / 2
-    lines = TAGLINES[lang].split("\n")
-    moon_in_text = "{o}" in TAGLINES[lang]
-    canvas = forest(size, cx, moon=not moon_in_text, moon_at=(cx + H * 0.42, H * 0.44, H * 0.055))
-
-    # The forest floor: a gentle knoll, highest under Dippy, its edge catching the moonlight.
-    ground = H * 0.865
-    outline = smooth_curve([(-W * 0.1, H * 0.97), (cx - H * 1.0, H * 0.92), (cx - H * 0.35, ground + H * 0.008), (cx, ground),
-                            (cx + H * 0.35, ground + H * 0.008), (cx + H * 1.0, H * 0.92), (W * 1.1, H * 0.97)], samples=40)
-    shape = lambda d, k, dy=0.0: d.polygon([(x * k, (y + dy) * k) for x, y in outline] + [(W * 1.1 * k, (H + 50) * k), (-W * 0.1 * k, (H + 50) * k)], fill=255)
-    aa_shapes(canvas, lambda d, k: shape(d, k), (74, 128, 142))
-    aa_shapes(canvas, lambda d, k: shape(d, k, H * 0.007), vertical_gradient((W, H), [(0.8, (18, 44, 62)), (1, (8, 20, 34))]))
-    perch(canvas, raw_dir, "idle", cx, ground + H * 0.012, H * 0.34)
-
-    if len(lines) == 2:
-        moonlit_line(canvas, lines[0], cx, H * 0.19, lang, H * 0.095, H * 1.0, u)
-        moonlit_line(canvas, lines[1], cx, H * 0.285, lang, H * 0.2, H * 1.0, u)
-    else:
-        moonlit_line(canvas, lines[0], cx, H * 0.2, lang, H * 0.1, H * 1.0, u)
+    canvas = forest(size, cx, moon=False, drop=0.1, front_gap=0.8)
+    # Dippy from the bottom edge: his ears start just below the line, his beak sits just above the edge.
+    perch(canvas, raw_dir, "idle", cx, H * 0.56 + H * 0.7 * 0.97, H * 0.7)
+    moonlit_line(canvas, TAGLINES[lang], cx, H * 0.4, lang, H * 0.105, H * 1.3, u)
     return canvas
 
 
