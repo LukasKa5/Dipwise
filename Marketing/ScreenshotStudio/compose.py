@@ -1249,149 +1249,96 @@ def glowing_eyes(canvas, x, y, size, look=0.0, sleepy=False):
     canvas.alpha_composite(patch, (round(x - w / 2), round(y - h / 2)))
 
 
-def flat_branch(canvas, start, end, thickness, unit):
-    """Dippy's branch, drawn flat like the icon: a smooth tapered limb with a lighter top edge and a few rounded
-    leaves in the icon's mint-teal. Returns where its top is at any point along it."""
-    (x0, y0), (x1, y1) = start, end
-
-    def center(t):
-        return x0 + (x1 - x0) * t, y0 + (y1 - y0) * t - math.sin(math.pi * t) * 30 * unit
-
-    def half(t):
-        return thickness * (1 - 0.55 * t ** 1.2) / 2
-
-    def limb(draw, k, lift=0.0):
-        top = [(center(i / 60)[0] * k, (center(i / 60)[1] - half(i / 60) + lift) * k) for i in range(61)]
-        bottom = [(center(i / 60)[0] * k, (center(i / 60)[1] + half(i / 60)) * k) for i in range(61)]
-        draw.polygon(top + bottom[::-1], fill=255)
-        tx, ty = center(1)
-        r = half(1)
-        draw.ellipse(((tx - r) * k, (ty - r + lift) * k, (tx + r) * k, (ty + r) * k), fill=255)
-
-    def leaf(draw, k, x, y, angle, length, width):
-        ca, sa = math.cos(angle), math.sin(angle)
-        outline = []
-        for side in (1, -1):
-            for i in range(21):
-                t = i / 20 if side == 1 else 1 - i / 20
-                across = side * width / 2 * math.sin(math.pi * t)
-                outline.append(((x + t * length * ca - across * sa) * k, (y + t * length * sa + across * ca) * k))
-        draw.polygon(outline, fill=255)
-
-    aa_shapes(canvas, lambda d, k: limb(d, k), (58, 74, 90))
-    aa_shapes(canvas, lambda d, k: limb(d, k, lift=thickness * 0.28), (30, 42, 56))
-    # Leaves in little clusters of three, the way they grow: under the branch, and a bunch at its tip.
-    clusters = [(0.42, 2.2), (0.6, 1.0), (0.9, 2.0), (1.0, 3.14)]
-    greens = [(36, 150, 122), (24, 112, 98), (46, 176, 138)]
-    for n, (t, angle) in enumerate(clusters):
-        x, y = center(t)
-        y += half(t) * 0.4
-        for j, spread in enumerate((-0.5, 0.0, 0.5)):
-            size = 1.0 if spread == 0 else 0.8
-            aa_shapes(canvas, lambda d, k, x=x, y=y, a=angle + spread, z=size: leaf(d, k, x, y, a, 84 * unit * z, 36 * unit * z),
-                      greens[(n + j) % 3])
-
-    def perch_point(t):
-        x, y = center(t)
-        return x, y - half(t)
-
-    return perch_point
-
-
-def forest(size, clearing, eyes=True, moon=True):
-    """Dippy's forest at night in the icon's flat style: the icon's navy with its faint lines in the sky, a moon,
-    rolling hills and three layers of firs that grow darker toward you, a soft mist, and the flock's eyes shining from
-    the trees. A clearing in the middle keeps the focal point in the center, where every crop keeps it."""
+def forest(size, center, eyes=True):
+    """Dippy's forest, drawn the way the icon is drawn and said as simply as possible: the icon's navy sky with its
+    faint lines, a few stars, and one treeline whose tops trace a price chart, rising, dipping in the middle, and
+    climbing to a new high marked by the icon's mint dot. Two pairs of the flock's eyes watch from the trees. Returns
+    the canvas and where the bottom of the dip is, for Dippy."""
     W, H = size
     u = H / 1080
-    cx = W / 2
-    canvas = vertical_gradient((W, H), [(0, (10, 26, 44)), (0.45, (20, 58, 82)), (0.72, (30, 80, 104)), (1, (10, 28, 44))])
+    canvas = vertical_gradient((W, H), [(0, (8, 22, 38)), (0.55, (18, 52, 76)), (0.85, (26, 70, 94)), (1, (20, 56, 80))])
     rng = random.Random(5)
 
     lines = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     ld = ImageDraw.Draw(lines)
-    for i in range(1, 6):
-        y = H * 0.12 * i
-        ld.line([(0, y), (W, y)], fill=(160, 210, 230, 16), width=max(1, round(2 * u)))
+    for i in range(1, 8):
+        ld.line([(0, H * 0.12 * i), (W, H * 0.12 * i)], fill=(160, 210, 230, 14), width=max(1, round(2 * u)))
     canvas.alpha_composite(lines)
 
     stars = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     sd = ImageDraw.Draw(stars)
-    for _ in range(int(W / H * 26)):
-        sx, sy = rng.uniform(0, W), rng.uniform(H * 0.02, H * 0.5)
+    for _ in range(int(W / H * 22)):
+        sx, sy = rng.uniform(0, W), rng.uniform(H * 0.03, H * 0.45)
         r = rng.choice([1.6, 2.2, 3.0]) * u
         sd.ellipse((sx - r, sy - r, sx + r, sy + r), fill=(255, 255, 255, rng.randint(60, 170)))
     canvas.alpha_composite(stars)
 
-    # The moon, full and flat, with a soft halo, beside the clearing.
-    mx, my, mr = cx + H * 0.48, H * 0.3, H * 0.075
-    if moon:
-        halo = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-        ImageDraw.Draw(halo).ellipse((mx - mr * 3.4, my - mr * 3.4, mx + mr * 3.4, my + mr * 3.4), fill=(255, 236, 190, 40))
-        canvas.alpha_composite(halo.filter(ImageFilter.GaussianBlur(mr * 1.4)))
-        aa_shapes(canvas, lambda d, k: d.ellipse(((mx - mr) * k, (my - mr) * k, (mx + mr) * k, (my + mr) * k), fill=255), (255, 234, 184))
-        aa_shapes(canvas, lambda d, k: [d.ellipse(((mx + a * mr - b * mr) * k, (my + c * mr - b * mr) * k, (mx + a * mr + b * mr) * k, (my + c * mr + b * mr) * k), fill=255)
-                                        for a, c, b in [(-0.3, -0.2, 0.2), (0.32, 0.25, 0.14), (-0.1, 0.45, 0.1)]], (240, 214, 160))
+    # The chart the treetops follow, in H units from the center: up, the dip, then a new high on the right.
+    shape = [(-2.0, 0.5), (-1.3, 0.44), (-0.85, 0.36), (-0.5, 0.46), (-0.22, 0.62), (0.0, 0.74),
+             (0.22, 0.62), (0.45, 0.46), (0.7, 0.32), (1.2, 0.26), (2.0, 0.2)]
+    curve = smooth_curve([(center + dx * H, dy * H) for dx, dy in shape], samples=60)
 
-    def hills(base, amplitude, seed, color_top, color_bottom):
-        r = random.Random(seed)
-        pts = [(x, base - amplitude * r.uniform(0.2, 1.0)) for x in [-W * 0.1 + i * W * 1.2 / 7 for i in range(8)]]
-        curve = smooth_curve(pts, samples=40)
-        fill = vertical_gradient((W, H), [(0, color_top), (1, color_bottom)])
-        aa_shapes(canvas, lambda d, k: d.polygon([(x * k, y * k) for x, y in curve] + [((W + 50) * k, (H + 50) * k), (-50 * k, (H + 50) * k)], fill=255), fill)
+    def tops(x):
+        for (x0, y0), (x1, y1) in zip(curve, curve[1:]):
+            if x0 <= x <= x1:
+                return y0 + (y1 - y0) * (x - x0) / max(x1 - x0, 1e-6)
+        return curve[0][1] if x < curve[0][0] else curve[-1][1]
 
-    hills(H * 0.66, H * 0.12, 3, (44, 96, 118), (30, 72, 94))
+    # A soft glow behind the treeline, like light from the screen behind the chart.
+    glow = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    ImageDraw.Draw(glow).line(curve, fill=MINT + (34,), width=round(H * 0.08), joint="curve")
+    canvas.alpha_composite(glow.filter(ImageFilter.GaussianBlur(H * 0.06)))
 
-    def tree_row(base, heights, spacing, gap, seed, top, bottom, record=None):
-        r = random.Random(seed)
-        trees = []
-        x = -spacing * r.uniform(0, 1)
-        while x < W + spacing:
-            if abs(x - clearing) > gap:
-                h = r.uniform(*heights)
-                trees.append((x, base + r.uniform(-0.02, 0.03) * H, h, h * r.uniform(0.46, 0.56)))
-            x += spacing * r.uniform(0.7, 1.15)
-        fill = vertical_gradient((W, H), [(0, top), (1, bottom)])
-        aa_shapes(canvas, lambda d, k: [fir(d, k, *t) for t in trees], fill)
-        return trees
+    spacing = H * 0.062
+    trees = []
+    x = center - spacing * math.ceil((center + spacing) / spacing)
+    while x < W + spacing:
+        tip = tops(x) + rng.uniform(-0.004, 0.004) * H
+        height = H * 1.06 - tip
+        trees.append((x, H * 1.06, height, min(height * 0.5, spacing * 2.3)))
+        x += spacing
+    fill = vertical_gradient((W, H), [(0, (12, 34, 52)), (0.6, (8, 22, 36)), (1, (4, 12, 22))])
+    # The firs' tiers leave little notches where neighbors meet; the body of the forest below them is solid.
+    body = [(x, tops(x) + (H * 1.06 - tops(x)) * 0.42) for x in range(-100, W + 101, max(1, W // 200))]
 
-    tree_row(H * 0.74, (H * 0.16, H * 0.26), H * 0.11, H * 0.22, 7, (36, 84, 106), (26, 64, 86))
-    mist = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    ImageDraw.Draw(mist).rectangle((0, H * 0.66, W, H * 0.78), fill=(150, 205, 222, 44))
-    canvas.alpha_composite(mist.filter(ImageFilter.GaussianBlur(H * 0.04)))
-    hills(H * 0.84, H * 0.06, 9, (18, 50, 72), (12, 36, 54))
-    middle = tree_row(H * 0.9, (H * 0.3, H * 0.42), H * 0.12, H * 0.08, 13, (18, 50, 72), (12, 34, 52))
-    hills(H * 0.93, H * 0.04, 21, (10, 28, 44), (6, 16, 28))
-    front = tree_row(H * 1.06, (H * 0.66, H * 0.84), H * 0.2, H * 0.6, 17, (10, 28, 44), (5, 14, 26))
+    def paint(d, k, row, drop):
+        for x, base, h, w in row:
+            fir(d, k, x, base, h - drop, w)
+        d.polygon([(x * k, (y + drop) * k) for x, y in body] + [((W + 100) * k, (H + 100) * k), (-100 * k, (H + 100) * k)], fill=255)
+
+    # A second row just behind, a shade lighter, so the gaps between the firs show more forest, not sky.
+    behind = [(x + spacing / 2, base, h, w) for x, base, h, w in trees]
+    aa_shapes(canvas, lambda d, k: paint(d, k, behind, H * 0.05),
+              vertical_gradient((W, H), [(0, (22, 58, 80)), (0.6, (14, 38, 56)), (1, (8, 22, 36))]))
+    aa_shapes(canvas, lambda d, k: paint(d, k, trees, 0), fill)
+
+    # The chart itself: a thin mint line along the treetops, the icon's line, dipping where Dippy sits.
+    tips = [(x, base - h) for x, base, h, w in trees]
+    line = smooth_curve(tips, samples=8)
+    glow_path(canvas, line, MINT, 5 * u / u, 20, u)
+
+    # The new high: the icon's mint dot with its ring, on the tallest tree in view.
+    hx = center + H * 0.7
+    hy = tops(hx)
+    ring = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    ImageDraw.Draw(ring).ellipse((hx - 38 * u, hy - 38 * u, hx + 38 * u, hy + 38 * u), fill=MINT + (60,))
+    canvas.alpha_composite(ring.filter(ImageFilter.GaussianBlur(10 * u)))
+    aa_shapes(canvas, lambda d, k: d.ellipse(((hx - 17 * u) * k, (hy - 17 * u) * k, (hx + 17 * u) * k, (hy + 17 * u) * k), fill=255), MINT)
+    aa_shapes(canvas, lambda d, k: d.ellipse(((hx - 8 * u) * k, (hy - 8 * u) * k, (hx + 8 * u) * k, (hy + 8 * u) * k), fill=255), WHITE)
 
     if eyes:
-        # The flock, peeking out of the firs on both sides of the clearing: big near, small far, one fast asleep.
-        spots = []
-        for x, base, h, w in middle:
-            if H * 0.34 < abs(x - clearing) < H * 0.6:
-                spots.append((x, base - h * 0.3, H * 0.016))
-        for x, base, h, w in front:
-            if abs(x - clearing) < H * 1.2:
-                spots.append((x, base - h * 0.42, H * 0.024))
-        for i, (x, y, s) in enumerate(spots):
-            glowing_eyes(canvas, x, y, s, look=1 if x < clearing else -1, sleepy=(i % 3 == 1))
-    return canvas
+        glowing_eyes(canvas, center - H * 0.6, tops(center - H * 0.6) + H * 0.2, H * 0.022, look=1)
+        glowing_eyes(canvas, center + H * 0.42, tops(center + H * 0.42) + H * 0.24, H * 0.019, look=-1, sleepy=True)
+    return canvas, (center, tops(center))
 
 
 def header(raw, raw_dir, size):
-    """The product page header: Dippy in a clearing of his night forest, on his branch under the moon, while the flock
-    watches from the trees. Drawn flat in the icon's own navy, mint, white, and amber. The focal point sits in the
-    middle, where iPhone's crop, the Dynamic Island, and the back and share buttons all leave it alone, and it needs
-    no words, so it works in every language."""
+    """The product page header: Dippy's forest at night, where the treeline is a price chart and Dippy sits right in
+    its dip, just like on the icon. No words: one image that works in every language. Everything that matters sits in
+    the middle, below the top band, where iPhone's crop, the Dynamic Island, and the back and share buttons leave it."""
     W, H = size
-    u = H / 1080
-    cx = W / 2
-    canvas = forest(size, cx)
-    # The branch grows out of the trees past the right edge, whatever the width, and Dippy sits just right of center.
-    start, end = (max(W + 40 * u, cx + H * 1.1), H * 0.62), (cx - H * 0.3, H * 0.66)
-    perch_at = flat_branch(canvas, start, end, 62 * u, u)
-    bx, by = perch_at((start[0] - (cx + H * 0.06)) / (start[0] - end[0]))
-    perch(canvas, raw_dir, "idle", bx, by + 8 * u, H * 0.4)
+    canvas, (dx, dy) = forest(size, W / 2)
+    perch(canvas, raw_dir, "idle", dx, dy + H * 0.03, H * 0.32)
     return canvas
 
 
@@ -1401,7 +1348,7 @@ def search_asset(raw, raw_dir, size, lang="en"):
     W, H = size
     u = H / 1080
     cx = W / 2
-    canvas = forest(size, cx, moon=False)
+    canvas, _ = forest(size, cx)
 
     bottom = rich_text(canvas, SEARCH_LINES[lang], cx, H * 0.06, lang, H * 0.1, min(W * 0.9, H * 1.4), u)
     phone = Bezel("iphone-18-pro-max")
