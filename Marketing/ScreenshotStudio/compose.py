@@ -1344,9 +1344,11 @@ def forest(size, clearing, eyes=False, moon=True, moon_at=None, drop=0.0, front_
     return canvas
 
 
-def moonlit_line(canvas, text, cx, top, lang, size, max_width, unit, middle=None):
+def moonlit_line(canvas, text, cx, top, lang, size, max_width, unit, middle=None, draw_moons=True, letters=None):
     """One centered line with the *starred* words in mint, a soft shadow, and the moon standing in for a letter: {o},
-    {ö} (its dots stay above the moon), or {.}, a full stop."""
+    {ö} (its dots stay above the moon), or {.}, a full stop. The moon gets a little air on both sides, like a letter.
+    Returns where each moon sits, for drawing (or animating) it separately with `draw_moons=False`; `letters`, if
+    given, collects the plain letter each moon stands in for, as (letter, x, top, font, color)."""
     draw = ImageDraw.Draw(canvas)
     runs, mint = [], False
     for index, part in enumerate(text.split("*")):
@@ -1365,7 +1367,7 @@ def moonlit_line(canvas, text, cx, top, lang, size, max_width, unit, middle=None
             if token == "{.}":
                 return moon_d * 1.25
             if token in ("{o}", "{ö}"):
-                return draw.textlength(token[1], font=latin)
+                return max(draw.textlength(token[1], font=latin), moon_d) + size * 0.1
             return draw.textlength(token, font=text_font)
 
         width = sum(width_of(t) for t, _ in runs)
@@ -1390,54 +1392,69 @@ def moonlit_line(canvas, text, cx, top, lang, size, max_width, unit, middle=None
     for token, is_mint in runs:
         color = MINT if is_mint else WHITE
         w = width_of(token)
-        if token == "{ö}":
-            draw.text((x, top), "ö", font=latin, fill=color)
+        if token == "{ö}" and draw_moons:
+            draw.text((x + (w - draw.textlength("ö", font=latin)) / 2, top), "ö", font=latin, fill=color)
         if token.startswith("{"):
             moons.append((x + w / 2, top + (o_top + o_bottom) / 2, moon_d / 2))
+            if letters is not None:
+                letter = "." if token == "{.}" else "o"
+                letters.append((letter, x + (w - draw.textlength(letter, font=latin)) / 2, top, latin, color))
         else:
             draw.text((x, top), token, font=text_font, fill=color)
         x += w
-    for mx, my, mr in moons:
-        full_moon(canvas, mx, my, mr)
+    if draw_moons:
+        for mx, my, mr in moons:
+            full_moon(canvas, mx, my, mr)
     # The dots of an ö go back on top of its moon: the glyph minus its plain "o".
     x = cx - width / 2
     for token, is_mint in runs:
         if token == "{ö}":
+            gx = x + (width_of(token) - draw.textlength("ö", font=latin)) / 2
             dots = Image.new("L", canvas.size, 0)
-            ImageDraw.Draw(dots).text((x, top), "ö", font=latin, fill=255)
+            ImageDraw.Draw(dots).text((gx, top), "ö", font=latin, fill=255)
             bowl = Image.new("L", canvas.size, 0)
-            ImageDraw.Draw(bowl).text((x, top), "o", font=latin, fill=255)
+            ImageDraw.Draw(bowl).text((gx, top), "o", font=latin, fill=255)
             dots = ImageChops.subtract(dots, bowl.filter(ImageFilter.MaxFilter(5)))
             canvas.paste(Image.new("RGBA", canvas.size, (MINT if is_mint else WHITE) + (255,)), (0, 0), dots)
         x += width_of(token)
+    return moons
 
 
-def header(raw, raw_dir, size, lang="en"):
-    """The product page header: Dippy's night forest, drawn flat in the icon's own navy, white, mint, and amber. Dippy
-    rises large from the bottom edge, his face and big eyes the first thing anyone sees, with the forest low behind
-    him. Above him is one line whose letter "o" (or full stop) is the full moon. The top stays quiet sky, since that is
-    where iPhone puts the Dynamic Island and the back and share buttons."""
+def header_scene(size):
+    """The header's stage without its actors: Dippy's night forest, kept low, and a soft vignette, so the edges fall a
+    little darker and the eye goes to the middle, the way premium art is lit."""
     W, H = size
-    u = H / 1080
-    cx = W / 2
-    canvas = forest(size, cx, moon=False, drop=0.1, front_gap=0.8)
-    # The line sits right below iPhone's back and share buttons, as wide as the space between the screen's edges
-    # allows; Dippy rises under it, his beak just above the bottom edge.
-    # A soft vignette: the edges fall a little darker, so the eye goes to the middle, the way premium art is lit.
+    canvas = forest(size, W / 2, moon=False, drop=0.1, front_gap=0.8)
     shade = Image.new("L", (64, 36), 0)
     ImageDraw.Draw(shade).ellipse((-14, -10, 78, 46), fill=255)
     shade = shade.filter(ImageFilter.GaussianBlur(7)).resize((W, H), Image.BICUBIC)
     vignette = Image.new("RGBA", (W, H), (4, 10, 20, 0))
     vignette.putalpha(shade.point(lambda v: round((255 - v) * 0.5)))
     canvas.alpha_composite(vignette)
+    return canvas
 
+
+def header_layout(size):
+    """Where the line and Dippy go. On 16:9 the line sits right below iPhone's back and share buttons, as wide as the
+    space between the screen's edges allows, and Dippy rises under it, his beak just above the bottom edge. The 21:9
+    header is shown wide, on iPad and Mac, without iPhone's crop, so it gets a bigger line and a bigger Dippy. Returns
+    the line's (size, max width, middle) and Dippy's (center, feet, height)."""
+    W, H = size
     if W / H > 2:
-        # The 21:9 header is shown wide, on iPad and Mac, without iPhone's crop: a bigger line and a bigger Dippy.
-        moonlit_line(canvas, TAGLINES[lang], cx, 0, lang, H * 0.19, W * 0.64, u, middle=H * 0.44)
-        perch(canvas, raw_dir, "idle", cx, H * 0.565 + H * 0.68 * 0.97, H * 0.68)
-    else:
-        moonlit_line(canvas, TAGLINES[lang], cx, 0, lang, H * 0.15, H * 1.25, u, middle=H * 0.505)
-        perch(canvas, raw_dir, "idle", cx, H * 0.605 + H * 0.62 * 0.97, H * 0.62)
+        return (H * 0.19, W * 0.64, H * 0.44), (W / 2, H * 0.565 + H * 0.68 * 0.97, H * 0.68)
+    return (H * 0.15, H * 1.25, H * 0.505), (W / 2, H * 0.605 + H * 0.62 * 0.97, H * 0.62)
+
+
+def header(raw, raw_dir, size, lang="en"):
+    """The product page header: Dippy's night forest, drawn flat in the icon's own navy, white, mint, and amber. Dippy
+    rises large from the bottom edge, his face and big eyes the first thing anyone sees. Above him is one line whose
+    letter "o" (or full stop) is the full moon. The top stays quiet sky, since that is where iPhone puts the Dynamic
+    Island and the back and share buttons."""
+    W, H = size
+    canvas = header_scene(size)
+    (text_size, max_width, middle), (cx, feet, height) = header_layout(size)
+    moonlit_line(canvas, TAGLINES[lang], W / 2, 0, lang, text_size, max_width, H / 1080, middle=middle)
+    perch(canvas, raw_dir, "idle", cx, feet, height)
     return canvas
 
 

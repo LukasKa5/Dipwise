@@ -161,6 +161,8 @@ The Flock isn't in the screenshots or description yet, because App Store builds 
 - **Search results:** "Get alerted when your stocks dip." on the real iPhone, with the alert lifting off the lock screen, in the same forest and in all 8 languages.
 - No pricing, URLs, ©, awards, or other platforms. No transparency, and the exact sizes App Store Connect accepts.
 
+**Header video (`HeaderVideo/<lang>/header-3840x1646.mov`):** a seamless 12-second loop at App Store Connect's header video spec: 21:9, 3840 x 1646, 60 fps, H.264, no sound. It opens on the finished line (that first frame is the poster, saved alongside as `poster-3840x1646.png`). The moon lets go of the "o", leaving a thin new-moon ring that still reads as the letter, and rises into the sky while Dippy looks up at it. Then it glides back down in a slow arc, shrinking as it comes, and settles into the "o" with a soft bounce and a glow. Dippy winks at you, and the loop starts again. Every move is eased, and Dippy's faces blend into each other instead of jumping. Regenerate with `python3 Marketing/ScreenshotStudio/header_animation.py Marketing/ScreenshotStudio/Raw Marketing/AppStore/HeaderVideo`.
+
 | File | Where it goes |
 |---|---|
 | Header/<lang>/header-5244x2950.png | Product page header, 16:9 universal (also usable in search results) |
