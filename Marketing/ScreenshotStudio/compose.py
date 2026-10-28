@@ -1344,7 +1344,7 @@ def forest(size, clearing, eyes=False, moon=True, moon_at=None, drop=0.0, front_
     return canvas
 
 
-def moonlit_line(canvas, text, cx, top, lang, size, max_width, unit):
+def moonlit_line(canvas, text, cx, top, lang, size, max_width, unit, middle=None):
     """One centered line with the *starred* words in mint, a soft shadow, and the moon standing in for a letter: {o},
     {ö} (its dots stay above the moon), or {.}, a full stop."""
     draw = ImageDraw.Draw(canvas)
@@ -1372,6 +1372,11 @@ def moonlit_line(canvas, text, cx, top, lang, size, max_width, unit):
         if width <= max_width or size < 10:
             break
         size *= 0.96
+    if middle is not None:
+        # Center the letters themselves, not the font's line box, on `middle`.
+        plain = "".join({"{o}": "o", "{ö}": "ö", "{.}": "."}.get(t, t) for t, _ in runs)
+        _, ink_top, _, ink_bottom = text_font.getbbox(plain)
+        top = middle - (ink_top + ink_bottom) / 2
     shadow = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
     sd = ImageDraw.Draw(shadow)
     x = cx - width / 2
@@ -1416,9 +1421,10 @@ def header(raw, raw_dir, size, lang="en"):
     u = H / 1080
     cx = W / 2
     canvas = forest(size, cx, moon=False, drop=0.1, front_gap=0.8)
-    # Dippy from the bottom edge: his ears start just below the line, his beak sits just above the edge.
-    perch(canvas, raw_dir, "idle", cx, H * 0.56 + H * 0.7 * 0.97, H * 0.7)
-    moonlit_line(canvas, TAGLINES[lang], cx, H * 0.4, lang, H * 0.105, H * 1.3, u)
+    # The line sits right below iPhone's back and share buttons, as wide as the space between the screen's edges
+    # allows; Dippy rises under it, his beak just above the bottom edge.
+    moonlit_line(canvas, TAGLINES[lang], cx, 0, lang, H * 0.15, H * 1.25, u, middle=H * 0.505)
+    perch(canvas, raw_dir, "idle", cx, H * 0.605 + H * 0.62 * 0.97, H * 0.62)
     return canvas
 
 
