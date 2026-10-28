@@ -1150,7 +1150,7 @@ LANGUAGES = ["en", "de", "es", "fr", "it", "pt-BR", "ja", "ko"]
 # The header's one phrase. *Stars* mark the mint words; {o} is an "o" drawn as the moon, in English, where it is
 # the "o" of "owl". Elsewhere a moon inside a word would only get in the way of reading it, so it stays in the sky.
 TAGLINES = {
-    "en": "Your *stock-watching* {o}wl.",
+    "en": "Your *stock-watching*\n{o}wl.",
     "de": "Deine Eule für die *Börse*.",
     "es": "Tu búho que *vigila la bolsa*.",
     "fr": "Ta chouette qui *veille sur la Bourse*.",
@@ -1310,22 +1310,25 @@ def forest(size, clearing, eyes=False, moon=True, moon_at=None):
 
     hills(H * 0.66, H * 0.12, 3, (34, 82, 104), (26, 66, 88))
 
-    def tree_row(base, heights, spacing, gap, seed, top, bottom, record=None):
+    def tree_row(base, heights, spacing, gap, seed, top, bottom, scatter=0.025, steps=(0.7, 1.15)):
+        # Scattered the way a forest grows: uneven gaps, some trees a little nearer (lower and taller), some farther.
         r = random.Random(seed)
         trees = []
         x = -spacing * r.uniform(0, 1)
         while x < W + spacing:
             if abs(x - clearing) > gap:
-                h = r.uniform(*heights)
-                trees.append((x, base + r.uniform(-0.02, 0.03) * H, h, h * r.uniform(0.46, 0.56)))
-            x += spacing * r.uniform(0.7, 1.15)
+                depth = r.uniform(-scatter, scatter)
+                h = r.uniform(*heights) * (1 + depth * 3)
+                trees.append((x, base + depth * H, h, h * r.uniform(0.46, 0.56)))
+            x += spacing * r.uniform(*steps)
         fill = vertical_gradient((W, H), [(0, top), (1, bottom)])
         aa_shapes(canvas, lambda d, k: [fir(d, k, *t) for t in trees], fill)
         return trees
 
-    tree_row(H * 0.74, (H * 0.16, H * 0.26), H * 0.11, H * 0.22, 7, (36, 84, 106), (26, 64, 86))
+    tree_row(H * 0.74, (H * 0.13, H * 0.27), H * 0.1, H * 0.22, 7, (36, 84, 106), (26, 64, 86), scatter=0.04, steps=(0.35, 1.6))
     hills(H * 0.84, H * 0.06, 9, (18, 50, 72), (12, 36, 54))
-    middle = tree_row(H * 0.9, (H * 0.3, H * 0.42), H * 0.12, H * 0.08, 13, (18, 50, 72), (12, 34, 52))
+    tree_row(H * 0.84, (H * 0.2, H * 0.32), H * 0.1, 0, 12, (24, 62, 84), (16, 46, 66), scatter=0.04, steps=(0.4, 1.7))
+    middle = tree_row(H * 0.93, (H * 0.26, H * 0.42), H * 0.16, 0, 13, (16, 44, 64), (10, 30, 46), scatter=0.05, steps=(0.45, 1.8))
     hills(H * 0.93, H * 0.04, 21, (10, 28, 44), (6, 16, 28))
     front = tree_row(H * 1.06, (H * 0.66, H * 0.84), H * 0.2, H * 0.6, 17, (10, 28, 44), (5, 14, 26))
 
@@ -1381,21 +1384,31 @@ def moonlit_line(canvas, text, cx, top, lang, size, max_width, unit):
 
 
 def header(raw, raw_dir, size, lang="en"):
-    """The product page header: Dippy's night forest, drawn flat in the icon's own navy, white, mint, and amber, with
-    Dippy perched on top of a fir in the middle, a fir just like all the others. Above him, one short phrase whose
-    "o" is the moon. Everything sits in the middle, below the Dynamic Island and between the back and share buttons,
-    where iPhone's crop keeps it."""
+    """The product page header: Dippy's night forest, drawn flat in the icon's own navy, white, mint, and amber. Dippy
+    stands on a soft, moonlit knoll in the middle, and above him is the one phrase, in English with a big "owl." whose
+    "o" is the full moon. Everything sits in the middle, below the Dynamic Island and between the back and share
+    buttons, where iPhone's crop keeps it."""
     W, H = size
     u = H / 1080
     cx = W / 2
+    lines = TAGLINES[lang].split("\n")
     moon_in_text = "{o}" in TAGLINES[lang]
-    canvas = forest(size, cx, moon=not moon_in_text, moon_at=(cx + H * 0.4, H * 0.42, H * 0.055))
-    # Dippy's fir: the same shape and colors as the firs around it, standing in the clearing.
-    tip = H * 0.64
-    fill = vertical_gradient((W, H), [(0, (10, 28, 44)), (1, (5, 14, 26))])
-    aa_shapes(canvas, lambda d, k: fir(d, k, cx, H * 1.06, H * 1.06 - tip, (H * 1.06 - tip) * 0.52), fill)
-    perch(canvas, raw_dir, "idle", cx, tip + H * 0.045, H * 0.34)
-    moonlit_line(canvas, TAGLINES[lang], cx, H * 0.17, lang, H * 0.085, H * 1.0, u)
+    canvas = forest(size, cx, moon=not moon_in_text, moon_at=(cx + H * 0.42, H * 0.44, H * 0.055))
+
+    # The forest floor: a gentle knoll, highest under Dippy, its edge catching the moonlight.
+    ground = H * 0.865
+    outline = smooth_curve([(-W * 0.1, H * 0.97), (cx - H * 1.0, H * 0.92), (cx - H * 0.35, ground + H * 0.008), (cx, ground),
+                            (cx + H * 0.35, ground + H * 0.008), (cx + H * 1.0, H * 0.92), (W * 1.1, H * 0.97)], samples=40)
+    shape = lambda d, k, dy=0.0: d.polygon([(x * k, (y + dy) * k) for x, y in outline] + [(W * 1.1 * k, (H + 50) * k), (-W * 0.1 * k, (H + 50) * k)], fill=255)
+    aa_shapes(canvas, lambda d, k: shape(d, k), (74, 128, 142))
+    aa_shapes(canvas, lambda d, k: shape(d, k, H * 0.007), vertical_gradient((W, H), [(0.8, (18, 44, 62)), (1, (8, 20, 34))]))
+    perch(canvas, raw_dir, "idle", cx, ground + H * 0.012, H * 0.34)
+
+    if len(lines) == 2:
+        moonlit_line(canvas, lines[0], cx, H * 0.19, lang, H * 0.095, H * 1.0, u)
+        moonlit_line(canvas, lines[1], cx, H * 0.285, lang, H * 0.2, H * 1.0, u)
+    else:
+        moonlit_line(canvas, lines[0], cx, H * 0.2, lang, H * 0.1, H * 1.0, u)
     return canvas
 
 
