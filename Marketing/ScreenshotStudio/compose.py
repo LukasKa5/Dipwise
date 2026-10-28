@@ -1423,8 +1423,21 @@ def header(raw, raw_dir, size, lang="en"):
     canvas = forest(size, cx, moon=False, drop=0.1, front_gap=0.8)
     # The line sits right below iPhone's back and share buttons, as wide as the space between the screen's edges
     # allows; Dippy rises under it, his beak just above the bottom edge.
-    moonlit_line(canvas, TAGLINES[lang], cx, 0, lang, H * 0.15, H * 1.25, u, middle=H * 0.505)
-    perch(canvas, raw_dir, "idle", cx, H * 0.605 + H * 0.62 * 0.97, H * 0.62)
+    # A soft vignette: the edges fall a little darker, so the eye goes to the middle, the way premium art is lit.
+    shade = Image.new("L", (64, 36), 0)
+    ImageDraw.Draw(shade).ellipse((-14, -10, 78, 46), fill=255)
+    shade = shade.filter(ImageFilter.GaussianBlur(7)).resize((W, H), Image.BICUBIC)
+    vignette = Image.new("RGBA", (W, H), (4, 10, 20, 0))
+    vignette.putalpha(shade.point(lambda v: round((255 - v) * 0.5)))
+    canvas.alpha_composite(vignette)
+
+    if W / H > 2:
+        # The 21:9 header is shown wide, on iPad and Mac, without iPhone's crop: a bigger line and a bigger Dippy.
+        moonlit_line(canvas, TAGLINES[lang], cx, 0, lang, H * 0.19, W * 0.64, u, middle=H * 0.44)
+        perch(canvas, raw_dir, "idle", cx, H * 0.565 + H * 0.68 * 0.97, H * 0.68)
+    else:
+        moonlit_line(canvas, TAGLINES[lang], cx, 0, lang, H * 0.15, H * 1.25, u, middle=H * 0.505)
+        perch(canvas, raw_dir, "idle", cx, H * 0.605 + H * 0.62 * 0.97, H * 0.62)
     return canvas
 
 
