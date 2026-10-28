@@ -156,15 +156,15 @@ The Flock isn't in the screenshots or description yet, because App Store builds 
 
 ## Creative assets: product page header and search results (`Header/`, `Search/`)
 
-**Header: Dippy's forest.** A flat illustration in the icon's own style: the icon's navy sky with its faint lines, a full moon, and layered firs that grow darker toward you. Dippy sits in the clearing on a moonlit boulder. Two of the flock watch from the trees, one of them dozing. No words, so one image works in every language and also serves as featuring artwork.
+**Header: Dippy's forest.** A flat illustration in the icon's own style: the icon's navy sky with its faint lines, and layered firs that grow darker toward you. Dippy is perched on top of a fir in the middle, a fir just like the others. Above him is one phrase, "Your stock-watching owl.", where the "o" of "owl" is the full moon. In the other languages, the phrase is translated and the moon sits in the sky beside Dippy.
 - **Safe area:** iPhone shows only the middle 3:2 of the 16:9 header, with the Dynamic Island and the back and share buttons along the top. Dippy and the moon sit inside that area, below the top band.
 - **Search results:** "Get alerted when your stocks dip." on the real iPhone, with the alert lifting off the lock screen, in the same forest and in all 8 languages.
 - No pricing, URLs, ©, awards, or other platforms. No transparency, and the exact sizes App Store Connect accepts.
 
 | File | Where it goes |
 |---|---|
-| Header/header-5244x2950.png | Product page header, 16:9 universal (also usable in search results and for featuring) |
-| Header/header-3840x1646.png | Product page header, 21:9 |
+| Header/<lang>/header-5244x2950.png | Product page header, 16:9 universal (also usable in search results) |
+| Header/<lang>/header-3840x1646.png | Product page header, 21:9 |
 | Header/header-social-1500x500.png | X / LinkedIn header |
 | Search/<lang>/search-3840x2560.png | Search results, 3:2 |
 | Search/<lang>/search-5244x2950.png | Search results, 16:9 |

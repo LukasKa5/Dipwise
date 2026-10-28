@@ -1147,6 +1147,19 @@ def glow_path(canvas, points, color, width, glow, unit):
 LANGUAGES = ["en", "de", "es", "fr", "it", "pt-BR", "ja", "ko"]
 
 # One short phrase per asset, as Apple asks, in every language the app speaks. *Stars* mark the mint words.
+# The header's one phrase. *Stars* mark the mint words; {o} is an "o" drawn as the moon, in English, where it is
+# the "o" of "owl". Elsewhere a moon inside a word would only get in the way of reading it, so it stays in the sky.
+TAGLINES = {
+    "en": "Your *stock-watching* {o}wl.",
+    "de": "Deine Eule für die *Börse*.",
+    "es": "Tu búho que *vigila la bolsa*.",
+    "fr": "Ta chouette qui *veille sur la Bourse*.",
+    "it": "Il tuo gufo che *veglia sulla Borsa*.",
+    "pt-BR": "Sua coruja que *vigia a bolsa*.",
+    "ja": "*株価*を見守るフクロウ。",
+    "ko": "*주식*을 지켜보는 부엉이.",
+}
+
 SEARCH_LINES = {
     "en": "Get alerted when\nyour stocks *dip*.",
     "de": "Ein Alarm, wenn deine\nAktien *fallen*.",
@@ -1249,10 +1262,21 @@ def glowing_eyes(canvas, x, y, size, look=0.0, sleepy=False):
     canvas.alpha_composite(patch, (round(x - w / 2), round(y - h / 2)))
 
 
-def forest(size, clearing, eyes=True, moon=True):
+def full_moon(canvas, mx, my, mr):
+    """The moon, full and flat, with its craters and a soft halo."""
+    W, H = canvas.size
+    halo = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    ImageDraw.Draw(halo).ellipse((mx - mr * 3.4, my - mr * 3.4, mx + mr * 3.4, my + mr * 3.4), fill=(255, 236, 190, 40))
+    canvas.alpha_composite(halo.filter(ImageFilter.GaussianBlur(mr * 1.4)))
+    aa_shapes(canvas, lambda d, k: d.ellipse(((mx - mr) * k, (my - mr) * k, (mx + mr) * k, (my + mr) * k), fill=255), (255, 234, 184))
+    aa_shapes(canvas, lambda d, k: [d.ellipse(((mx + a * mr - b * mr) * k, (my + c * mr - b * mr) * k, (mx + a * mr + b * mr) * k, (my + c * mr + b * mr) * k), fill=255)
+                                    for a, c, b in [(-0.3, -0.2, 0.2), (0.32, 0.25, 0.14), (-0.1, 0.45, 0.1)]], (240, 214, 160))
+
+
+def forest(size, clearing, eyes=False, moon=True, moon_at=None):
     """Dippy's forest at night in the icon's flat style: the icon's navy with its faint lines in the sky, a moon,
-    rolling hills and three layers of firs that grow darker toward you, and two of the flock's eyes shining from
-    the trees. A clearing in the middle keeps the focal point in the center, where every crop keeps it."""
+    rolling hills and three layers of firs that grow darker toward you, and, if asked, two of the flock's eyes
+    shining from the trees. A clearing in the middle keeps the focal point in the center, where every crop keeps it."""
     W, H = size
     u = H / 1080
     cx = W / 2
@@ -1274,15 +1298,8 @@ def forest(size, clearing, eyes=True, moon=True):
         sd.ellipse((sx - r, sy - r, sx + r, sy + r), fill=(255, 255, 255, rng.randint(60, 170)))
     canvas.alpha_composite(stars)
 
-    # The moon, full and flat, with a soft halo, beside the clearing.
-    mx, my, mr = cx + H * 0.48, H * 0.3, H * 0.075
     if moon:
-        halo = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-        ImageDraw.Draw(halo).ellipse((mx - mr * 3.4, my - mr * 3.4, mx + mr * 3.4, my + mr * 3.4), fill=(255, 236, 190, 40))
-        canvas.alpha_composite(halo.filter(ImageFilter.GaussianBlur(mr * 1.4)))
-        aa_shapes(canvas, lambda d, k: d.ellipse(((mx - mr) * k, (my - mr) * k, (mx + mr) * k, (my + mr) * k), fill=255), (255, 234, 184))
-        aa_shapes(canvas, lambda d, k: [d.ellipse(((mx + a * mr - b * mr) * k, (my + c * mr - b * mr) * k, (mx + a * mr + b * mr) * k, (my + c * mr + b * mr) * k), fill=255)
-                                        for a, c, b in [(-0.3, -0.2, 0.2), (0.32, 0.25, 0.14), (-0.1, 0.45, 0.1)]], (240, 214, 160))
+        full_moon(canvas, *(moon_at or (cx + H * 0.48, H * 0.3, H * 0.075)))
 
     def hills(base, amplitude, seed, color_top, color_bottom):
         r = random.Random(seed)
@@ -1322,23 +1339,63 @@ def forest(size, clearing, eyes=True, moon=True):
     return canvas
 
 
-def header(raw, raw_dir, size):
-    """The product page header: Dippy sitting on a moonlit rock in the clearing of his night forest, the flock peeking
-    from the trees. Drawn flat in the icon's own navy, white, mint, and amber. Dippy sits in the middle, where iPhone's
-    crop, the Dynamic Island, and the back and share buttons all leave him, and it needs no words, so it works in every
-    language."""
+def moonlit_line(canvas, text, cx, top, lang, size, max_width, unit):
+    """One centered line with the *starred* words in mint, a soft shadow, and each {o} drawn as the full moon."""
+    draw = ImageDraw.Draw(canvas)
+    plain = text.replace("*", "").replace("{o}", "o")
+    while True:
+        text_font = lang_font(lang, size)
+        width = draw.textlength(plain, font=text_font)
+        if width <= max_width or size < 10:
+            break
+        size *= 0.96
+    _, o_top, _, o_bottom = text_font.getbbox("o")
+    shadow = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+    sd = ImageDraw.Draw(shadow)
+    moons, x, mint = [], cx - width / 2, False
+    for index, part in enumerate(text.split("*")):
+        if index:
+            mint = not mint
+        for piece_index, piece in enumerate(part.split("{o}")):
+            if piece_index:
+                o_width = draw.textlength("o", font=text_font)
+                moons.append((x + o_width / 2, top + (o_top + o_bottom) / 2, (o_bottom - o_top) * 0.56))
+                x += o_width
+            sd.text((x, top + 7 * unit), piece, font=text_font, fill=(0, 0, 0, 130))
+            draw.text((x, top), piece, font=text_font, fill=MINT if mint else WHITE)
+            x += draw.textlength(piece, font=text_font)
+    canvas.alpha_composite(shadow.filter(ImageFilter.GaussianBlur(12 * unit)), (0, 0))
+    # The shadow went on after the text, so draw the words once more on top of it.
+    x, mint = cx - width / 2, False
+    for index, part in enumerate(text.split("*")):
+        if index:
+            mint = not mint
+        for piece_index, piece in enumerate(part.split("{o}")):
+            if piece_index:
+                x += draw.textlength("o", font=text_font)
+            draw.text((x, top), piece, font=text_font, fill=MINT if mint else WHITE)
+            x += draw.textlength(piece, font=text_font)
+    for mx, my, mr in moons:
+        full_moon(canvas, mx, my, mr)
+    return bool(moons)
+
+
+def header(raw, raw_dir, size, lang="en"):
+    """The product page header: Dippy's night forest, drawn flat in the icon's own navy, white, mint, and amber, with
+    Dippy perched on top of a fir in the middle, a fir just like all the others. Above him, one short phrase whose
+    "o" is the moon. Everything sits in the middle, below the Dynamic Island and between the back and share buttons,
+    where iPhone's crop keeps it."""
     W, H = size
     u = H / 1080
     cx = W / 2
-    canvas = forest(size, cx)
-    # The rock: a round boulder running out of the frame, its top-right edge lit by the moon.
-    top, half = H * 0.83, H * 0.36
-    outline = smooth_curve([(cx - half, H * 1.1), (cx - half * 0.92, top + H * 0.08), (cx - half * 0.55, top + H * 0.01),
-                            (cx, top), (cx + half * 0.55, top + H * 0.012), (cx + half * 0.95, top + H * 0.09), (cx + half * 1.02, H * 1.1)], samples=30)
-    shape = lambda d, k, dx=0.0, dy=0.0: d.polygon([((x + dx) * k, (y + dy) * k) for x, y in outline], fill=255)
-    aa_shapes(canvas, lambda d, k: shape(d, k), (88, 120, 140))
-    aa_shapes(canvas, lambda d, k: shape(d, k, -H * 0.012, H * 0.009), vertical_gradient((W, H), [(0, (52, 76, 96)), (0.78, (44, 66, 86)), (1, (20, 34, 50))]))
-    perch(canvas, raw_dir, "idle", cx, top + H * 0.025, H * 0.4)
+    moon_in_text = "{o}" in TAGLINES[lang]
+    canvas = forest(size, cx, moon=not moon_in_text, moon_at=(cx + H * 0.4, H * 0.42, H * 0.055))
+    # Dippy's fir: the same shape and colors as the firs around it, standing in the clearing.
+    tip = H * 0.64
+    fill = vertical_gradient((W, H), [(0, (10, 28, 44)), (1, (5, 14, 26))])
+    aa_shapes(canvas, lambda d, k: fir(d, k, cx, H * 1.06, H * 1.06 - tip, (H * 1.06 - tip) * 0.52), fill)
+    perch(canvas, raw_dir, "idle", cx, tip + H * 0.045, H * 0.34)
+    moonlit_line(canvas, TAGLINES[lang], cx, H * 0.17, lang, H * 0.085, H * 1.0, u)
     return canvas
 
 
@@ -1348,7 +1405,7 @@ def search_asset(raw, raw_dir, size, lang="en"):
     W, H = size
     u = H / 1080
     cx = W / 2
-    canvas = forest(size, cx, moon=False)
+    canvas = forest(size, cx, eyes=True, moon=False)
 
     bottom = rich_text(canvas, SEARCH_LINES[lang], cx, H * 0.06, lang, H * 0.1, min(W * 0.9, H * 1.4), u)
     phone = Bezel("iphone-18-pro-max")
@@ -1366,7 +1423,7 @@ def search_asset(raw, raw_dir, size, lang="en"):
 def _render(job):
     kind, raw_dir, folder, name, size, lang, with_text = job
     raw = Raw(raw_dir)
-    image = header(raw, raw_dir, size) if kind == "header" else search_asset(raw, raw_dir, size, lang)
+    image = header(raw, raw_dir, size, lang) if kind == "header" else search_asset(raw, raw_dir, size, lang)
     path = folder / f"{name}.png"
     path.parent.mkdir(parents=True, exist_ok=True)
     image.convert("RGB").save(path, optimize=True)
@@ -1374,16 +1431,15 @@ def _render(job):
 
 
 def headers(raw, raw_dir, folder):
-    """Every creative asset at App Store Connect's exact sizes: the header (the universal 16:9 and 21:9, wordless, so
-    one works everywhere and doubles as featuring art), a social banner, and the search results asset (3:2 and 16:9)
-    in every language."""
+    """Every creative asset at App Store Connect's exact sizes, in every language: the header (the universal 16:9 and
+    21:9), the search results asset (3:2 and 16:9), and a social banner."""
     from multiprocessing import Pool
     store = folder.parent
-    jobs = [("header", raw_dir, folder, "header-5244x2950", (5244, 2950), "en", False),
-            ("header", raw_dir, folder, "header-3840x1646", (3840, 1646), "en", False),
-            ("header", raw_dir, folder, "header-social-1500x500", (1500, 500), "en", False)]
+    jobs = [("header", raw_dir, folder, "header-social-1500x500", (1500, 500), "en", False)]
     for lang in LANGUAGES:
-        jobs += [("search", raw_dir, store / "Search" / lang, "search-3840x2560", (3840, 2560), lang, True),
+        jobs += [("header", raw_dir, folder / lang, "header-5244x2950", (5244, 2950), lang, True),
+                 ("header", raw_dir, folder / lang, "header-3840x1646", (3840, 1646), lang, True),
+                 ("search", raw_dir, store / "Search" / lang, "search-3840x2560", (3840, 2560), lang, True),
                  ("search", raw_dir, store / "Search" / lang, "search-5244x2950", (5244, 2950), lang, True)]
     with Pool() as pool:
         for path in pool.imap_unordered(_render, jobs):
