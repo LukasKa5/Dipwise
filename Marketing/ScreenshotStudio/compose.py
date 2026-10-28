@@ -1113,22 +1113,6 @@ def vertical_gradient(size, stops):
     return strip.resize((w, h), Image.BICUBIC).convert("RGBA")
 
 
-def chart_ridge(width, base, amplitude, seed, step):
-    """A mountain ridge that is secretly a price chart: a seeded random walk, eased between its points."""
-    rng = random.Random(seed)
-    level, controls = 0.0, []
-    for x in range(-step, width + step * 2, step):
-        level = max(-1, min(1, level + rng.uniform(-0.55, 0.55)))
-        controls.append((x, base - level * amplitude))
-    points = []
-    for (x0, y0), (x1, y1) in zip(controls, controls[1:]):
-        for i in range(8):
-            t = i / 8
-            e = (1 - math.cos(math.pi * t)) / 2
-            points.append((x0 + (x1 - x0) * t, y0 + (y1 - y0) * e))
-    return points
-
-
 def fill_below(canvas, points, top_color, bottom_color):
     """Fills the land under a ridge with its own soft gradient."""
     w, h = canvas.size
@@ -1160,115 +1144,9 @@ def glow_path(canvas, points, color, width, glow, unit):
     ImageDraw.Draw(canvas).line(points, fill=color + (255,), width=round(width * unit), joint="curve")
 
 
-def leaf_at(draw, base, angle, length, width, color):
-    """One leaf growing from `base` along `angle`: a short stem, a pointed blade, and a lighter midrib."""
-    ca, sa = math.cos(angle), math.sin(angle)
-    stem = length * 0.12
-    bx, by = base[0] + ca * stem, base[1] + sa * stem
-    draw.line([base, (bx, by)], fill=(20, 40, 46, 255), width=max(2, round(width * 0.14)))
-    outline = []
-    for side in (1, -1):
-        for k in range(25):
-            t = k / 24 if side == 1 else 1 - k / 24
-            along = t * length
-            across = side * width / 2 * math.sin(math.pi * t ** 0.85) * (1 - 0.15 * t)
-            outline.append((bx + along * ca - across * sa, by + along * sa + across * ca))
-    draw.polygon(outline, fill=color + (255,))
-    draw.line([(bx, by), (bx + ca * length * 0.92, by + sa * length * 0.92)],
-              fill=tuple(min(255, c + 40) for c in color) + (210,), width=max(1, round(width * 0.07)))
-
-
-def branch(canvas, start, end, thickness, unit):
-    """A branch growing out of a tree at the edge: thick at the trunk, thinning toward the tip with a gentle rise,
-    bark lit by the moon along the top, side twigs, and leaves growing from the twigs on short stems, the way real
-    leaves do. Returns where the top of the branch is at any point along it, for perching."""
-    (x0, y0), (x1, y1) = start, end
-    rise = 60 * unit
-
-    def center(t):
-        return x0 + (x1 - x0) * t, y0 + (y1 - y0) * t - math.sin(math.pi * t * 0.9) * rise
-
-    def half(t):
-        return thickness * (1 - 0.78 * t ** 0.9) / 2
-
-    rng = random.Random(9)
-    greens = [(22, 92, 82), (30, 116, 98), (18, 76, 70), (40, 132, 108)]
-    draw = ImageDraw.Draw(canvas)
-
-    def twig(t, angle, length):
-        """A side twig from the branch, with leaves alternating along it and a small cluster at its tip."""
-        bx, by = center(t)
-        by += half(t) * (0.5 if math.sin(angle) > 0 else -0.5)
-        points = []
-        for k in range(16):
-            s_ = k / 15
-            bend = math.sin(math.pi * s_) * 12 * unit
-            points.append((bx + math.cos(angle) * length * s_ - math.sin(angle) * bend,
-                           by + math.sin(angle) * length * s_ + math.cos(angle) * bend))
-        draw.line(points, fill=(16, 30, 42, 255), width=max(3, round(thickness * 0.16)), joint="curve")
-        for n, k in enumerate((5, 8, 11)):
-            side = 1 if n % 2 else -1
-            leaf_at(draw, points[k], angle + side * 0.75 + rng.uniform(-0.15, 0.15),
-                    rng.uniform(78, 96) * unit, rng.uniform(32, 40) * unit, rng.choice(greens))
-        tip = points[-1]
-        for spread in (-0.45, 0.05, 0.5):
-            leaf_at(draw, tip, angle + spread, rng.uniform(84, 104) * unit, rng.uniform(34, 42) * unit, rng.choice(greens))
-
-    # Twigs hang below the branch and reach past its tip, so the perch on top stays clear.
-    twig(0.2, math.pi * 0.78, 150 * unit)
-    twig(0.48, math.pi * 0.66, 130 * unit)
-    twig(0.74, math.pi * 0.86, 120 * unit)
-    twig(0.97, math.pi * 1.02, 110 * unit)
-
-    top, bottom = [], []
-    for k in range(81):
-        t = k / 80
-        x, y = center(t)
-        top.append((x, y - half(t)))
-        bottom.append((x, y + half(t)))
-    bark = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
-    bd = ImageDraw.Draw(bark)
-    bd.polygon(top + bottom[::-1], fill=(22, 34, 46, 255))
-    # Shading: a darker underside, moonlight along the top, and bark grain following the branch.
-    under = [(x, y - (y - ty) * 0.45) for (x, y), (_, ty) in zip(bottom, top)]
-    bd.polygon(under + bottom[::-1], fill=(12, 20, 30, 255))
-    bd.line(top, fill=(92, 128, 140, 255), width=max(2, round(4 * unit)), joint="curve")
-    for _ in range(26):
-        t = rng.uniform(0.03, 0.9)
-        x, y = center(t)
-        dy = rng.uniform(-0.55, 0.35) * half(t)
-        span = rng.uniform(20, 46) * unit
-        bd.line([(x - span, y + dy), (x + span, y + dy + rng.uniform(-2, 2) * unit)], fill=(36, 52, 66, 255), width=max(1, round(2.5 * unit)))
-    # A knot where a twig once grew.
-    kx, ky = center(0.34)
-    bd.ellipse((kx - 14 * unit, ky - 8 * unit, kx + 14 * unit, ky + 8 * unit), fill=(12, 20, 30, 255), outline=(40, 58, 72, 255), width=max(1, round(2 * unit)))
-    canvas.alpha_composite(bark)
-    # The tip: a last little cluster of leaves where the branch ends.
-    tx, ty = center(1.0)
-    for spread in (-0.5, 0.0, 0.55):
-        leaf_at(draw, (tx, ty), math.pi + spread, 96 * unit, 40 * unit, rng.choice(greens))
-
-    def perch_point(t):
-        x, y = center(t)
-        return x, y - half(t)
-
-    return perch_point
-
-
 LANGUAGES = ["en", "de", "es", "fr", "it", "pt-BR", "ja", "ko"]
 
 # One short phrase per asset, as Apple asks, in every language the app speaks. *Stars* mark the mint words.
-TAGLINES = {
-    "en": "Your *stock-watching* owl.",
-    "de": "Deine Eule für die *Börse*.",
-    "es": "Tu búho que *vigila la bolsa*.",
-    "fr": "Ta chouette qui *veille sur la Bourse*.",
-    "it": "Il tuo gufo che *veglia sulla Borsa*.",
-    "pt-BR": "Sua coruja que *vigia a bolsa*.",
-    "ja": "*株価*を見守るフクロウ。",
-    "ko": "*주식*을 지켜보는 부엉이.",
-}
-
 SEARCH_LINES = {
     "en": "Get alerted when\nyour stocks *dip*.",
     "de": "Ein Alarm, wenn deine\nAktien *fallen*.",
@@ -1319,118 +1197,211 @@ def rich_text(canvas, text, cx, top, lang, size, max_width, unit, line_gap=1.12)
     return top + len(lines) * size * line_gap
 
 
-def night_valley(size, dip_x, dip_y, moon):
-    """Dip Valley at night: the app's navy sky, a soft mint aurora, quiet stars, the moon, two calm mountain ranges with
-    moonlit rims and mist, and the front hills, whose ridge is the icon's glowing line dipping to the alert. Returns
-    the canvas and the ridge."""
-    W, H = size
-    u = H / 1080
-    canvas = vertical_gradient((W, H), [(0, (5, 12, 26)), (0.5, (16, 44, 72)), (0.7, (24, 62, 88)), (1, (8, 20, 34))])
-    rng = random.Random(11)
-
-    aurora = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    ad = ImageDraw.Draw(aurora)
-    ribbon = [(x, H * (0.3 + 0.06 * math.sin(x / W * math.pi * 2.2 + 0.6))) for x in range(-50, W + 60, 20)]
-    ad.line(ribbon, fill=(47, 230, 160, 40), width=round(H * 0.16), joint="curve")
-    ad.line([(x, y + H * 0.06) for x, y in ribbon], fill=(80, 150, 255, 26), width=round(H * 0.1), joint="curve")
-    canvas.alpha_composite(aurora.filter(ImageFilter.GaussianBlur(H * 0.08)))
-
-    stars = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    sd = ImageDraw.Draw(stars)
-    for _ in range(int(W / H * 40)):
-        sx, sy = rng.uniform(0, W), rng.uniform(0, H * 0.55)
-        r = rng.choice([1.4, 1.9, 2.6, 3.2]) * u
-        sd.ellipse((sx - r, sy - r, sx + r, sy + r), fill=(255, 255, 255, rng.randint(40, 150)))
-    canvas.alpha_composite(stars)
-
-    if moon:
-        moon_x, moon_y, moon_r = moon[0], moon[1], round(moon[2])
-        halo = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-        ImageDraw.Draw(halo).ellipse((moon_x - moon_r * 3, moon_y - moon_r * 3, moon_x + moon_r * 3, moon_y + moon_r * 3), fill=(255, 232, 180, 34))
-        canvas.alpha_composite(halo.filter(ImageFilter.GaussianBlur(moon_r)))
-        disc = Image.new("L", (moon_r * 8, moon_r * 8), 0)
-        dd = ImageDraw.Draw(disc)
-        dd.ellipse((0, 0, moon_r * 8 - 1, moon_r * 8 - 1), fill=255)
-        dd.ellipse((round(moon_r * 2.5), round(-moon_r * 1.4), round(moon_r * 10.5), round(moon_r * 6.6)), fill=0)
-        disc = disc.resize((moon_r * 2, moon_r * 2), Image.LANCZOS)
-        canvas.paste((255, 230, 170), (round(moon_x - moon_r), round(moon_y - moon_r)), disc)
-
-    def range_line(base, amplitude, seed, peaks):
-        rng = random.Random(seed)
-        xs = [-W * 0.1 + k * W * 1.2 / peaks for k in range(peaks + 1)]
-        points = [(x, base - amplitude * (rng.uniform(0.35, 1.0) if k % 2 else rng.uniform(-0.1, 0.25))) for k, x in enumerate(xs)]
-        return smooth_curve(points, samples=36)
-
-    peaks = max(6, round(W / H * 3.2))
-    far = range_line(dip_y - H * 0.16, H * 0.18, 21, peaks)
-    fill_below(canvas, far, (34, 78, 104), (20, 52, 74))
-    ImageDraw.Draw(canvas).line(far, fill=(92, 142, 160, 255), width=max(1, round(2.5 * u)), joint="curve")
-    mist = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    ImageDraw.Draw(mist).rectangle((0, dip_y - H * 0.16, W, dip_y - H * 0.04), fill=(130, 190, 210, 40))
-    canvas.alpha_composite(mist.filter(ImageFilter.GaussianBlur(H * 0.05)))
-    mid = range_line(dip_y - H * 0.07, H * 0.12, 34, peaks + 2)
-    fill_below(canvas, mid, (20, 54, 76), (12, 34, 50))
-    ImageDraw.Draw(canvas).line(mid, fill=(58, 104, 124, 255), width=max(1, round(2 * u)), joint="curve")
-
-    span = H * 0.9
-    ridge = smooth_curve([(-60, dip_y - H * 0.12), (dip_x - span * 0.75, dip_y - H * 0.15), (dip_x - span * 0.3, dip_y - H * 0.1),
-                          (dip_x, dip_y), (dip_x + span * 0.25, dip_y - H * 0.09), (dip_x + span * 0.6, dip_y - H * 0.14),
-                          (W + 60, dip_y - H * 0.17)])
-    fill_below(canvas, ridge, (10, 30, 46), (5, 13, 24))
-    return canvas, ridge
-
-
-def dip_alert(canvas, ridge, unit):
-    """The ridge lit in the icon's mint, with a small, calm ping where it dips."""
+def aa_shapes(canvas, paint, fill, scale=2):
+    """Flat vector shapes with clean edges: `paint(draw, k)` draws on a mask `scale`× larger, which is smoothed down
+    and filled with `fill`, a color or an image the size of the canvas."""
     W, H = canvas.size
-    x, y = max(ridge, key=lambda point: point[1])
-    pool = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    ImageDraw.Draw(pool).ellipse((x - H * 0.22, y - H * 0.11, x + H * 0.22, y + H * 0.11), fill=MINT + (55,))
-    canvas.alpha_composite(pool.filter(ImageFilter.GaussianBlur(H * 0.08)))
-    glow_path(canvas, ridge, MINT, 13, 42, unit)
-    rings = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    rd = ImageDraw.Draw(rings)
-    for r, a in [(78, 40), (54, 90)]:
-        rd.ellipse((x - r * unit, y - r * unit, x + r * unit, y + r * unit), outline=MINT + (a,), width=round(4 * unit))
-    canvas.alpha_composite(rings)
-    cd = ImageDraw.Draw(canvas)
-    cd.ellipse((x - 20 * unit, y - 20 * unit, x + 20 * unit, y + 20 * unit), fill=MINT)
-    cd.ellipse((x - 9 * unit, y - 9 * unit, x + 9 * unit, y + 9 * unit), fill=WHITE)
-    return x, y
+    mask = Image.new("L", (W * scale, H * scale), 0)
+    paint(ImageDraw.Draw(mask), scale)
+    mask = mask.resize((W, H), Image.LANCZOS)
+    if isinstance(fill, Image.Image):
+        canvas.paste(fill, (0, 0), mask)
+    else:
+        canvas.paste(Image.new("RGBA", (W, H), fill + (255,)), (0, 0), mask)
 
 
-def header(raw, raw_dir, size, lang="en", with_text=True):
-    """The product page header, built on Apple's guidance: one clear idea, Dippy keeping watch over the dip, with
-    everything that matters in the middle, so any crop on any device keeps it. One short phrase sits above him; the
-    app's name and icon already appear right next to the header on the product page, so the art doesn't repeat them."""
+def fir(draw, k, x, base, height, width):
+    """A flat fir in the icon's style: a trunk and four tiers, each a soft triangle a little wider than the last."""
+    trunk = width * 0.08
+    draw.rectangle(((x - trunk) * k, (base - height * 0.16) * k, (x + trunk) * k, base * k), fill=255)
+    tiers = 4
+    for i in range(tiers):
+        top = base - height + height * 0.2 * i
+        bottom = top + height * 0.36
+        half = width / 2 * (0.42 + 0.58 * (i + 1) / tiers)
+        draw.polygon([(x * k, top * k), ((x + half) * k, bottom * k), ((x + half * 0.5) * k, (bottom - height * 0.035) * k),
+                      ((x - half * 0.5) * k, (bottom - height * 0.035) * k), ((x - half) * k, bottom * k)], fill=255)
+
+
+def glowing_eyes(canvas, x, y, size, look=0.0, sleepy=False):
+    """A pair of the flock's eyes shining out of the dark, drawn exactly like Dippy's: a dark ring, an amber iris, a
+    pupil, and a glint, with a warm glow around them. Sleepy eyes are half shut."""
+    s = size
+    k = 4
+    w, h = round(s * 5.6), round(s * 3)
+    patch = Image.new("RGBA", (w * k, h * k), (0, 0, 0, 0))
+    d = ImageDraw.Draw(patch)
+    for ex in (w * 0.29, w * 0.71):
+        cx, cy = ex * k, h / 2 * k
+        r = s * k
+        d.ellipse((cx - r, cy - r, cx + r, cy + r), fill=(12, 22, 36, 255))
+        d.ellipse((cx - r * 0.8, cy - r * 0.8, cx + r * 0.8, cy + r * 0.8), fill=(250, 172, 32, 255))
+        px = cx + look * r * 0.25
+        d.ellipse((px - r * 0.42, cy - r * 0.42, px + r * 0.42, cy + r * 0.42), fill=(12, 22, 36, 255))
+        d.ellipse((px - r * 0.36, cy - r * 0.44, px - r * 0.1, cy - r * 0.18), fill=(255, 255, 255, 255))
+        if sleepy:
+            d.pieslice((cx - r * 1.04, cy - r * 1.04, cx + r * 1.04, cy + r * 1.04), 180, 360, fill=(14, 34, 52, 255))
+            d.line([(cx - r, cy), (cx + r, cy)], fill=(12, 22, 36, 255), width=round(r * 0.14))
+    patch = patch.resize((w, h), Image.LANCZOS)
+    glow = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+    ImageDraw.Draw(glow).ellipse((x - s * 3.2, y - s * 1.9, x + s * 3.2, y + s * 1.9), fill=(250, 172, 32, 70 if not sleepy else 30))
+    canvas.alpha_composite(glow.filter(ImageFilter.GaussianBlur(s * 1.2)))
+    canvas.alpha_composite(patch, (round(x - w / 2), round(y - h / 2)))
+
+
+def flat_branch(canvas, start, end, thickness, unit):
+    """Dippy's branch, drawn flat like the icon: a smooth tapered limb with a lighter top edge and a few rounded
+    leaves in the icon's mint-teal. Returns where its top is at any point along it."""
+    (x0, y0), (x1, y1) = start, end
+
+    def center(t):
+        return x0 + (x1 - x0) * t, y0 + (y1 - y0) * t - math.sin(math.pi * t) * 30 * unit
+
+    def half(t):
+        return thickness * (1 - 0.55 * t ** 1.2) / 2
+
+    def limb(draw, k, lift=0.0):
+        top = [(center(i / 60)[0] * k, (center(i / 60)[1] - half(i / 60) + lift) * k) for i in range(61)]
+        bottom = [(center(i / 60)[0] * k, (center(i / 60)[1] + half(i / 60)) * k) for i in range(61)]
+        draw.polygon(top + bottom[::-1], fill=255)
+        tx, ty = center(1)
+        r = half(1)
+        draw.ellipse(((tx - r) * k, (ty - r + lift) * k, (tx + r) * k, (ty + r) * k), fill=255)
+
+    def leaf(draw, k, x, y, angle, length, width):
+        ca, sa = math.cos(angle), math.sin(angle)
+        outline = []
+        for side in (1, -1):
+            for i in range(21):
+                t = i / 20 if side == 1 else 1 - i / 20
+                across = side * width / 2 * math.sin(math.pi * t)
+                outline.append(((x + t * length * ca - across * sa) * k, (y + t * length * sa + across * ca) * k))
+        draw.polygon(outline, fill=255)
+
+    aa_shapes(canvas, lambda d, k: limb(d, k), (58, 74, 90))
+    aa_shapes(canvas, lambda d, k: limb(d, k, lift=thickness * 0.28), (30, 42, 56))
+    # Leaves in little clusters of three, the way they grow: under the branch, and a bunch at its tip.
+    clusters = [(0.42, 2.2), (0.6, 1.0), (0.9, 2.0), (1.0, 3.14)]
+    greens = [(36, 150, 122), (24, 112, 98), (46, 176, 138)]
+    for n, (t, angle) in enumerate(clusters):
+        x, y = center(t)
+        y += half(t) * 0.4
+        for j, spread in enumerate((-0.5, 0.0, 0.5)):
+            size = 1.0 if spread == 0 else 0.8
+            aa_shapes(canvas, lambda d, k, x=x, y=y, a=angle + spread, z=size: leaf(d, k, x, y, a, 84 * unit * z, 36 * unit * z),
+                      greens[(n + j) % 3])
+
+    def perch_point(t):
+        x, y = center(t)
+        return x, y - half(t)
+
+    return perch_point
+
+
+def forest(size, clearing, eyes=True, moon=True):
+    """Dippy's forest at night in the icon's flat style: the icon's navy with its faint lines in the sky, a moon,
+    rolling hills and three layers of firs that grow darker toward you, a soft mist, and the flock's eyes shining from
+    the trees. A clearing in the middle keeps the focal point in the center, where every crop keeps it."""
     W, H = size
     u = H / 1080
     cx = W / 2
-    dip_x, dip_y = cx - H * 0.3, H * 0.78
-    canvas, ridge = night_valley(size, dip_x, dip_y, moon=(cx - H * 0.78, H * 0.34, H * 0.065))
-    dip_alert(canvas, ridge, u)
+    canvas = vertical_gradient((W, H), [(0, (10, 26, 44)), (0.45, (20, 58, 82)), (0.72, (30, 80, 104)), (1, (10, 28, 44))])
+    rng = random.Random(5)
 
-    # Dippy's branch reaches in from the right and ends just past the middle; he sits near its tip, looking down at
-    # the dip below.
-    start, end = (W + 40 * u, H * 0.58), (cx - H * 0.14, H * 0.52)
-    perch_at = branch(canvas, start, end, 64 * u, u)
-    t = (cx + H * 0.16 - start[0]) / (end[0] - start[0])
-    bx, by = perch_at(t)
-    perch(canvas, raw_dir, "look-left", bx, by + 10 * u, H * 0.25)
+    lines = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    ld = ImageDraw.Draw(lines)
+    for i in range(1, 6):
+        y = H * 0.12 * i
+        ld.line([(0, y), (W, y)], fill=(160, 210, 230, 16), width=max(1, round(2 * u)))
+    canvas.alpha_composite(lines)
 
-    if with_text:
-        rich_text(canvas, TAGLINES[lang], cx, H * 0.085, lang, H * 0.1, min(W * 0.9, H * 1.5), u)
+    stars = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    sd = ImageDraw.Draw(stars)
+    for _ in range(int(W / H * 26)):
+        sx, sy = rng.uniform(0, W), rng.uniform(H * 0.02, H * 0.5)
+        r = rng.choice([1.6, 2.2, 3.0]) * u
+        sd.ellipse((sx - r, sy - r, sx + r, sy + r), fill=(255, 255, 255, rng.randint(60, 170)))
+    canvas.alpha_composite(stars)
+
+    # The moon, full and flat, with a soft halo, beside the clearing.
+    mx, my, mr = cx + H * 0.48, H * 0.3, H * 0.075
+    if moon:
+        halo = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        ImageDraw.Draw(halo).ellipse((mx - mr * 3.4, my - mr * 3.4, mx + mr * 3.4, my + mr * 3.4), fill=(255, 236, 190, 40))
+        canvas.alpha_composite(halo.filter(ImageFilter.GaussianBlur(mr * 1.4)))
+        aa_shapes(canvas, lambda d, k: d.ellipse(((mx - mr) * k, (my - mr) * k, (mx + mr) * k, (my + mr) * k), fill=255), (255, 234, 184))
+        aa_shapes(canvas, lambda d, k: [d.ellipse(((mx + a * mr - b * mr) * k, (my + c * mr - b * mr) * k, (mx + a * mr + b * mr) * k, (my + c * mr + b * mr) * k), fill=255)
+                                        for a, c, b in [(-0.3, -0.2, 0.2), (0.32, 0.25, 0.14), (-0.1, 0.45, 0.1)]], (240, 214, 160))
+
+    def hills(base, amplitude, seed, color_top, color_bottom):
+        r = random.Random(seed)
+        pts = [(x, base - amplitude * r.uniform(0.2, 1.0)) for x in [-W * 0.1 + i * W * 1.2 / 7 for i in range(8)]]
+        curve = smooth_curve(pts, samples=40)
+        fill = vertical_gradient((W, H), [(0, color_top), (1, color_bottom)])
+        aa_shapes(canvas, lambda d, k: d.polygon([(x * k, y * k) for x, y in curve] + [((W + 50) * k, (H + 50) * k), (-50 * k, (H + 50) * k)], fill=255), fill)
+
+    hills(H * 0.66, H * 0.12, 3, (44, 96, 118), (30, 72, 94))
+
+    def tree_row(base, heights, spacing, gap, seed, top, bottom, record=None):
+        r = random.Random(seed)
+        trees = []
+        x = -spacing * r.uniform(0, 1)
+        while x < W + spacing:
+            if abs(x - clearing) > gap:
+                h = r.uniform(*heights)
+                trees.append((x, base + r.uniform(-0.02, 0.03) * H, h, h * r.uniform(0.46, 0.56)))
+            x += spacing * r.uniform(0.7, 1.15)
+        fill = vertical_gradient((W, H), [(0, top), (1, bottom)])
+        aa_shapes(canvas, lambda d, k: [fir(d, k, *t) for t in trees], fill)
+        return trees
+
+    tree_row(H * 0.74, (H * 0.16, H * 0.26), H * 0.11, H * 0.22, 7, (36, 84, 106), (26, 64, 86))
+    mist = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    ImageDraw.Draw(mist).rectangle((0, H * 0.66, W, H * 0.78), fill=(150, 205, 222, 44))
+    canvas.alpha_composite(mist.filter(ImageFilter.GaussianBlur(H * 0.04)))
+    hills(H * 0.84, H * 0.06, 9, (18, 50, 72), (12, 36, 54))
+    middle = tree_row(H * 0.9, (H * 0.3, H * 0.42), H * 0.12, H * 0.08, 13, (18, 50, 72), (12, 34, 52))
+    hills(H * 0.93, H * 0.04, 21, (10, 28, 44), (6, 16, 28))
+    front = tree_row(H * 1.06, (H * 0.66, H * 0.84), H * 0.2, H * 0.6, 17, (10, 28, 44), (5, 14, 26))
+
+    if eyes:
+        # The flock, peeking out of the firs on both sides of the clearing: big near, small far, one fast asleep.
+        spots = []
+        for x, base, h, w in middle:
+            if H * 0.34 < abs(x - clearing) < H * 0.6:
+                spots.append((x, base - h * 0.3, H * 0.016))
+        for x, base, h, w in front:
+            if abs(x - clearing) < H * 1.2:
+                spots.append((x, base - h * 0.42, H * 0.024))
+        for i, (x, y, s) in enumerate(spots):
+            glowing_eyes(canvas, x, y, s, look=1 if x < clearing else -1, sleepy=(i % 3 == 1))
+    return canvas
+
+
+def header(raw, raw_dir, size):
+    """The product page header: Dippy in a clearing of his night forest, on his branch under the moon, while the flock
+    watches from the trees. Drawn flat in the icon's own navy, mint, white, and amber. The focal point sits in the
+    middle, where iPhone's crop, the Dynamic Island, and the back and share buttons all leave it alone, and it needs
+    no words, so it works in every language."""
+    W, H = size
+    u = H / 1080
+    cx = W / 2
+    canvas = forest(size, cx)
+    # The branch grows out of the trees past the right edge, whatever the width, and Dippy sits just right of center.
+    start, end = (max(W + 40 * u, cx + H * 1.1), H * 0.62), (cx - H * 0.3, H * 0.66)
+    perch_at = flat_branch(canvas, start, end, 62 * u, u)
+    bx, by = perch_at((start[0] - (cx + H * 0.06)) / (start[0] - end[0]))
+    perch(canvas, raw_dir, "idle", bx, by + 8 * u, H * 0.4)
     return canvas
 
 
 def search_asset(raw, raw_dir, size, lang="en"):
     """The search results asset, built on Apple's guidance: say what the app does at a glance and show it firsthand.
-    The real iPhone holds the lock screen with the dip alert lifting off it, Dippy on top, the valley behind."""
+    The real iPhone holds the lock screen with the dip alert lifting off it, Dippy on top, his forest behind."""
     W, H = size
     u = H / 1080
     cx = W / 2
-    canvas, ridge = night_valley(size, cx - H * 0.62, H * 0.84, moon=(cx + H * 0.56, H * 0.4, H * 0.045))
-    dip_alert(canvas, ridge, u)
+    canvas = forest(size, cx, moon=False)
 
     bottom = rich_text(canvas, SEARCH_LINES[lang], cx, H * 0.06, lang, H * 0.1, min(W * 0.9, H * 1.4), u)
     phone = Bezel("iphone-18-pro-max")
@@ -1448,7 +1419,7 @@ def search_asset(raw, raw_dir, size, lang="en"):
 def _render(job):
     kind, raw_dir, folder, name, size, lang, with_text = job
     raw = Raw(raw_dir)
-    image = (header(raw, raw_dir, size, lang, with_text) if kind == "header" else search_asset(raw, raw_dir, size, lang))
+    image = header(raw, raw_dir, size) if kind == "header" else search_asset(raw, raw_dir, size, lang)
     path = folder / f"{name}.png"
     path.parent.mkdir(parents=True, exist_ok=True)
     image.convert("RGB").save(path, optimize=True)
@@ -1456,17 +1427,16 @@ def _render(job):
 
 
 def headers(raw, raw_dir, folder):
-    """Every creative asset at App Store Connect's exact sizes, in every language: the header (21:9 and the
-    universal 16:9), the search results asset (3:2 and 16:9), a text-free header for featuring, and a social banner."""
+    """Every creative asset at App Store Connect's exact sizes: the header (the universal 16:9 and 21:9, wordless, so
+    one works everywhere and doubles as featuring art), a social banner, and the search results asset (3:2 and 16:9)
+    in every language."""
     from multiprocessing import Pool
     store = folder.parent
-    jobs = [("header", raw_dir, folder, "featuring-art-5244x2950-no-text", (5244, 2950), "en", False),
-            ("header", raw_dir, folder, "featuring-art-3840x1646-no-text", (3840, 1646), "en", False),
-            ("header", raw_dir, folder, "header-social-1500x500", (1500, 500), "en", True)]
+    jobs = [("header", raw_dir, folder, "header-5244x2950", (5244, 2950), "en", False),
+            ("header", raw_dir, folder, "header-3840x1646", (3840, 1646), "en", False),
+            ("header", raw_dir, folder, "header-social-1500x500", (1500, 500), "en", False)]
     for lang in LANGUAGES:
-        jobs += [("header", raw_dir, folder / lang, "header-5244x2950", (5244, 2950), lang, True),
-                 ("header", raw_dir, folder / lang, "header-3840x1646", (3840, 1646), lang, True),
-                 ("search", raw_dir, store / "Search" / lang, "search-3840x2560", (3840, 2560), lang, True),
+        jobs += [("search", raw_dir, store / "Search" / lang, "search-3840x2560", (3840, 2560), lang, True),
                  ("search", raw_dir, store / "Search" / lang, "search-5244x2950", (5244, 2950), lang, True)]
     with Pool() as pool:
         for path in pool.imap_unordered(_render, jobs):
