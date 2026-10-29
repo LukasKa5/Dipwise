@@ -1349,11 +1349,14 @@ def forest(size, clearing, eyes=False, moon=True, moon_at=None, drop=0.0, front_
     return canvas
 
 
-def moonlit_line(canvas, text, cx, top, lang, size, max_width, unit, middle=None, draw_moons=True, letters=None):
+def moonlit_line(canvas, text, cx, top, lang, size, max_width, unit, middle=None, draw_moons=True, letters=None,
+                 natural=False):
     """One centered line with the *starred* words in mint, a soft shadow, and the moon standing in for a letter: {o},
     {ö} (its dots stay above the moon), or {.}, a full stop. The moon gets a little air on both sides, like a letter.
     Returns where each moon sits, for drawing (or animating) it separately with `draw_moons=False`; `letters`, if
-    given, collects the plain letter each moon stands in for, as (letter, x, top, font, color)."""
+    given, collects the plain letter each moon stands in for, as (letter, x, top, font, color). With `natural`, the
+    letter keeps its own width and the moon is exactly the size of the letter, so the plain letter can sit there
+    with normal spacing and the moon covers it exactly."""
     draw = ImageDraw.Draw(canvas)
     runs, mint = [], False
     for index, part in enumerate(text.split("*")):
@@ -1365,13 +1368,15 @@ def moonlit_line(canvas, text, cx, top, lang, size, max_width, unit, middle=None
     while True:
         text_font = lang_font(lang, size)
         latin = lang_font("en", size)
-        _, o_top, _, o_bottom = latin.getbbox("o")
-        moon_d = (o_bottom - o_top) * 1.2
+        o_left, o_top, o_right, o_bottom = latin.getbbox("o")
+        moon_d = (o_right - o_left) * 1.04 if natural else (o_bottom - o_top) * 1.2
 
         def width_of(token):
             if token == "{.}":
                 return moon_d * 1.25
             if token in ("{o}", "{ö}"):
+                if natural:
+                    return draw.textlength(token[1], font=latin)
                 return max(draw.textlength(token[1], font=latin), moon_d) + size * 0.1
             return draw.textlength(token, font=text_font)
 
@@ -1400,10 +1405,12 @@ def moonlit_line(canvas, text, cx, top, lang, size, max_width, unit, middle=None
         if token == "{ö}" and draw_moons:
             draw.text((x + (w - draw.textlength("ö", font=latin)) / 2, top), "ö", font=latin, fill=color)
         if token.startswith("{"):
-            moons.append((x + w / 2, top + (o_top + o_bottom) / 2, moon_d / 2))
+            letter = "." if token == "{.}" else "o"
+            gx = x + (w - draw.textlength(letter, font=latin)) / 2
+            center_x = gx + (o_left + o_right) / 2 if natural and letter == "o" else x + w / 2
+            moons.append((center_x, top + (o_top + o_bottom) / 2, moon_d / 2))
             if letters is not None:
-                letter = "." if token == "{.}" else "o"
-                letters.append((letter, x + (w - draw.textlength(letter, font=latin)) / 2, top, latin, color))
+                letters.append((letter, gx, top, latin, color))
         else:
             draw.text((x, top), token, font=text_font, fill=color)
         x += w
