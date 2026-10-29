@@ -1,11 +1,13 @@
-"""A trial header video, English only: one day in Dippy's forest, as a 14-second loop at App Store Connect's header
+"""A trial header video, English only: one day in Dippy's forest, as a 16-second loop at App Store Connect's header
 video spec (21:9, 3840 x 1646, 60 fps, .mov, no sound).
 
   - Day, in the icon's own teal: the line reads "Your stock-watching owl." with a plain "o". Dippy blinks.
   - The sun sinks behind the firs; the sky warms to dusk, then deepens to the icon's navy night, and the stars come out.
-  - The moon rises from behind the trees on the right, big and amber the way it is low on the horizon, climbs the sky
-    whitening and shrinking as it goes, and comes down onto the "o", covering it with a soft bounce and a glow.
-  - Dippy follows the sun, then the moon, winks at you, and dozes off as the night dissolves back into morning.
+  - The moon rises from behind the trees on the right, amber the way it is low on the horizon and the same size all
+    the way, climbs the sky whitening as it goes, and comes down onto the "o", covering it with a soft bounce and a glow.
+  - Dippy follows the sun, then the moon, and winks at you. He never sleeps.
+  - Dawn: the night pales, the moon fades into the brightening sky, the "o" comes back, and the sun rises from behind
+    the trees on the right and climbs to where it was in the first frame, so the loop never jumps.
 Every move is eased, and Dippy's faces blend into each other.
 
 Run:  python3 Marketing/ScreenshotStudio/header_daynight.py Marketing/ScreenshotStudio/Raw Marketing/AppStore/HeaderVideo
@@ -26,29 +28,33 @@ import compose as c
 
 SIZE = (3840, 1646)
 FPS = 60
-SECONDS = 14
+SECONDS = 16
 FRAMES = FPS * SECONDS
 HERE = Path(__file__).resolve().parent
 LANG = "en"
 
-SUNSET = (2.6, 6.2)          # the sun sinks behind the trees
+SUNSET = (2.6, 6.2)          # the sun sinks behind the trees on the left
 DUSK, NIGHT = 4.6, 7.4       # the sky is fully dusk, then fully night
 MOONRISE, LAND = 5.4, 10.4   # the moon rises on the right and lands in the "o"
-DAWN = 12.4                  # the night dissolves back into the first frame
+DAWN = (12.2, 13.8, 15.6)    # night pales into dawn, then day; the moon fades and the sun rises on the right
+SUNRISE = (12.8, 16.0)       # and climbs back to where it was in the first frame
+NOON = 0.45                  # where on its arc the sun is in the first frame
 
 SKIES = {
-    "day": [(0, (34, 106, 152)), (0.45, (62, 146, 186)), (0.78, (128, 198, 212)), (1, (150, 212, 220))],
+    # Day in the icon's own palette: its deep teal, lit up, with a mint glow along the horizon.
+    "day": [(0, (18, 78, 112)), (0.45, (32, 114, 144)), (0.78, (70, 168, 168)), (1, (96, 192, 176))],
     "dusk": [(0, (26, 38, 78)), (0.4, (96, 74, 120)), (0.7, (222, 130, 108)), (1, (246, 176, 120))],
     "night": [(0, (10, 26, 44)), (0.45, (20, 58, 82)), (0.72, (30, 80, 104)), (1, (10, 28, 44))],
 }
 
+# Dippy never sleeps: he only blinks once, and watches everything else happen.
 FACES = [
-    ("sleep", 1.5, 1.68, 0.05),        # a blink
+    ("sleep", 1.5, 1.66, 0.05),        # a blink
     ("look-left", 3.0, 5.6, 0.2),      # watching the sun go down
     ("look-right", 6.0, 8.4, 0.2),     # the moon rising
     ("look-up", 8.4, 10.6, 0.2),       # the moon coming over the line
     ("wink", 11.0, 11.5, 0.1),         # a wink at you
-    ("sleep", 12.2, 13.3, 0.09),        # dozing off as morning comes, then waking up to it
+    ("look-right", 13.0, 15.2, 0.25),  # the sun coming up
 ]
 
 
@@ -99,7 +105,7 @@ class Stage:
         self.land = {
             "night": night,
             "dusk": recolor(night, (1.25, 1.0, 1.05), (22, 6, 16)),
-            "day": recolor(night, (1.45, 1.6, 1.3), (14, 34, 30)),
+            "day": recolor(night, (1.3, 1.6, 1.3), (8, 26, 22)),
         }
         shade = Image.new("L", (64, 36), 0)
         ImageDraw.Draw(shade).ellipse((-14, -10, 78, 46), fill=255)
@@ -144,7 +150,7 @@ class Stage:
         self.owl_at = (round(ox - idle.width / 2), round(feet - idle.height * 0.97))
 
         mx, my, mr = self.slot
-        self.moon = self.body(mr * 1.8, moon=True)
+        self.moon = self.body(mr * 1.2, moon=True)
         self.sun = self.body(H * 0.075, moon=False)
         self.first = None
 
@@ -201,12 +207,19 @@ class Stage:
         y = a * points[0][1] + b * points[1][1] + cc * points[2][1] + d * points[3][1]
         return x, y
 
+    def sun_at(self, s):
+        """The sun's one arc across the sky: up from behind the trees on the right (0), over the top, and down behind
+        the trees on the left (1)."""
+        W, H = SIZE
+        angle = math.pi * s
+        return W / 2 + H * 1.15 * math.cos(angle), H * 1.05 - H * 0.98 * math.sin(angle)
+
     def scenery(self, t):
         """Sky, stars, sun, the rising moon while it is behind the trees, the land, and the vignette. Returns the
         canvas and the moon in front of everything once it is clear of the trees (or None)."""
         W, H = SIZE
-        to_dusk = between(t, SUNSET[0], DUSK)
-        to_night = between(t, DUSK, NIGHT)
+        to_dusk = between(t, SUNSET[0], DUSK) * (1 - between(t, DAWN[1], DAWN[2]))
+        to_night = between(t, DUSK, NIGHT) * (1 - between(t, DAWN[0], DAWN[1]))
 
         def mix(images):
             image = Image.blend(images["day"], images["dusk"], to_dusk) if to_dusk < 1 else images["dusk"]
@@ -214,7 +227,7 @@ class Stage:
 
         canvas = mix(self.skies)
 
-        dark = between(t, DUSK, NIGHT + 0.6)
+        dark = between(t, DUSK, NIGHT + 0.6) * (1 - between(t, DAWN[0] - 0.2, DAWN[1]))
         if dark > 0.01:
             field = self.starfield.copy()
             field.putalpha(self.starfield.getchannel("A").point(lambda a: round(a * dark)))
@@ -225,63 +238,63 @@ class Stage:
                 faded.putalpha(sprite.getchannel("A").point(lambda a: round(a * level)))
                 canvas.alpha_composite(faded, (round(x - sprite.width / 2), round(y - sprite.height / 2)))
 
-        # The sun sinks behind the trees on the left, warming as it goes.
-        k = between(t, *SUNSET)
-        if k < 1:
-            sx = W / 2 - H * (0.6 + 0.42 * k)
-            sy = H * (0.18 + 0.86 * k * k)
-            self.place(canvas, self.sun, sx, sy, self.sun["r"], min(1, k * 1.4), 1.0)
+        # The sun travels one arc, right to left: it sets on the left, and at dawn comes up again on the right, so
+        # it never jumps. Low in the sky it warms to amber.
+        if t < SUNSET[1] + 0.1:
+            s = NOON + (1 - NOON) * between(t, *SUNSET)
+        elif t >= SUNRISE[0] - 0.1:
+            s = NOON * between(t, *SUNRISE)
+        else:
+            s = None
+        if s is not None:
+            sx, sy = self.sun_at(s)
+            warmth = min(1.0, max(0.0, (sy - H * 0.3) / (H * 0.5)))
+            self.place(canvas, self.sun, sx, sy, self.sun["r"], warmth, 1.0)
 
-        # The moon rises behind the trees, then, once it is clear of them, crosses in front of the sky to the letter.
-        k = between(t, MOONRISE, LAND)
-        x = y = None
-        if t >= MOONRISE:
+        # The moon, the same size all the way, rises behind the trees, then crosses in front of the sky to the
+        # letter; at dawn it fades into the brightening sky.
+        moon, behind = None, False
+        if MOONRISE <= t:
+            k = between(t, MOONRISE, LAND)
             x, y = self.moon_path(k)
-            mr = self.slot[2]
-            r = mr * (1.7 - 0.7 * smooth(k * 1.4))
+            r = self.slot[2]
             if t >= LAND:
                 since = t - LAND
-                r *= 1 + 0.1 * math.exp(-since * 5) * math.cos(since * 14)
+                r *= 1 + 0.08 * math.exp(-since * 5) * math.cos(since * 14)
             glow = 0.9 + (1.4 * math.exp(-(t - LAND) * 2.4) if t >= LAND else 0)
-            moon = (x, y, r, 1 - smooth(k * 1.6), glow)
-            behind = k < 0.35
-            if behind:
-                self.place(canvas, self.moon, *moon)
+            fade = 1 - between(t, DAWN[0] + 0.4, DAWN[1] + 0.8)
+            if fade > 0.001:
+                moon = (x, y, r, 1 - smooth(k * 1.6), glow, fade)
+                behind = k < 0.35
+                if behind:
+                    self.place(canvas, self.moon, *moon)
 
         canvas.alpha_composite(mix(self.land))
         vignette = Image.new("RGBA", SIZE, (4, 10, 20, 0))
         vignette.putalpha(self.shade.point(lambda v: round(v * (0.25 + 0.25 * to_night))))
         canvas.alpha_composite(vignette)
+        return canvas, (None if behind else moon)
 
-        return canvas, (moon if t >= MOONRISE and not behind else None)
-
-    def actors(self, canvas, t, moon, morning=0.0):
-        """Dippy, the line, the letter while the moon is away, and the moon over it. `morning` fades the moon out and
-        the letter back in as the night dissolves into the first frame."""
+    def actors(self, canvas, t, moon):
+        """Dippy, the line, the letter while the moon is away, and the moon over it."""
         owl = self.owls["idle"]
         for pose, weight in faces_at(t):
             owl = Image.blend(owl, self.owls[pose], weight)
         c.paste_clipped(canvas, owl, *self.owl_at)
         canvas.alpha_composite(self.text)
-        letter = max(1 - between(t, LAND - 0.3, LAND), morning)
+        letter = max(1 - between(t, LAND - 0.3, LAND), between(t, DAWN[0] + 0.4, DAWN[1] + 0.8))
         if letter > 0.001:
             shown = self.letter.copy()
             shown.putalpha(self.letter.getchannel("A").point(lambda a: round(a * letter)))
             canvas.alpha_composite(shown)
         if moon:
-            self.place(canvas, self.moon, *moon, alpha=1 - morning)
+            self.place(canvas, self.moon, *moon)
         return canvas.convert("RGB")
 
     def frame(self, index):
         t = index / FPS
         canvas, moon = self.scenery(t)
-        morning = between(t, DAWN, SECONDS)
-        if morning > 0:
-            # Only the sky and the land dissolve into morning; Dippy and the line stay crisp.
-            if self.first is None:
-                self.first = self.scenery(0)[0]
-            canvas = Image.blend(canvas, self.first, morning)
-        return self.actors(canvas, t, moon, morning)
+        return self.actors(canvas, t, moon)
 
 
 _stage = None
