@@ -1,12 +1,12 @@
 """A trial header video, English only: one day and night in Dippy's forest, as a 20-second loop at App Store
-Connect's header video spec (21:9, 3840 x 1646, 60 fps, .mov, no sound).
+Connect's header video spec (21:9, 3840 x 1646, 30 fps, .mov, no sound).
 
 It follows the sky the way it really works, so every moment leads to the next and nothing ever jumps or stalls:
   - The sun crosses the sky on one arc, rising behind the firs on the right and setting behind those on the left, at
-    an even pace. The color of the sky follows the sun's height: day in the icon's teal while it is high, dusk as it
-    nears the horizon, the icon's navy night once it is well below, and dawn again before it rises.
+    an even pace. The sky follows it: day in the icon's teal, a long dusk from the sun nearing the trees until the
+    moon is well up, the icon's navy night, and a long dawn around sunrise.
   - The stars come out with the dark and fade with the dawn.
-  - The moon rises only after the sun has set, from behind the trees on the right, and its arc reaches its highest
+  - The full moon rises as the sun sets, from behind the trees on the right, and its arc reaches its highest
     point exactly at the "o" of "owl": it slows there and covers the letter, a real letter in the same font as the
     rest, then carries on and sets behind the trees on the left, well before the sun comes up. It keeps the same size
     and color all the way.
@@ -30,14 +30,15 @@ from PIL import Image, ImageDraw, ImageFilter
 import compose as c
 
 SIZE = (3840, 1646)
-FPS = 60
+FPS = 30
+SUBFRAMES = 2                     # each frame blends two moments, a touch of motion blur, so 30 fps glides
 SECONDS = 20
 FRAMES = FPS * SECONDS
 HERE = Path(__file__).resolve().parent
 LANG = "en"
 
 SUNRISE, DAYLIGHT = 17.0, 8.0     # the sun comes up at 17 s and is up for 8 s, across the loop's seam
-MOONRISE, MOONSET = 6.0, 15.0     # the moon is up between them, after sunset and before sunrise
+MOONRISE, MOONSET = 5.2, 15.0     # a full moon rises as the sun sets, and sets well before sunrise
 TRANSIT = (MOONRISE + MOONSET) / 2  # its highest point, in the "o"
 
 SKIES = {
@@ -47,14 +48,20 @@ SKIES = {
     "night": [(0, (10, 26, 44)), (0.45, (20, 58, 82)), (0.72, (30, 80, 104)), (1, (10, 28, 44))],
 }
 
+# How dark the sky is (0 day, 0.5 dusk, 1 night) through the loop. The twilights are long: dusk lingers from the
+# sun nearing the trees until the moon is well up, and dawn the same way around sunrise. Joined by a smooth curve
+# that never stops in the middle of a change.
+SKY = [(0.0, 0.0), (2.8, 0.0), (4.3, 0.36), (5.0, 0.48), (7.0, 0.6), (8.8, 1.0),
+       (14.6, 1.0), (16.0, 0.62), (17.0, 0.5), (17.8, 0.38), (19.4, 0.0), (20.0, 0.0)]
+
 # Dippy never sleeps: one blink, and his eyes on whatever is moving in the sky.
 FACES = [
     ("sleep", 1.0, 1.16, 0.05),        # a blink
-    ("look-left", 2.6, 5.3, 0.3),      # the sun going down on the left
-    ("look-right", 6.6, 8.9, 0.3),     # the moon rising on the right
-    ("look-up", 8.9, 10.1, 0.3),       # the moon reaching the "o"
-    ("wink", 10.8, 11.3, 0.1),         # a wink at you, the moon in its letter
-    ("look-left", 12.6, 15.0, 0.3),    # the moon setting on the left
+    ("look-left", 2.6, 5.0, 0.3),      # the sun going down on the left
+    ("look-right", 5.6, 8.6, 0.3),     # the moon rising on the right
+    ("look-up", 8.6, 9.8, 0.3),        # the moon reaching the "o"
+    ("wink", 10.4, 10.9, 0.1),         # a wink at you, the moon in its letter
+    ("look-left", 12.4, 14.8, 0.3),    # the moon setting on the left
     ("look-right", 16.6, 19.0, 0.3),   # the sun coming up on the right
 ]
 
@@ -88,9 +95,20 @@ def sun_progress(t):
     return None, -math.sin(math.pi * q)
 
 
-def darkness(height):
-    """How far the sky is from day (0) to night (1), from the sun's height: dusk is the middle, at the horizon."""
-    return smooth((0.45 - height) / 0.75)
+def darkness(t):
+    """How far the sky is from day (0) to night (1) at time `t`, along `SKY`: a monotone cubic through the keys, so
+    the change is smooth everywhere and only rests where the sky itself rests, at full day and full night."""
+    t %= SECONDS
+    times, values = zip(*SKY)
+    slopes = [(values[i + 1] - values[i]) / (times[i + 1] - times[i]) for i in range(len(SKY) - 1)]
+    tangents = [slopes[0]] + [0.0 if a * b <= 0 else 2 / (1 / a + 1 / b) for a, b in zip(slopes, slopes[1:])] + [slopes[-1]]
+    for i in range(len(SKY) - 1):
+        if times[i] <= t <= times[i + 1]:
+            h = times[i + 1] - times[i]
+            x = (t - times[i]) / h
+            return (values[i] * (2 * x ** 3 - 3 * x ** 2 + 1) + tangents[i] * h * (x ** 3 - 2 * x ** 2 + x)
+                    + values[i + 1] * (-2 * x ** 3 + 3 * x ** 2) + tangents[i + 1] * h * (x ** 3 - x ** 2))
+    return 0.0
 
 
 def moon_progress(t):
@@ -236,9 +254,15 @@ class Stage:
         return Image.blend(images["dusk"], images["night"], (dark - 0.5) * 2)
 
     def frame(self, index):
-        t = index / FPS
+        moments = [self.moment((index + k / SUBFRAMES) / FPS) for k in range(SUBFRAMES)]
+        image = moments[0]
+        for k, other in enumerate(moments[1:], start=2):
+            image = Image.blend(image, other, 1 / k)
+        return image
+
+    def moment(self, t):
         sun, height = sun_progress(t)
-        dark = darkness(height)
+        dark = darkness(t)
         canvas = self.mix(self.skies, dark)
 
         stars = smooth((dark - 0.6) / 0.35)
