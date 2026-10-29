@@ -116,8 +116,9 @@ struct InvestorProfileView: View {
       }
       VStack(spacing: 16) {
         ForEach(Array(behavior.traits.enumerated()), id: \.element.id) { index, trait in
+          // One invitation for the whole profile; the other locked parts below are only blurred.
           TraitRow(trait: trait)
-            .proLocked(!isPro && index >= 2, message: "See your full investor DNA with Pro")
+            .proLocked(!isPro && index >= 2, message: "See your full investor DNA with Pro", prompt: index == 2)
         }
       }
       .padding(18)
@@ -152,7 +153,7 @@ struct InvestorProfileView: View {
       .padding(18)
       .frame(maxWidth: .infinity, alignment: .leading)
       .cardStyle()
-      .proLocked(!isPro, message: "See the blind spots in how you invest with Pro")
+      .proLocked(!isPro, message: "See the blind spots in how you invest with Pro", prompt: false)
     }
   }
 
@@ -199,7 +200,7 @@ struct InvestorProfileView: View {
               .font(.subheadline)
               .fixedSize(horizontal: false, vertical: true)
           }
-          .proLocked(!isPro && index >= 2, message: "See everything a broker learns about you with Pro")
+          .proLocked(!isPro && index >= 2, message: "See everything a broker learns about you with Pro", prompt: false)
         }
       }
       .padding(18)
@@ -223,7 +224,7 @@ struct InvestorProfileView: View {
         HabitTile(title: "Past 12 months", value: profile.yearReturn.map { $0.formatted(.percent.precision(.fractionLength(1)).sign(strategy: .always())) } ?? "—",
                   caption: "today's holdings", systemImage: "calendar")
       }
-      .proLocked(!isPro, message: "See your investing habits with Pro")
+      .proLocked(!isPro, message: "See your investing habits with Pro", prompt: false)
     }
   }
 
@@ -251,7 +252,7 @@ struct InvestorProfileView: View {
       }
       .padding(18)
       .cardStyle()
-      .proLocked(!isPro, message: "Compare yourself with the flock with Pro")
+      .proLocked(!isPro, message: "Compare yourself with the flock with Pro", prompt: false)
     }
   }
 }

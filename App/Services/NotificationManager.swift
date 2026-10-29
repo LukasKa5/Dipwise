@@ -109,11 +109,11 @@ enum NotificationManager {
       guard let date = calendar.date(from: components), date > .now else { continue }
       let content = UNMutableNotificationContent()
       if streak > 0 {
-        content.title = "Keep your streak going"
-        content.body = "Your daily brief is ready. One minute with the owl keeps your plan sharp."
+        content.title = "Your morning brief · day \(streak + 1)"
+        content.body = "How your stocks closed, how close they are to your zones, and where the flock sees the market heading."
       } else {
-        content.title = "Your daily brief is ready"
-        content.body = "See how your stocks moved and how close they are to your zones."
+        content.title = "Your morning brief is ready"
+        content.body = "How your stocks closed, how close they are to your zones, and where the flock sees the market heading."
       }
       content.sound = .default
       content.userInfo = ["brief": true]

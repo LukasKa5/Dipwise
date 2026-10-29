@@ -585,11 +585,11 @@ struct NotifyStep: View {
               Spacer(minLength: 4)
               Text("now")
                 .font(.system(size: 13, design: .default))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(NotificationPlatter.secondary)
             }
             Text(alert.message)
               .font(.system(size: 15, design: .default))
-              .foregroundStyle(.primary)
+              .foregroundStyle(NotificationPlatter.ink)
               .lineLimit(isExpanded ? 4 : 2)
               .multilineTextAlignment(.leading)
               .fixedSize(horizontal: false, vertical: true)
@@ -600,7 +600,7 @@ struct NotifyStep: View {
             WidgetSparkline(values: alert.values)
               .frame(height: 64)
               .padding(10)
-              .background(.white.opacity(0.06), in: .rect(cornerRadius: 14, style: .continuous))
+              .background(.black.opacity(0.05), in: .rect(cornerRadius: 14, style: .continuous))
           }
           HStack(spacing: 8) {
             actionLabel(alert.id == "brief" ? "Start Brief" : "Open Plan")
@@ -608,12 +608,13 @@ struct NotifyStep: View {
           }
         }
       }
-      .foregroundStyle(.primary)
+      .foregroundStyle(NotificationPlatter.ink)
       .padding(.horizontal, 14)
       .padding(.vertical, 12)
       .frame(maxWidth: .infinity, alignment: .leading)
-      // Exactly like iOS: a light frosted platter with dark text, which reads on any wallpaper.
-      .background(.regularMaterial, in: .rect(cornerRadius: 24, style: .continuous))
+      // Exactly like iOS, and exactly like the App Store screenshots: a light platter with dark text, which reads on
+      // any wallpaper.
+      .background(NotificationPlatter.fill, in: .rect(cornerRadius: 24, style: .continuous))
       .environment(\.colorScheme, .light)
     }
     .buttonStyle(ShowcasePressStyle())
@@ -633,9 +634,10 @@ struct NotifyStep: View {
   private func actionLabel(_ title: String) -> some View {
     Text(title)
       .font(.system(size: 15, weight: .semibold))
+      .foregroundStyle(NotificationPlatter.ink)
       .frame(maxWidth: .infinity)
       .padding(.vertical, 10)
-      .background(.white.opacity(0.1), in: .rect(cornerRadius: 14, style: .continuous))
+      .background(.black.opacity(0.06), in: .rect(cornerRadius: 14, style: .continuous))
   }
 
   /// Alerts arrive one by one, newest on top, then the screen clears and it starts again.
@@ -659,4 +661,12 @@ struct NotifyStep: View {
       try? await Task.sleep(for: .seconds(0.8))
     }
   }
+}
+
+/// The colors of iOS's lock screen notifications, shared by the intro and the App Store renders so an alert looks the
+/// same everywhere: a nearly white platter, near-black text, and gray secondary text.
+enum NotificationPlatter {
+  static let fill = Color(red: 0.95, green: 0.95, blue: 0.97).opacity(0.96)
+  static let ink = Color(white: 0.06)
+  static let secondary = Color(white: 0.45)
 }

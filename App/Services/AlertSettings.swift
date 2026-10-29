@@ -21,9 +21,11 @@ enum AlertSettings {
     return showsBrief && (UserDefaults.standard.object(forKey: briefReminderKey) as? Bool ?? true)
   }
 
-  /// Minutes after midnight for the daily brief reminder.
+  /// Minutes after midnight for the daily brief reminder: 8:00 in the morning by default, when the brief recaps the
+  /// last session before the US open. Morning sends fit a news-like recap best, and stay out of quiet hours.
+  static let defaultBriefMinutes = 8 * 60
   static var briefReminderMinutes: Int {
-    UserDefaults.standard.object(forKey: briefReminderMinutesKey) as? Int ?? 8 * 60 + 30
+    UserDefaults.standard.object(forKey: briefReminderMinutesKey) as? Int ?? defaultBriefMinutes
   }
 
   static var headsUpEnabled: Bool {

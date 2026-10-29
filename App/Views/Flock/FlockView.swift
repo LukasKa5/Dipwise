@@ -176,12 +176,8 @@ struct FlockView: View {
       }
     }
     .padding(20)
-    .foregroundStyle(.white)
-    .background(
-      LinearGradient(colors: [Brand.nightTop, Brand.nightMiddle], startPoint: .top, endPoint: .bottom),
-      in: .rect(cornerRadius: 28, style: .continuous)
-    )
-    .environment(\.colorScheme, .dark)
+    // The same navy card as Home's and the app icon's.
+    .heroCardStyle()
     .padding(.top, 8)
   }
 
@@ -247,7 +243,7 @@ struct FlockView: View {
               FlowRow(stat: stat)
             }
             .buttonStyle(.plain)
-            .proLocked(!subscription.isPro && index >= 1, message: "See what the flock is buying and selling")
+            .proLocked(!subscription.isPro && index >= 1, message: "See what the flock is buying and selling", prompt: index == 1)
             if index < min(flock.flows.count, 6) - 1 {
               Divider().padding(.leading, 62)
             }
@@ -293,7 +289,7 @@ struct FlockView: View {
           RadarCard(item: item)
         }
         .buttonStyle(.plain)
-        .proLocked(!subscription.isPro && index >= freeCount, message: "See every dip the crowd is buying")
+        .proLocked(!subscription.isPro && index >= freeCount, message: "See every dip the crowd is buying", prompt: index == freeCount)
       }
     }
   }

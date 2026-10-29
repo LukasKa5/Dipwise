@@ -116,7 +116,8 @@ enum FlockCalendar {
 
 // MARK: - Daily check-ins
 
-/// What a member says they're doing with their money this week, from the daily brief.
+/// What a member says they're doing with their money this week, from the daily brief. Five distinct moves an investor
+/// actually makes, so the flock's answers say something real. (Raw values stay as they were, for stored check-ins.)
 enum FlockAction: String, CaseIterable, Identifiable, Codable {
   case buying
   case holding
@@ -128,26 +129,27 @@ enum FlockAction: String, CaseIterable, Identifiable, Codable {
 
   var title: String {
     switch self {
-    case .buying: String(localized: "Buying more")
-    case .holding: String(localized: "Holding")
-    case .waiting: String(localized: "Waiting with cash")
-    case .trimming: String(localized: "Taking profit")
-    case .selling: String(localized: "Selling")
+    case .buying: String(localized: "Adding money")
+    case .holding: String(localized: "Holding steady")
+    case .waiting: String(localized: "Building cash")
+    case .trimming: String(localized: "Rebalancing")
+    case .selling: String(localized: "Reducing risk")
     }
   }
 
   var systemImage: String {
     switch self {
-    case .buying: "cart.fill"
-    case .holding: "hand.raised.fill"
-    case .waiting: "hourglass"
-    case .trimming: "scissors"
-    case .selling: "arrow.up.forward.circle.fill"
+    case .buying: "plus.circle.fill"
+    case .holding: "pause.circle.fill"
+    case .waiting: "banknote.fill"
+    case .trimming: "arrow.left.arrow.right.circle.fill"
+    case .selling: "shield.lefthalf.filled"
     }
   }
 }
 
-/// How a member feels about the market today, from fearful to greedy.
+/// Where a member thinks the market is heading, from very bearish to very bullish: the scale investor sentiment surveys
+/// use. Together the answers make the flock's fear and greed index.
 enum FlockFeeling: Int, CaseIterable, Identifiable, Codable {
   case fearful = 0
   case worried = 25
@@ -159,21 +161,21 @@ enum FlockFeeling: Int, CaseIterable, Identifiable, Codable {
 
   var title: String {
     switch self {
-    case .fearful: String(localized: "Fearful")
-    case .worried: String(localized: "Worried")
-    case .calm: String(localized: "Calm")
-    case .confident: String(localized: "Confident")
-    case .greedy: String(localized: "Greedy")
+    case .fearful: String(localized: "Very bearish")
+    case .worried: String(localized: "Bearish")
+    case .calm: String(localized: "Neutral")
+    case .confident: String(localized: "Bullish")
+    case .greedy: String(localized: "Very bullish")
     }
   }
 
   var systemImage: String {
     switch self {
-    case .fearful: "cloud.bolt.rain.fill"
-    case .worried: "cloud.drizzle.fill"
-    case .calm: "cloud.sun.fill"
-    case .confident: "sun.max.fill"
-    case .greedy: "flame.fill"
+    case .fearful: "chart.line.downtrend.xyaxis.circle.fill"
+    case .worried: "arrow.down.right.circle.fill"
+    case .calm: "equal.circle.fill"
+    case .confident: "arrow.up.right.circle.fill"
+    case .greedy: "chart.line.uptrend.xyaxis.circle.fill"
     }
   }
 }

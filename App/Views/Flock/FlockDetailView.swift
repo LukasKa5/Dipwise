@@ -497,7 +497,7 @@ struct FlockDetailView: View {
               .contentShape(.rect)
             }
             .buttonStyle(.plain)
-            .proLocked(!isPro && index >= 1, message: "See every top investor holding \(symbol)")
+            .proLocked(!isPro && index >= 1, message: "See every top investor holding \(symbol)", prompt: index == 1)
           }
         }
       }

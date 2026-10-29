@@ -111,7 +111,7 @@ struct InvestorView: View {
           }
           .buttonStyle(.plain)
           // The top holding is free to see; the full mix is Pro.
-          .proLocked(!isPro && index >= 1, message: "See every holding with Pro")
+          .proLocked(!isPro && index >= 1, message: "See every holding with Pro", prompt: index == 1)
         }
       }
     }

@@ -84,7 +84,7 @@ struct FlockSentimentCard: View {
             GeometryReader { geometry in
               Capsule().fill(.white.opacity(0.1))
                 .overlay(alignment: .leading) {
-                  Capsule().fill(action == .buying ? Brand.buy : (action == .selling || action == .trimming ? Brand.sell : .white.opacity(0.6)))
+                  Capsule().fill(action.tint)
                     .frame(width: max(4, geometry.size.width * share))
                 }
             }
@@ -98,12 +98,8 @@ struct FlockSentimentCard: View {
       }
     }
     .padding(20)
-    .foregroundStyle(.white)
-    .background(
-      LinearGradient(colors: [Brand.nightTop, Brand.nightMiddle], startPoint: .top, endPoint: .bottom),
-      in: .rect(cornerRadius: 28, style: .continuous)
-    )
-    .environment(\.colorScheme, .dark)
+    // The same navy card as Home's and the app icon's.
+    .heroCardStyle()
   }
 }
 
@@ -134,5 +130,29 @@ struct SentimentGauge: View {
     }
     .animation(.smooth, value: score)
     .accessibilityHidden(true)
+  }
+}
+
+extension FlockFeeling {
+  /// From red to green, so every option reads clearly on light and navy backgrounds.
+  var tint: Color {
+    switch self {
+    case .fearful: Brand.sell
+    case .worried: Color(red: 0.96, green: 0.52, blue: 0.24)
+    case .calm: Color(red: 0.45, green: 0.55, blue: 0.66)
+    case .confident: Color(red: 0.36, green: 0.78, blue: 0.42)
+    case .greedy: Brand.buy
+    }
+  }
+}
+
+extension FlockAction {
+  var tint: Color {
+    switch self {
+    case .buying: Brand.buy
+    case .holding, .trimming: Color(red: 0.45, green: 0.55, blue: 0.66)
+    case .waiting: Brand.amber
+    case .selling: Brand.sell
+    }
   }
 }

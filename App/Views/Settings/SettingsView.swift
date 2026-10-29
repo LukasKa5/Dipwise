@@ -17,7 +17,7 @@ struct SettingsView: View {
   @Environment(ProgressStore.self) private var progress
   @AppStorage(AlertSettings.briefReminderKey) private var briefReminder = true
   @AppStorage(AlertSettings.showsBriefKey) private var showsBrief = true
-  @AppStorage(AlertSettings.briefReminderMinutesKey) private var briefMinutes = 8 * 60 + 30
+  @AppStorage(AlertSettings.briefReminderMinutesKey) private var briefMinutes = AlertSettings.defaultBriefMinutes
   @Environment(SubscriptionManager.self) private var subscription
   @Environment(FlockService.self) private var flock
   @Environment(\.modelContext) private var modelContext

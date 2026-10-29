@@ -152,11 +152,6 @@ private struct WatchlistRow: View {
   var quote: Quote?
   @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
-  private var nearest: PriceAlert? {
-    guard let quote else { return nil }
-    return holding.activeAlerts.min { ($0.distance(for: quote) ?? .infinity) < ($1.distance(for: quote) ?? .infinity) }
-  }
-
   var body: some View {
     VStack(alignment: .leading, spacing: 10) {
       HStack(spacing: 12) {
@@ -197,28 +192,6 @@ private struct WatchlistRow: View {
         } else {
           ProgressView()
         }
-      }
-      if let nearest, let quote {
-        HStack(spacing: 8) {
-          Image(systemName: nearest.kind.systemImage)
-            .font(.caption.weight(.bold))
-            .foregroundStyle(nearest.kind.side.color)
-          Text(nearest.summary(for: quote))
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(nearest.kind.side.color)
-            .lineLimit(1)
-            .minimumScaleFactor(0.85)
-          Spacer(minLength: 6)
-          Text(nearest.distance(for: quote).map { $0 == 0 ? "Now" : "\($0.formatted(.percent.precision(.fractionLength(1)))) away" } ?? "")
-            .font(.caption.weight(.semibold).monospacedDigit())
-            .foregroundStyle(.secondary)
-            .lineLimit(1)
-            .fixedSize()
-        }
-      } else {
-        Label("No alerts yet", systemImage: "bell.slash")
-          .font(.caption)
-          .foregroundStyle(.tertiary)
       }
     }
     .padding(.vertical, 6)

@@ -20,10 +20,10 @@ struct InfoButton: View {
     .accessibilityLabel("What is \(topic.title)?")
     .sheet(isPresented: $isPresented) {
       HelpSheet(topic: topic, isNavy: isOnNavyCard)
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.large])
         .presentationDragIndicator(.visible)
         .presentationCornerRadius(32)
-        .presentationBackground(isOnNavyCard ? Brand.nightMiddle : Palette.canvas)
+        .presentationBackground { HelpSheet.background(isNavy: isOnNavyCard) }
     }
   }
 }
@@ -51,7 +51,7 @@ struct HelpSheet: View {
                 .foregroundStyle(.white)
                 .frame(width: 34, height: 34)
                 .background(Palette.amber, in: .circle)
-                .overlay { Circle().strokeBorder(isNavy ? Brand.nightMiddle : Palette.canvas, lineWidth: 3) }
+                .overlay { Circle().strokeBorder(isNavy ? Brand.nightTop : .white, lineWidth: 3) }
                 .offset(x: 38, y: 36)
             }
             Text("Dippy explains")
@@ -119,26 +119,22 @@ struct HelpSheet: View {
       .padding(.horizontal, 22)
       .padding(.bottom, 16)
     }
-    .background((isNavy ? Brand.nightMiddle : Palette.canvas).ignoresSafeArea())
+    .background(HelpSheet.background(isNavy: isNavy).ignoresSafeArea())
     .environment(\.isOnNavyCard, false)
-    .modifier(NavyScheme(isOn: isNavy))
+    .environment(\.colorScheme, isNavy ? .dark : .light)
+  }
+
+  /// White, or, when opened from a navy card, the same blue as the card and the app icon.
+  static func background(isNavy: Bool) -> some View {
+    Rectangle().fill(
+      isNavy
+        ? AnyShapeStyle(LinearGradient(colors: [Brand.nightTop, Brand.nightMiddle], startPoint: .top, endPoint: .bottom))
+        : AnyShapeStyle(Color.white)
+    )
   }
 
   private var cardFill: AnyShapeStyle {
-    isNavy ? AnyShapeStyle(.white.opacity(0.08)) : AnyShapeStyle(Palette.card)
-  }
-}
-
-/// Forces dark mode only for the navy version, so the normal sheet follows the system.
-private struct NavyScheme: ViewModifier {
-  var isOn: Bool
-
-  func body(content: Content) -> some View {
-    if isOn {
-      content.environment(\.colorScheme, .dark)
-    } else {
-      content
-    }
+    isNavy ? AnyShapeStyle(.white.opacity(0.1)) : AnyShapeStyle(Color(white: 0.96))
   }
 }
 

@@ -123,12 +123,7 @@ struct OddsForecastCard: View {
           .fixedSize(horizontal: false, vertical: true)
       }
       .padding(18)
-      .foregroundStyle(.white)
-      .background(
-        LinearGradient(colors: [Brand.nightTop, Brand.nightMiddle], startPoint: .top, endPoint: .bottom),
-        in: .rect(cornerRadius: 26, style: .continuous)
-      )
-      .environment(\.colorScheme, .dark)
+      .heroCardStyle(cornerRadius: 26)
       .onAppear { if buyZone == nil { side = .sell } }
     }
   }

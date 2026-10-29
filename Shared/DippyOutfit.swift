@@ -1,57 +1,52 @@
 import SwiftUI
 
-/// What Dippy wears. Outfits are earned with achievements (and a few come with Pro), chosen in the Wardrobe, and
+/// What Dippy wears. Outfits are achievements' rewards (the top hat comes with Pro), worn from the Achievements, and
 /// shown everywhere Dippy appears: the app, the widgets, and Apple Watch. Dippy himself never changes underneath.
 enum DippyOutfit: String, CaseIterable, Identifiable, Codable {
   case none
-  case scarf
   case bowTie
-  case glasses
   case beanie
   case headphones
   case partyHat
-  case sunglasses
   case crown
   case graduationCap
   case topHat
-  case monocle
 
   var id: Self { self }
 
   var title: String {
     switch self {
     case .none: String(localized: "Just Dippy")
-    case .scarf: String(localized: "Cozy Scarf")
     case .bowTie: String(localized: "Bow Tie")
-    case .glasses: String(localized: "Reading Glasses")
     case .beanie: String(localized: "Beanie")
     case .headphones: String(localized: "Headphones")
     case .partyHat: String(localized: "Party Hat")
-    case .sunglasses: String(localized: "Sunglasses")
     case .crown: String(localized: "Crown")
     case .graduationCap: String(localized: "Graduation Cap")
     case .topHat: String(localized: "Top Hat")
-    case .monocle: String(localized: "Monocle")
     }
   }
 
-  /// The achievement that unlocks it, or nil when it comes with Pro (or is always there).
+  /// The achievement that unlocks it. Every outfit is an achievement's reward; the top hat is Pro's.
   var achievementID: String? {
     switch self {
-    case .none, .topHat, .monocle: nil
-    case .scarf: "first-plan"
-    case .bowTie: "full-plan"
-    case .glasses: "toolkit"
+    case .none: nil
+    case .bowTie: "first-plan"
     case .beanie: "streak-7"
     case .headphones: "diversified"
     case .partyHat: "dip-catcher"
-    case .sunglasses: "patient"
     case .crown: "streak-30"
     case .graduationCap: "wise"
+    case .topHat: "pro"
     }
   }
 
-  var requiresPro: Bool { self == .topHat || self == .monocle }
+  var requiresPro: Bool { self == .topHat }
+
+  /// The outfit an achievement awards, if any.
+  static func reward(for achievementID: String) -> DippyOutfit? {
+    allCases.first { $0.achievementID == achievementID }
+  }
 
   private static let key = "dippy.outfit"
 
@@ -77,29 +72,6 @@ extension DippyOutfit {
     case .none:
       break
 
-    case .scarf:
-      var inner = context
-      inner.clip(to: body)
-      let band = Path { path in
-        path.move(to: CGPoint(x: 300, y: 584))
-        path.addQuadCurve(to: CGPoint(x: 724, y: 584), control: CGPoint(x: 512, y: 650))
-        path.addLine(to: CGPoint(x: 724, y: 628))
-        path.addQuadCurve(to: CGPoint(x: 300, y: 628), control: CGPoint(x: 512, y: 696))
-        path.closeSubpath()
-      }
-      inner.fill(band, with: .color(Brand.sell))
-      let stripe = Path { path in
-        path.move(to: CGPoint(x: 300, y: 606))
-        path.addQuadCurve(to: CGPoint(x: 724, y: 606), control: CGPoint(x: 512, y: 672))
-      }
-      inner.stroke(stripe, with: .color(.white.opacity(0.85)), style: StrokeStyle(lineWidth: 8, dash: [18, 14]))
-      let tail = Path(roundedRect: CGRect(x: 566, y: 636, width: 52, height: 104), cornerRadius: 12)
-      context.fill(tail, with: .color(Brand.sell))
-      for x in stride(from: CGFloat(574), through: 610, by: 12) {
-        context.stroke(Path { $0.move(to: CGPoint(x: x, y: 740)); $0.addLine(to: CGPoint(x: x, y: 762)) },
-                       with: .color(Brand.sell), style: StrokeStyle(lineWidth: 6, lineCap: .round))
-      }
-
     case .bowTie:
       let left = Path { path in
         path.move(to: CGPoint(x: 512, y: 604))
@@ -118,30 +90,6 @@ extension DippyOutfit {
         context.stroke(side, with: .color(Brand.sell), style: StrokeStyle(lineWidth: 12, lineJoin: .round))
       }
       context.fill(Path(roundedRect: CGRect(x: 496, y: 588, width: 32, height: 32), cornerRadius: 9), with: .color(Color(red: 0.75, green: 0.15, blue: 0.2)))
-
-    case .glasses:
-      for x in [CGFloat(446), 578] {
-        context.stroke(Path(ellipseIn: CGRect(x: x - 96, y: 372, width: 192, height: 192)), with: .color(ink), lineWidth: 13)
-      }
-      context.stroke(Path { $0.move(to: CGPoint(x: 494, y: 440)); $0.addQuadCurve(to: CGPoint(x: 530, y: 440), control: CGPoint(x: 512, y: 422)) },
-                     with: .color(ink), style: StrokeStyle(lineWidth: 12, lineCap: .round))
-
-    case .sunglasses:
-      for x in [CGFloat(446), 578] {
-        let lens = Path(roundedRect: CGRect(x: x - 92, y: 404, width: 184, height: 132), cornerRadius: 60)
-        context.fill(lens, with: .color(ink.opacity(0.94)))
-        context.stroke(Path { $0.move(to: CGPoint(x: x - 54, y: 440)); $0.addLine(to: CGPoint(x: x - 20, y: 424)) },
-                       with: .color(.white.opacity(0.75)), style: StrokeStyle(lineWidth: 10, lineCap: .round))
-      }
-      context.stroke(Path { $0.move(to: CGPoint(x: 538, y: 446)); $0.addLine(to: CGPoint(x: 486, y: 446)) },
-                     with: .color(ink), style: StrokeStyle(lineWidth: 14, lineCap: .round))
-
-    case .monocle:
-      context.stroke(Path(ellipseIn: CGRect(x: 480, y: 370, width: 196, height: 196)), with: .color(Brand.amber), lineWidth: 12)
-      context.stroke(Path { path in
-        path.move(to: CGPoint(x: 668, y: 520))
-        path.addQuadCurve(to: CGPoint(x: 660, y: 700), control: CGPoint(x: 720, y: 620))
-      }, with: .color(Brand.amber), style: StrokeStyle(lineWidth: 6, lineCap: .round, dash: [2, 10]))
 
     case .beanie:
       let dome = Path { path in

@@ -295,17 +295,17 @@ private struct MarketingNotificationCard: View {
           Spacer(minLength: 4)
           Text("now")
             .font(.system(size: 13))
-            .foregroundStyle(Color(white: 0.45))
+            .foregroundStyle(NotificationPlatter.secondary)
         }
         Text("Now $211.38, inside $205.65–$217.10. Your plan: buy 3 shares.")
           .font(.system(size: 15))
           .fixedSize(horizontal: false, vertical: true)
       }
     }
-    .foregroundStyle(Color(white: 0.06))
+    .foregroundStyle(NotificationPlatter.ink)
     .padding(.horizontal, 14)
     .padding(.vertical, 12)
-    .background(Color(red: 0.95, green: 0.95, blue: 0.97), in: .rect(cornerRadius: 24, style: .continuous))
+    .background(NotificationPlatter.fill, in: .rect(cornerRadius: 24, style: .continuous))
     .environment(\.colorScheme, .light)
   }
 }

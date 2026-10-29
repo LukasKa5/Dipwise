@@ -2,7 +2,7 @@ import SwiftData
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// Brings in an existing portfolio from a broker's CSV export, or pasted spreadsheet rows.
+/// Brings in an existing portfolio from a broker's CSV export.
 struct ImportPortfolioView: View {
   private enum Phase {
     case choose
@@ -60,11 +60,8 @@ struct ImportPortfolioView: View {
       Group {
         Section {
           VStack(spacing: 14) {
-            Image(systemName: "tray.and.arrow.down.fill")
-              .font(.title.weight(.semibold))
-              .foregroundStyle(Palette.buy)
-              .frame(width: 72, height: 72)
-              .background(Brand.nightMiddle, in: .circle)
+            LivelyOwl(mood: .calm)
+              .frame(width: 64, height: 74)
             Text("Bring your portfolio in seconds")
               .font(.title3.bold())
               .multilineTextAlignment(.center)
@@ -75,16 +72,12 @@ struct ImportPortfolioView: View {
             Button {
               showsFilePicker = true
             } label: {
-              Label("Choose CSV File", systemImage: "doc.badge.plus")
+              Text("Choose CSV File")
                 .font(.headline)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 6)
             }
             .buttonStyle(.borderedProminent)
-            PasteButton(payloadType: String.self) { strings in
-              if let text = strings.first { Task { @MainActor in parse(text) } }
-            }
-            .buttonBorderShape(.capsule)
             if let errorMessage {
               Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
                 .font(.footnote)

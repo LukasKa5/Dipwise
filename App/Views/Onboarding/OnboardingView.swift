@@ -214,7 +214,6 @@ private struct WelcomeStep: View {
   @State private var arrived = false
   private let lines: [LocalizedStringKey] = [
     "Hoo! Tap me four times.",
-    "That tickles! Keep going…",
     "I'm Dippy, your stock-watching owl.",
     "I watch your stocks day and night…",
     "…and tell you when it's time to act.",

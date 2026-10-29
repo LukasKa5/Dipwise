@@ -99,7 +99,7 @@ struct AlertInsightsView: View {
         VStack(spacing: 0) {
           ForEach(Array(found.enumerated()), id: \.element.id) { index, signal in
             signalRow(signal)
-              .proLocked(!isPro && index >= 2, message: "See every live signal")
+              .proLocked(!isPro && index >= 2, message: "See every live signal", prompt: index == 2)
             if index < found.count - 1 {
               Divider().padding(.leading, 60)
             }

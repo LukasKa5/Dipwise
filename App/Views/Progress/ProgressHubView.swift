@@ -1,7 +1,7 @@
 import SwiftData
 import SwiftUI
 
-/// Streak calendar, level, achievements, and the Dip Journal's track record.
+/// Streak calendar, level, achievements with their outfits, and the Dip Journal's track record.
 struct ProgressHubView: View {
   @Query(sort: \Holding.addedAt) private var holdings: [Holding]
   @Query(sort: \PriceAlert.journalDate, order: .reverse) private var alerts: [PriceAlert]
@@ -9,7 +9,6 @@ struct ProgressHubView: View {
   @Environment(QuoteStore.self) private var quotes
   @Environment(Router.self) private var router
   @Environment(\.dismiss) private var dismiss
-  @State private var selectedAchievement: Achievement?
 
   private var journal: [PriceAlert] { alerts.filter { $0.journalAction != nil && $0.holding != nil } }
 
@@ -19,8 +18,7 @@ struct ProgressHubView: View {
         VStack(alignment: .leading, spacing: 28) {
           streakCard
           levelCard
-          WardrobeSection(achievements: Achievement.all(progress: progress, holdings: holdings, quotes: quotes.quotes))
-          achievements
+          AchievementsSection(achievements: Achievement.all(progress: progress, holdings: holdings, quotes: quotes.quotes))
           journalSection
         }
         .padding(20)
@@ -29,10 +27,6 @@ struct ProgressHubView: View {
       }
       .background(Palette.canvas)
       .navigationTitle("Your Progress")
-      .sheet(item: $selectedAchievement) { item in
-        AchievementDetailView(achievement: item)
-          .presentationDetents([.medium])
-      }
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .confirmationAction) {
@@ -100,47 +94,6 @@ struct ProgressHubView: View {
     }
     .padding(18)
     .cardStyle()
-  }
-
-  private var achievements: some View {
-    let items = Achievement.all(progress: progress, holdings: holdings, quotes: quotes.quotes)
-    return VStack(alignment: .leading, spacing: 14) {
-      SectionHeader(title: "Achievements", subtitle: "\(items.filter(\.isUnlocked).count) of \(items.count) unlocked")
-      LazyVGrid(columns: [GridItem(.adaptive(minimum: 100), spacing: 12)], spacing: 12) {
-        ForEach(items) { item in
-          Button {
-            selectedAchievement = item
-          } label: {
-          VStack(spacing: 8) {
-            ZStack {
-              Circle()
-                .trim(from: 0, to: item.progress)
-                .stroke(Palette.amber, style: StrokeStyle(lineWidth: 4, lineCap: .round))
-                .rotationEffect(.degrees(-90))
-              Circle()
-                .fill(item.isUnlocked ? AnyShapeStyle(Palette.amber.gradient) : AnyShapeStyle(.quaternary))
-                .padding(6)
-              Image(systemName: item.systemImage)
-                .font(.title2)
-                .foregroundStyle(item.isUnlocked ? AnyShapeStyle(.white) : AnyShapeStyle(.secondary))
-            }
-            .frame(width: 64, height: 64)
-            Text(item.title)
-              .font(.caption.weight(.semibold))
-              .multilineTextAlignment(.center)
-              .lineLimit(2)
-          }
-          .frame(maxWidth: .infinity)
-          .padding(.vertical, 12)
-          .cardStyle(cornerRadius: 18)
-          .accessibilityElement(children: .ignore)
-          .accessibilityLabel(item.title)
-          .accessibilityValue(item.isUnlocked ? "Unlocked" : "\(item.detail). \(item.progressLabel)")
-          }
-          .buttonStyle(.plain)
-        }
-      }
-    }
   }
 
   private var journalSection: some View {
@@ -219,60 +172,5 @@ private struct WeekStrip: View {
         .accessibilityValue(progress.wasCheckedIn(on: day) ? "Done" : "Missed")
       }
     }
-  }
-}
-
-/// What an achievement means and how far along the user is.
-private struct AchievementDetailView: View {
-  var achievement: Achievement
-  @Environment(\.dismiss) private var dismiss
-
-  var body: some View {
-    VStack(spacing: 18) {
-      ZStack {
-        Circle()
-          .stroke(.quaternary, lineWidth: 6)
-        Circle()
-          .trim(from: 0, to: achievement.progress)
-          .stroke(Palette.amber, style: StrokeStyle(lineWidth: 6, lineCap: .round))
-          .rotationEffect(.degrees(-90))
-        Circle()
-          .fill(achievement.isUnlocked ? AnyShapeStyle(Palette.amber.gradient) : AnyShapeStyle(.quaternary))
-          .padding(10)
-        Image(systemName: achievement.systemImage)
-          .font(.system(size: 38))
-          .foregroundStyle(achievement.isUnlocked ? AnyShapeStyle(.white) : AnyShapeStyle(.secondary))
-          .symbolEffect(.bounce, value: achievement.isUnlocked)
-      }
-      .frame(width: 110, height: 110)
-      .padding(.top, 28)
-
-      VStack(spacing: 6) {
-        Text(achievement.title)
-          .font(.title2.bold())
-        Text(achievement.detail)
-          .font(.headline)
-          .foregroundStyle(Palette.amber)
-          .multilineTextAlignment(.center)
-      }
-      Text(achievement.explanation)
-        .font(.body)
-        .foregroundStyle(.secondary)
-        .multilineTextAlignment(.center)
-        .padding(.horizontal, 28)
-
-      VStack(spacing: 6) {
-        ProgressView(value: achievement.progress)
-          .tint(Palette.amber)
-        Text(achievement.progressLabel)
-          .font(.subheadline.weight(.semibold))
-          .foregroundStyle(achievement.isUnlocked ? Palette.buy : .secondary)
-      }
-      .padding(.horizontal, 40)
-      Spacer()
-    }
-    .frame(maxWidth: .infinity)
-    .background(Palette.canvas)
-    .accessibilityElement(children: .combine)
   }
 }

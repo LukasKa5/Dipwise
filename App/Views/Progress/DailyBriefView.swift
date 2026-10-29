@@ -1,7 +1,7 @@
 import SwiftData
 import SwiftUI
 
-/// A one-minute daily routine: how your stocks moved, your closest plans, how you feel about the market (shared
+/// A one-minute morning routine, ready before the US open: how your stocks did in the last session, your closest plans, how you feel about the market (shared
 /// anonymously with the flock, which answers back with everyone's mood), a flock question, a lesson, and your streak.
 struct DailyBriefView: View {
   @Query(sort: \Holding.addedAt) private var holdings: [Holding]
@@ -100,11 +100,20 @@ struct DailyBriefView: View {
     .padding(.bottom, 8)
   }
 
+  /// Before the open (or on a weekend) the brief recaps the last session; once the market is open, it's today's moves.
+  static var sessionLine: String {
+    let greeting = DayPeriod(date: .now).greeting
+    switch MarketClock.phase() {
+    case .open, .afterHours: return String(localized: "\(greeting)! Here's how your stocks are moving today.")
+    default: return String(localized: "\(greeting)! Here's how your stocks closed in the last session.")
+    }
+  }
+
   // MARK: Steps
 
   private var movers: some View {
     VStack(alignment: .leading, spacing: 18) {
-      OwlSays(text: "\(DayPeriod(date: .now).greeting)! Here's how your stocks moved.")
+      OwlSays(text: LocalizedStringKey(Self.sessionLine))
       let movers = holdings.compactMap { holding in quotes[holding.symbol].map { (holding, $0) } }
         .sorted { abs($0.1.change) > abs($1.1.change) }
         .prefix(5)
@@ -164,7 +173,7 @@ struct DailyBriefView: View {
 
   private var mood: some View {
     VStack(alignment: .leading, spacing: 18) {
-      OwlSays(text: didCheckIn ? "Here's how the whole flock feels today." : "How do you feel about the market today?")
+      OwlSays(text: didCheckIn ? "Here's where the whole flock sees the market heading." : "Where do you see the market heading this week?")
       if !didCheckIn {
         HStack(spacing: 8) {
           ForEach(FlockFeeling.allCases) { option in
@@ -174,7 +183,7 @@ struct DailyBriefView: View {
               VStack(spacing: 6) {
                 Image(systemName: option.systemImage)
                   .font(.title2)
-                  .symbolRenderingMode(.multicolor)
+                  .foregroundStyle(option.tint)
                   .frame(height: 30)
                 Text(option.title)
                   .font(.caption.weight(.semibold))
@@ -212,7 +221,7 @@ struct DailyBriefView: View {
                   .padding(.horizontal, 14)
                   .padding(.vertical, 10)
                   .background(action == option ? AnyShapeStyle(Palette.green) : AnyShapeStyle(Palette.card), in: .capsule)
-                  .foregroundStyle(action == option ? .white : .primary)
+                  .foregroundStyle(action == option ? AnyShapeStyle(.white) : AnyShapeStyle(option.tint))
               }
               .buttonStyle(.plain)
             }
