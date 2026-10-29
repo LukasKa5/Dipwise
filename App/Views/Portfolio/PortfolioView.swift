@@ -34,6 +34,7 @@ struct PortfolioView: View {
           }
           performance(summary)
           allocationSection(summary)
+          riskSection(summary)
           dividends(summary)
           positions(summary)
           movers(summary)
@@ -284,6 +285,42 @@ struct PortfolioView: View {
       }
       .padding(18)
       .cardStyle()
+    }
+  }
+
+  // MARK: Risk
+
+  @ViewBuilder
+  private func riskSection(_ summary: PortfolioSummary) -> some View {
+    if let risk = PortfolioRisk.make(summary: summary, benchmark: quotes["^GSPC"]) {
+      let percent = FloatingPointFormatStyle<Double>.Percent().precision(.fractionLength(0))
+      VStack(alignment: .leading, spacing: 14) {
+        SectionHeader(title: "Risk", subtitle: "How your portfolio behaved over the past year") {
+          if !subscription.isPro { ProBadge() }
+          InfoButton(topic: .risk)
+        }
+        VStack(alignment: .leading, spacing: 14) {
+          LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+            MiniStat(title: "Volatility", value: risk.volatility.formatted(percent))
+            MiniStat(title: "Biggest fall", value: risk.maxDrawdown.formatted(percent), color: Palette.loss)
+            MiniStat(title: "Worst day", value: risk.worstDay.formatted(.percent.precision(.fractionLength(1))), color: Palette.loss)
+            MiniStat(title: "Beta vs S&P 500", value: risk.beta.map { $0.formatted(.number.precision(.fractionLength(2))) } ?? "–")
+            MiniStat(title: "If the market fell 20%", value: risk.crashLoss.map { "−" + quotes.formatBase($0) } ?? "–", color: Palette.loss)
+            MiniStat(title: "Largest position", value: risk.largest.map { "\($0.symbol) \($0.weight.formatted(percent))" } ?? "–")
+          }
+          HStack(alignment: .top, spacing: 10) {
+            LivelyOwl(mood: .calm)
+              .frame(width: 34, height: 40)
+            Text(risk.verdict)
+              .font(.subheadline)
+              .fixedSize(horizontal: false, vertical: true)
+          }
+        }
+        .padding(18)
+        .cardStyle()
+        .proLocked(!subscription.isPro, message: "See how risky your portfolio really is with Pro")
+        .task { await quotes.refresh(symbols: ["^GSPC"]) }
+      }
     }
   }
 

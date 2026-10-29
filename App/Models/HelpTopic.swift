@@ -15,6 +15,7 @@ enum HelpTopic: Identifiable, Hashable {
   case buyingPower
   case dividends
   case allocation
+  case risk
   case radar
   case flock
   case category(AlertCategory)
@@ -43,6 +44,7 @@ enum HelpTopic: Identifiable, Hashable {
     case .buyingPower: String(localized: "Buying power")
     case .dividends: String(localized: "Dividend income")
     case .allocation: String(localized: "Allocation")
+    case .risk: String(localized: "Portfolio risk")
     case .radar: String(localized: "Dip Radar")
     case .flock: String(localized: "The flock")
     case .category(let category): category.title
@@ -57,6 +59,7 @@ enum HelpTopic: Identifiable, Hashable {
     case .medianAverage: "equal.circle"
     case .odds: "dice.fill"
     case .planHealth: "heart.text.square.fill"
+    case .risk: "waveform.path.ecg"
     case .signals: "dot.radiowaves.left.and.right"
     case .trackRecord: "checkmark.seal.fill"
     case .dipJournal: "book.closed.fill"
@@ -81,6 +84,8 @@ enum HelpTopic: Identifiable, Hashable {
       String(localized: "Odds estimate how likely an alert is to fire within 30 or 90 days. Dippy looks at how much this stock has moved day to day over the past year and asks: how often would a move this big happen? They're estimates from past behavior, not predictions.")
     case .conviction:
       String(localized: "Crowd conviction is a 0–100 score combining three things: how many alerts are buy-side, whether interest is growing this week, and how many alerts sit close to today's price. High means the crowd is eager to buy; low means it's leaning toward selling.")
+    case .risk:
+      String(localized: "Volatility is how much your portfolio swings in a typical year. Biggest fall is the deepest drop from a high over the past year. Beta compares your swings with the market's: 1.0 moves with it, 1.5 moves half again as much. The crash estimate multiplies a 20% market drop by your beta. All of it is based on your current positions over the past year, not a prediction.")
     case .planHealth:
       String(localized: "Plan health checks whether each of your stocks has a buy zone, a sell zone, and some protection like a stop loss or trailing stop. A score near 100 means you know what you'll do in any market.")
     case .signals:
@@ -126,6 +131,7 @@ enum HelpTopic: Identifiable, Hashable {
     switch self {
     case .zones: String(localized: "NVDA is $182. Buy zone $165–175, sell zone $210–225.")
     case .medianAverage: String(localized: "Targets $90, $95, $96, $98, $150: median $96, average $106.")
+    case .risk: String(localized: "A beta of 1.4 means that on a day the S&P 500 falls 2%, your portfolio has tended to fall about 2.8%.")
     case .odds: String(localized: "A stock that often moves 3% a day is far more likely to drop 10% within a month than one that moves 1%.")
     case .alert(.rsiOversold): String(localized: "RSI ranges from 0 to 100. Below 30 is usually called oversold.")
     case .alert(.goldenCross): String(localized: "When the 50-day average rises above the 200-day, many investors see a new uptrend.")

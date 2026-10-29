@@ -1247,6 +1247,52 @@
         }
       }
     },
+    "%@ is %@ of your portfolio. One stock decides most of your result, good or bad.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ macht %2$@ deines Portfolios aus. Eine Aktie entscheidet über den Großteil deines Ergebnisses, im Guten wie im Schlechten."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ es el %2$@ de tu cartera. Una sola acción decide casi todo tu resultado, para bien o para mal."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ représente %2$@ de ton portefeuille. Une seule action décide de l'essentiel de ton résultat, en bien comme en mal."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ è il %2$@ del tuo portafoglio. Un solo titolo decide gran parte del risultato, nel bene e nel male."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ é %2$@ da sua carteira. Uma ação decide quase todo o seu resultado, para o bem ou para o mal."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@がポートフォリオの%2$@を占めています。良くも悪くも1銘柄で結果の大半が決まります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@가 포트폴리오의 %2$@를 차지해요. 좋든 나쁘든 한 종목이 결과 대부분을 좌우해요."
+          }
+        }
+      }
+    },
     "%@ is close to your sell zone": {
       "localizations": {
         "de": {
@@ -4757,6 +4803,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Um movimento de 5% em um dia é notícia. Confira resultados, projeções ou o mercado antes de reagir."
+          }
+        }
+      }
+    },
+    "A beta of 1.4 means that on a day the S&P 500 falls 2%, your portfolio has tended to fall about 2.8%.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ein Beta von 1,4 heißt: Fällt der S&P 500 an einem Tag um 2 %, ist dein Portfolio meist um etwa 2,8 % gefallen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Una beta de 1,4 significa que, un día en que el S&P 500 cae un 2 %, tu cartera suele caer un 2,8 %."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un bêta de 1,4 signifie qu'un jour où le S&P 500 perd 2 %, ton portefeuille a tendance à perdre environ 2,8 %."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un beta di 1,4 significa che in un giorno in cui l'S&P 500 scende del 2%, il tuo portafoglio tende a scendere di circa il 2,8%."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Um beta de 1,4 significa que, num dia em que o S&P 500 cai 2%, sua carteira costuma cair cerca de 2,8%."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ベータ1.4なら、S&P 500が2%下がった日に、ポートフォリオはおよそ2.8%下がる傾向があります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "베타 1.4라면 S&P 500이 2% 떨어진 날 포트폴리오는 보통 약 2.8% 떨어졌다는 뜻이에요."
           }
         }
       }
@@ -10373,6 +10465,52 @@
         }
       }
     },
+    "Beta vs S&P 500": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beta zum S&P 500"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beta vs. S&P 500"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bêta vs S&P 500"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beta vs S&P 500"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beta vs. S&P 500"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "S&P 500に対するベータ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "S&P 500 대비 베타"
+          }
+        }
+      }
+    },
     "Better than %@ of members": {
       "localizations": {
         "de": {
@@ -10691,6 +10829,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "큰 수익은 지켜보지 않으면 줄어들어요. 트레일링 스톱이나 매도 구간으로 일부를 지키세요."
+          }
+        }
+      }
+    },
+    "Biggest fall": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Größter Einbruch"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mayor caída"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus forte baisse"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calo maggiore"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maior queda"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最大下落"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "최대 하락"
           }
         }
       }
@@ -25234,6 +25418,52 @@
         }
       }
     },
+    "How your portfolio behaved over the past year": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wie sich dein Portfolio im letzten Jahr verhalten hat"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cómo se comportó tu cartera el último año"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comment ton portefeuille s'est comporté sur un an"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Come si è comportato il tuo portafoglio nell'ultimo anno"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Como sua carteira se comportou no último ano"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "過去1年のポートフォリオの動き"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지난 1년 포트폴리오의 움직임"
+          }
+        }
+      }
+    },
     "I own this": {
       "localizations": {
         "de": {
@@ -25460,6 +25690,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Se uma ação é mais de um terço da carteira, um dia ruim para ela é um dia ruim para você. Confira sua alocação."
+          }
+        }
+      }
+    },
+    "If the market fell 20%": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wenn der Markt 20 % fällt"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Si el mercado cae un 20 %"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Si le marché chute de 20 %"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se il mercato scende del 20%"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se o mercado cair 20%"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "市場が20%下落したら"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "시장이 20% 하락하면"
           }
         }
       }
@@ -27346,6 +27622,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Abaixo do mercado"
+          }
+        }
+      }
+    },
+    "Largest position": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Größte Position"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mayor posición"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus grosse position"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Posizione maggiore"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maior posição"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最大ポジション"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "최대 포지션"
           }
         }
       }
@@ -37148,6 +37470,52 @@
         }
       }
     },
+    "Portfolio risk": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Portfoliorisiko"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Riesgo de la cartera"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risque du portefeuille"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rischio del portafoglio"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risco da carteira"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ポートフォリオのリスク"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "포트폴리오 위험"
+          }
+        }
+      }
+    },
     "Position": {
       "localizations": {
         "de": {
@@ -41796,6 +42164,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Veja exatamente onde os investidores colocam alertas"
+          }
+        }
+      }
+    },
+    "See how risky your portfolio really is with Pro": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sieh mit Pro, wie riskant dein Portfolio wirklich ist"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descubre con Pro cuánto riesgo tiene tu cartera"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vois avec Pro à quel point ton portefeuille est risqué"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scopri con Pro quanto è rischioso il tuo portafoglio"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Veja com o Pro o risco real da sua carteira"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proでポートフォリオの本当のリスクを確認"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro로 포트폴리오의 실제 위험을 확인하세요"
           }
         }
       }
@@ -52748,6 +53162,98 @@
         }
       }
     },
+    "Volatility": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volatilität"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volatilidad"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volatilité"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volatilità"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volatilidade"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ボラティリティ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "변동성"
+          }
+        }
+      }
+    },
+    "Volatility is how much your portfolio swings in a typical year. Biggest fall is the deepest drop from a high over the past year. Beta compares your swings with the market's: 1.0 moves with it, 1.5 moves half again as much. The crash estimate multiplies a 20% market drop by your beta. All of it is based on your current positions over the past year, not a prediction.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volatilität zeigt, wie stark dein Portfolio in einem typischen Jahr schwankt. Der größte Einbruch ist der tiefste Fall von einem Hoch im letzten Jahr. Beta vergleicht deine Schwankungen mit denen des Marktes: 1,0 bewegt sich mit ihm, 1,5 um die Hälfte stärker. Die Crash-Schätzung multipliziert einen Marktrückgang von 20 % mit deinem Beta. Alles basiert auf deinen aktuellen Positionen im letzten Jahr und ist keine Prognose."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La volatilidad es cuánto oscila tu cartera en un año típico. La mayor caída es el descenso más profundo desde un máximo en el último año. La beta compara tus oscilaciones con las del mercado: 1,0 se mueve con él, 1,5 se mueve la mitad más. La estimación de crash multiplica una caída del 20 % del mercado por tu beta. Todo se basa en tus posiciones actuales durante el último año, no es una predicción."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La volatilité indique combien ton portefeuille oscille sur une année typique. La plus forte baisse est la chute la plus profonde depuis un sommet sur un an. Le bêta compare tes variations à celles du marché : 1,0 bouge avec lui, 1,5 bouge moitié plus. L'estimation de krach multiplie une baisse de 20 % du marché par ton bêta. Tout repose sur tes positions actuelles sur un an, ce n'est pas une prévision."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La volatilità indica quanto oscilla il tuo portafoglio in un anno tipico. Il calo maggiore è la discesa più profonda da un massimo nell'ultimo anno. Il beta confronta le tue oscillazioni con quelle del mercato: 1,0 si muove con lui, 1,5 si muove la metà in più. La stima del crollo moltiplica un calo del 20% del mercato per il tuo beta. Tutto si basa sulle posizioni attuali nell'ultimo anno, non è una previsione."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volatilidade é quanto sua carteira oscila em um ano típico. A maior queda é o recuo mais profundo a partir de uma máxima no último ano. O beta compara suas oscilações com as do mercado: 1,0 se move com ele, 1,5 se move metade a mais. A estimativa de crash multiplica uma queda de 20% do mercado pelo seu beta. Tudo se baseia nas suas posições atuais no último ano, não é uma previsão."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ボラティリティは、ポートフォリオが通常の1年でどれだけ変動するかを示します。最大下落は過去1年の高値からの最も深い下げです。ベータは市場との値動きの比較で、1.0は市場と同じ、1.5は市場の1.5倍動きます。暴落時の試算は市場の20%下落にベータを掛けたものです。すべて現在の保有銘柄の過去1年に基づくもので、予測ではありません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "변동성은 포트폴리오가 보통 1년 동안 얼마나 출렁이는지 보여줘요. 최대 하락은 지난 1년 고점 대비 가장 깊은 하락이에요. 베타는 시장과 변동을 비교해요. 1.0은 시장과 같이, 1.5는 절반 더 크게 움직여요. 폭락 추정은 시장 20% 하락에 베타를 곱한 값이에요. 모두 현재 보유 종목의 지난 1년 기준이며 예측이 아니에요."
+          }
+        }
+      }
+    },
     "Volume hits %@× normal": {
       "localizations": {
         "de": {
@@ -55692,6 +56198,52 @@
         }
       }
     },
+    "Worst day": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schlechtester Tag"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Peor día"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pire jour"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giorno peggiore"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pior dia"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最悪の日"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "최악의 날"
+          }
+        }
+      }
+    },
     "Worst today": {
       "localizations": {
         "de": {
@@ -58544,6 +59096,98 @@
         }
       }
     },
+    "Your portfolio moves about %@× as much as the market. Expect bigger swings both ways.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Portfolio bewegt sich etwa %@-mal so stark wie der Markt. Rechne mit größeren Schwankungen in beide Richtungen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu cartera se mueve unas %@× lo que el mercado. Espera vaivenes más grandes en ambos sentidos."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ton portefeuille bouge environ %@× plus que le marché. Attends-toi à de plus grands écarts dans les deux sens."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il tuo portafoglio si muove circa %@× il mercato. Aspettati oscillazioni più ampie in entrambe le direzioni."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sua carteira se move cerca de %@× o mercado. Espere oscilações maiores nos dois sentidos."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ポートフォリオは市場の約%@倍動きます。上下とも大きな値動きを覚悟しましょう。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "포트폴리오가 시장의 약 %@배로 움직여요. 양방향으로 더 큰 변동을 예상하세요."
+          }
+        }
+      }
+    },
+    "Your portfolio moves less than the market. Calmer in a sell-off, but it may lag in a rally.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Portfolio bewegt sich weniger als der Markt. Ruhiger bei Ausverkäufen, aber es kann in Rallys zurückbleiben."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu cartera se mueve menos que el mercado. Más tranquila en las caídas, pero puede quedarse atrás en las subidas."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ton portefeuille bouge moins que le marché. Plus calme dans les baisses, mais il peut traîner dans les hausses."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il tuo portafoglio si muove meno del mercato. Più tranquillo nei ribassi, ma può restare indietro nei rialzi."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sua carteira se move menos que o mercado. Mais calma nas quedas, mas pode ficar para trás nas altas."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ポートフォリオは市場より値動きが小さめです。下落時は穏やかですが、上昇時に出遅れることも。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "포트폴리오가 시장보다 덜 움직여요. 하락장엔 차분하지만 상승장에선 뒤처질 수 있어요."
+          }
+        }
+      }
+    },
     "Your portfolio swings about %@ in a typical year.": {
       "localizations": {
         "de": {
@@ -58954,6 +59598,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sua posição sobe um valor definido acima do que você pagou."
+          }
+        }
+      }
+    },
+    "Your risk is close to the market's. Your plans and zones do the rest.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Risiko liegt nahe am Markt. Den Rest erledigen deine Pläne und Zonen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu riesgo es parecido al del mercado. Tus planes y zonas hacen el resto."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ton risque est proche de celui du marché. Tes plans et tes zones font le reste."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il tuo rischio è vicino a quello del mercato. Piani e zone fanno il resto."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seu risco é parecido com o do mercado. Seus planos e zonas fazem o resto."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "リスクは市場並みです。あとはプランとゾーンにお任せ。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "위험 수준이 시장과 비슷해요. 나머지는 계획과 구간이 챙겨요."
           }
         }
       }
