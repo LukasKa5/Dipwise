@@ -171,6 +171,8 @@ The Flock isn't in the screenshots or description yet, because App Store builds 
 
 The line therefore sits in the iPhone's middle, below its buttons and below iPad's tab bar. Dippy sits high enough that iPad still shows his eyes and beak. The 16:9 still keeps its iPhone-tuned layout.
 
+**Before uploading,** run `swift Marketing/ScreenshotStudio/validate_assets.swift Marketing/AppStore`. It checks every header and search image and every header video against App Store Connect's specifications (sizes, formats, alpha, frame rate, length, codec, tracks). Header videos go only in the **21:9 product page header** slot. The 16:9 slot takes only 5244 x 2950 images, and the search results slot takes 3:2 or 16:9 images, or 3:2 video.
+
 | File | Where it goes |
 |---|---|
 | Header/<lang>/header-5244x2950.png | Product page header, 16:9 universal (also usable in search results) |
