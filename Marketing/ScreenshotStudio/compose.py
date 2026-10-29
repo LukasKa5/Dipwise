@@ -1275,30 +1275,35 @@ def full_moon(canvas, mx, my, mr):
                                     for a, c, b in [(-0.3, -0.2, 0.2), (0.32, 0.25, 0.14), (-0.1, 0.45, 0.1)]], (240, 214, 160))
 
 
-def forest(size, clearing, eyes=False, moon=True, moon_at=None, drop=0.0, front_gap=0.6):
+def forest(size, clearing, eyes=False, moon=True, moon_at=None, drop=0.0, front_gap=0.6, sky=True):
     """Dippy's forest at night in the icon's flat style: the icon's navy with its faint lines in the sky, a moon,
     rolling hills and three layers of firs that grow darker toward you, and, if asked, two of the flock's eyes
-    shining from the trees. A clearing in the middle keeps the focal point in the center, where every crop keeps it."""
+    shining from the trees. A clearing in the middle keeps the focal point in the center, where every crop keeps it.
+    With `sky=False` it draws only the land, on a transparent canvas, for scenes that paint their own sky."""
     W, H = size
     u = H / 1080
     cx = W / 2
     canvas = vertical_gradient((W, H), [(0, (10, 26, 44)), (0.45, (20, 58, 82)), (0.72, (30, 80, 104)), (1, (10, 28, 44))])
+    if not sky:
+        canvas = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        moon = False
     rng = random.Random(5)
 
-    lines = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    ld = ImageDraw.Draw(lines)
-    for i in range(1, 6):
-        y = H * 0.12 * i
-        ld.line([(0, y), (W, y)], fill=(160, 210, 230, 16), width=max(1, round(2 * u)))
-    canvas.alpha_composite(lines)
+    if sky:
+        lines = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        ld = ImageDraw.Draw(lines)
+        for i in range(1, 6):
+            y = H * 0.12 * i
+            ld.line([(0, y), (W, y)], fill=(160, 210, 230, 16), width=max(1, round(2 * u)))
+        canvas.alpha_composite(lines)
 
-    stars = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    sd = ImageDraw.Draw(stars)
-    for _ in range(int(W / H * 26)):
-        sx, sy = rng.uniform(0, W), rng.uniform(H * 0.02, H * 0.5)
-        r = rng.choice([1.6, 2.2, 3.0]) * u
-        sd.ellipse((sx - r, sy - r, sx + r, sy + r), fill=(255, 255, 255, rng.randint(60, 170)))
-    canvas.alpha_composite(stars)
+        stars = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        sd = ImageDraw.Draw(stars)
+        for _ in range(int(W / H * 26)):
+            sx, sy = rng.uniform(0, W), rng.uniform(H * 0.02, H * 0.5)
+            r = rng.choice([1.6, 2.2, 3.0]) * u
+            sd.ellipse((sx - r, sy - r, sx + r, sy + r), fill=(255, 255, 255, rng.randint(60, 170)))
+        canvas.alpha_composite(stars)
 
     if moon:
         full_moon(canvas, *(moon_at or (cx + H * 0.48, H * 0.3, H * 0.075)))

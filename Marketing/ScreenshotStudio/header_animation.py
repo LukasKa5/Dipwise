@@ -1,12 +1,10 @@
 """The animated product page header: a 12-second loop of Dippy's night forest, at App Store Connect's header video
 spec (21:9, 3840 x 1646, 60 fps, 5-30 s, .mov, no sound), in every language the app supports.
 
-The moon is the star of it, and every move is eased, at 60 frames a second, so it glides:
-  - It opens on the finished line, the moon sitting in the "o" of "owl", breathing softly; Dippy blinks.
-  - The moon gently lets go of the word: the plain letter comes back, and the moon rises, big again, into the sky.
-  - Dippy looks up at it. The stars twinkle.
-  - The moon glides down in a slow arc, shrinking as it comes, and settles into the "o" with a soft bounce and a glow.
-  - Dippy looks back at you and winks. The last frame flows into the first.
+The moon stays in the "o" of "owl" the whole time; everything is eased, at 60 frames a second, so it glides:
+  - The stars twinkle and the moon breathes softly. Dippy blinks.
+  - Dippy looks up at the moon, and it slowly brightens while he watches, then settles.
+  - Dippy looks back at you and winks, blinks once more, and the last frame flows into the first.
 The first frame is the finished line with Dippy looking at you, so it doubles as the poster frame.
 
 Run:  python3 Marketing/ScreenshotStudio/header_animation.py Marketing/ScreenshotStudio/Raw Marketing/AppStore/HeaderVideo
@@ -30,11 +28,6 @@ FPS = 60
 SECONDS = 12
 FRAMES = FPS * SECONDS
 HERE = Path(__file__).resolve().parent
-
-# The moon's journey, in seconds.
-LEAVE, RISEN = 3.4, 5.0        # it lets go of the word and rises into the sky
-DESCEND, LAND = 6.6, 9.0       # it glides back down and settles into the letter
-
 
 def smooth(x):
     """Ease in and out, clamped: the curve every move in the video follows."""
@@ -74,28 +67,13 @@ class Stage:
         self.background = c.header_scene(SIZE)
         (text_size, max_width, middle), (cx, feet, height) = c.header_layout(SIZE)
         self.text = Image.new("RGBA", SIZE, (0, 0, 0, 0))
-        letters = []
         moons = c.moonlit_line(self.text, c.TAGLINES[lang], W / 2, 0, lang, text_size, max_width, self.u,
-                               middle=middle, draw_moons=False, letters=letters)
+                               middle=middle, draw_moons=False)
         self.slot = moons[0]
-        # While the moon is away, its place keeps a new moon: a thin moonlit ring that still reads as the letter.
-        self.letter = Image.new("RGBA", SIZE, (0, 0, 0, 0))
-        mx, my, mr = self.slot
-        k = 4
-        ring = Image.new("L", (round(mr * 2 * k + 8), round(mr * 2 * k + 8)), 0)
-        stroke = mr * 0.3 * k
-        ImageDraw.Draw(ring).ellipse((4, 4, ring.width - 5, ring.height - 5), outline=255, width=round(stroke))
-        ring = ring.resize((ring.width // k, ring.height // k), Image.LANCZOS)
-        tint = Image.new("RGBA", ring.size, (255, 234, 184, 0))
-        tint.putalpha(ring.point(lambda a: round(a * 0.75)))
-        self.letter.alpha_composite(tint, (round(mx - ring.width / 2), round(my - ring.height / 2)))
         self.owls = {pose: c.owl_image(raw_dir, pose, height) for pose in ("idle", "sleep", "look-up", "wink")}
         idle = self.owls["idle"]
         self.owl_at = (round(cx - idle.width / 2), round(feet - idle.height * 0.97))
-        # The moon in the sky: up and to the left, bigger, the way it hangs over a forest.
-        mx, my, mr = self.slot
-        self.sky = (W / 2 - H * 0.62, H * 0.2, max(mr * 2.4, H * 0.07))
-        self.moon = self.moon_sprite(self.sky[2] * 1.2)
+        self.moon = self.moon_sprite(self.slot[2] * 1.3)
         rng = random.Random(27)
         self.stars = []
         for _ in range(26):
@@ -126,31 +104,11 @@ class Stage:
         return image
 
     def moon_state(self, t):
-        """Where the moon is, how big, and how bright its halo, at time `t`."""
-        (sx, sy, sr), (mx, my, mr) = self.sky, self.slot
-
-        def arc(k):
-            # From the sky down to the letter along a curve that drops in from above it, so the moon never crosses
-            # the words: it leaves straight up and lands straight down.
-            cx_, cy_ = mx, sy - SIZE[1] * 0.04
-            a, b, cc = (1 - k) ** 2, 2 * (1 - k) * k, k * k
-            return (a * sx + b * cx_ + cc * mx, a * sy + b * cy_ + cc * my, sr + (mr - sr) * k)
-
+        """The moon sits in the letter; it breathes, and brightens while Dippy looks up at it."""
+        x, y, r = self.slot
         breathe = 0.85 + 0.15 * math.sin(2 * math.pi * 2 * t / SECONDS)
-        if t < LEAVE or t >= LAND:
-            x, y, r = mx, my, mr
-            glow = breathe
-            if t >= LAND:
-                # It settles with a soft bounce and a glow that fades back to breathing.
-                since = t - LAND
-                r *= 1 + 0.1 * math.exp(-since * 5) * math.cos(since * 14)
-                glow += 1.4 * math.exp(-since * 2.4)
-            return x, y, r, glow
-        if t < DESCEND:
-            x, y, r = arc(1 - between(t, LEAVE, RISEN))
-            return x, y, r, breathe
-        x, y, r = arc(between(t, DESCEND, LAND))
-        return x, y, r, breathe
+        watched = between(t, 4.4, 6.2) * (1 - between(t, 8.0, 9.6))
+        return x, y, r * (1 + 0.06 * watched), breathe + 0.9 * watched
 
     def frame(self, index):
         t = index / FPS
@@ -171,13 +129,6 @@ class Stage:
         c.paste_clipped(canvas, owl, *self.owl_at)
 
         canvas.alpha_composite(self.text)
-
-        # The plain letter shows while the moon is away; it fades as the moon leaves and as it lands.
-        letter = between(t, LEAVE - 0.1, LEAVE + 0.5) * (1 - between(t, LAND - 0.35, LAND))
-        if letter > 0.001:
-            shown = self.letter.copy()
-            shown.putalpha(self.letter.getchannel("A").point(lambda a: round(a * letter)))
-            canvas.alpha_composite(shown)
 
         x, y, r, glow = self.moon_state(t)
         disc, halo, base = self.moon
