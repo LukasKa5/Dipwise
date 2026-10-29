@@ -1,4 +1,4 @@
-"""A trial header video, English only: one day and night in Dippy's forest, as a 20-second loop at App Store
+"""The day-and-night header video, in every language the app supports: one day and night in Dippy's forest, as a 20-second loop at App Store
 Connect's header video spec (21:9, 3840 x 1646, 30 fps, .mov, no sound).
 
 It follows the sky the way it really works, so every moment leads to the next and nothing ever jumps or stalls:
@@ -35,7 +35,6 @@ SUBFRAMES = 2                     # each frame blends two moments, a touch of mo
 SECONDS = 20
 FRAMES = FPS * SECONDS
 HERE = Path(__file__).resolve().parent
-LANG = "en"
 
 SUNRISE, DAYLIGHT = 17.0, 8.0     # the sun comes up at 17 s and is up for 8 s, across the loop's seam
 MOONRISE, MOONSET = 5.2, 15.0     # a full moon rises as the sun sets, and sets well before sunrise
@@ -134,7 +133,7 @@ def recolor(layer, scale, offset):
 
 
 class Stage:
-    def __init__(self, raw_dir):
+    def __init__(self, raw_dir, lang):
         W, H = SIZE
         u = self.u = H / 1080
         cx = W / 2
@@ -178,7 +177,7 @@ class Stage:
         (text_size, max_width, middle), (ox, feet, height) = c.header_layout(SIZE)
         self.text = Image.new("RGBA", SIZE, (0, 0, 0, 0))
         letters = []
-        self.slot = c.moonlit_line(self.text, c.TAGLINES[LANG], cx, 0, LANG, text_size, max_width, u, middle=middle,
+        self.slot = c.moonlit_line(self.text, c.TAGLINES[lang], cx, 0, lang, text_size, max_width, u, middle=middle,
                                    draw_moons=False, letters=letters, natural=True)[0]
         self.letter = Image.new("RGBA", SIZE, (0, 0, 0, 0))
         letter, lx, ltop, font, color = letters[0]
@@ -235,7 +234,8 @@ class Stage:
         """The sun's arc: up from behind the trees on the right, high over the line, down behind the trees on the left."""
         W, H = SIZE
         angle = math.pi * p
-        return W / 2 + H * 0.95 * math.cos(angle), H * 1.15 - H * 1.05 * math.sin(angle)
+        # High enough to pass over the line, low enough to stay below iPhone's and iPad's controls at the top.
+        return W / 2 + H * 0.95 * math.cos(angle), H * 1.15 - H * 0.9 * math.sin(angle)
 
     def moon_at(self, p):
         """The moon's arc: up from behind the trees on the right, its highest point exactly in the "o", and down
@@ -319,9 +319,9 @@ class Stage:
 _stage = None
 
 
-def _init(raw_dir):
+def _init(raw_dir, lang):
     global _stage
-    _stage = Stage(raw_dir)
+    _stage = Stage(raw_dir, lang)
 
 
 def _render(job):
@@ -330,19 +330,24 @@ def _render(job):
     return index
 
 
-def main(raw_dir, out_dir):
-    encoder = Path(tempfile.gettempdir()) / "dipwise-encode-frames"
-    subprocess.run(["swiftc", "-O", str(HERE / "encode_frames.swift"), "-o", str(encoder)], check=True)
-    frames = Path(tempfile.mkdtemp(prefix="dipwise-daynight-"))
-    with Pool(initializer=_init, initargs=(raw_dir,)) as pool:
+def render(raw_dir, lang, out_dir, encoder):
+    frames = Path(tempfile.mkdtemp(prefix=f"dipwise-daynight-{lang}-"))
+    with Pool(initializer=_init, initargs=(raw_dir, lang)) as pool:
         for _ in pool.imap_unordered(_render, [(i, frames) for i in range(FRAMES)], chunksize=8):
             pass
-    target = out_dir / LANG / "header-day-night-3840x1646.mov"
+    target = out_dir / lang / "header-day-night-3840x1646.mov"
     target.parent.mkdir(parents=True, exist_ok=True)
     subprocess.run([str(encoder), str(frames), str(target), str(FPS)], check=True)
     shutil.copy(frames / "0000.png", target.with_name("poster-day-night-3840x1646.png"))
     shutil.rmtree(frames)
 
 
+def main(raw_dir, out_dir, langs):
+    encoder = Path(tempfile.gettempdir()) / "dipwise-encode-frames"
+    subprocess.run(["swiftc", "-O", str(HERE / "encode_frames.swift"), "-o", str(encoder)], check=True)
+    for lang in langs:
+        render(raw_dir, lang, out_dir, encoder)
+
+
 if __name__ == "__main__":
-    main(Path(sys.argv[1]), Path(sys.argv[2]))
+    main(Path(sys.argv[1]), Path(sys.argv[2]), sys.argv[3:] or c.LANGUAGES)

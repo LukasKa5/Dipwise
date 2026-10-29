@@ -1371,9 +1371,11 @@ def moonlit_line(canvas, text, cx, top, lang, size, max_width, unit, middle=None
         o_left, o_top, o_right, o_bottom = latin.getbbox("o")
         moon_d = (o_right - o_left) * 1.04 if natural else (o_bottom - o_top) * 1.2
 
+        stop = "。" if lang == "ja" else "."
+
         def width_of(token):
             if token == "{.}":
-                return moon_d * 1.25
+                return draw.textlength(stop, font=text_font) if natural else moon_d * 1.25
             if token in ("{o}", "{ö}"):
                 if natural:
                     return draw.textlength(token[1], font=latin)
@@ -1405,12 +1407,19 @@ def moonlit_line(canvas, text, cx, top, lang, size, max_width, unit, middle=None
         if token == "{ö}" and draw_moons:
             draw.text((x + (w - draw.textlength("ö", font=latin)) / 2, top), "ö", font=latin, fill=color)
         if token.startswith("{"):
-            letter = "." if token == "{.}" else "o"
-            gx = x + (w - draw.textlength(letter, font=latin)) / 2
-            center_x = gx + (o_left + o_right) / 2 if natural and letter == "o" else x + w / 2
-            moons.append((center_x, top + (o_top + o_bottom) / 2, moon_d / 2))
-            if letters is not None:
-                letters.append((letter, gx, top, latin, color))
+            if token == "{.}" and natural:
+                # The full stop itself, in the line's own font; the moon covers it exactly, a little larger.
+                s_left, s_top, s_right, s_bottom = text_font.getbbox(stop)
+                moons.append((x + (s_left + s_right) / 2, top + (s_top + s_bottom) / 2, max((s_right - s_left) * 0.6, size * 0.13)))
+                if letters is not None:
+                    letters.append((stop, x, top, text_font, color))
+            else:
+                letter = "." if token == "{.}" else "o"
+                gx = x + (w - draw.textlength(letter, font=latin)) / 2
+                center_x = gx + (o_left + o_right) / 2 if natural and letter == "o" else x + w / 2
+                moons.append((center_x, top + (o_top + o_bottom) / 2, moon_d / 2))
+                if letters is not None:
+                    letters.append((letter, gx, top, latin, color))
         else:
             draw.text((x, top), token, font=text_font, fill=color)
         x += w
@@ -1448,12 +1457,15 @@ def header_scene(size):
 
 def header_layout(size):
     """Where the line and Dippy go. On 16:9 the line sits right below iPhone's back and share buttons, as wide as the
-    space between the screen's edges allows, and Dippy rises under it, his beak just above the bottom edge. The 21:9
-    header is shown wide, on iPad and Mac, without iPhone's crop, so it gets a bigger line and a bigger Dippy. Returns
+    space between the screen's edges allows, and Dippy rises under it, his beak just above the bottom edge. Returns
     the line's (size, max width, middle) and Dippy's (center, feet, height)."""
     W, H = size
     if W / H > 2:
-        return (H * 0.19, W * 0.64, H * 0.44), (W / 2, H * 0.565 + H * 0.68 * 0.97, H * 0.68)
+        # The 21:9 header (and its video) has to work in two very different crops: iPhone keeps only the middle,
+        # about 1.5 times as wide as it is tall, with the back and share buttons at the top; iPad keeps the full
+        # width but only the middle 70% of the height, with its tab bar at the top. So the line stays within the
+        # iPhone's middle, below its buttons, and Dippy sits high enough that iPad still shows his eyes and beak.
+        return (H * 0.15, H * 1.25, H * 0.5), (W / 2, H * 0.58 + H * 0.46 * 0.97, H * 0.46)
     return (H * 0.15, H * 1.25, H * 0.505), (W / 2, H * 0.605 + H * 0.62 * 0.97, H * 0.62)
 
 
