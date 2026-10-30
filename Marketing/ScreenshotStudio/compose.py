@@ -1162,15 +1162,17 @@ TAGLINES = {
     "ko": "*주식*을 지켜보는 부엉이{.}",
 }
 
+# The search results line: what the app does, in one short line, with the moon standing in for a letter as on the
+# header, so the two read as one brand.
 SEARCH_LINES = {
-    "en": "Get alerted when\nyour stocks *dip*.",
-    "de": "Ein Alarm, wenn deine\nAktien *fallen*.",
-    "es": "Un aviso cuando tus\nacciones *bajan*.",
-    "fr": "Une alerte quand tes\nactions *baissent*.",
-    "it": "Un avviso quando le\ntue azioni *scendono*.",
-    "pt-BR": "Um alerta quando suas\nações *caem*.",
-    "ja": "株価が*下がったら*、\nすぐにお知らせ。",
-    "ko": "주가가 *떨어지면*\n바로 알려드려요.",
+    "en": "Get alerted when st{o}cks *dip*.",
+    "de": "Alarm, s{o}bald Aktien *fallen*.",
+    "es": "Aviso cuando tus acci{o}nes *bajan*.",
+    "fr": "Une alerte quand tes acti{o}ns *baissent*.",
+    "it": "Un avviso quand{o} le azioni *scendono*.",
+    "pt-BR": "Um alerta quand{o} suas ações *caem*.",
+    "ja": "株価が*下がったら*すぐお知らせ{.}",
+    "ko": "주가가 *떨어지면* 바로 알려드려요{.}",
 }
 
 
@@ -1482,24 +1484,113 @@ def header(raw, raw_dir, size, lang="en"):
     return canvas
 
 
+# The lock screen alert in each language: the date line, "now", the title, and the body.
+LOCK_ALERT = {
+    "en": ("Wednesday, October 14", "now", "NVDA entered your buy zone", "Now $211.38, inside $205.65–$217.10. Your plan: buy 3 shares."),
+    "de": ("Mittwoch, 14. Oktober", "jetzt", "NVDA ist in deiner Kaufzone", "Jetzt 211,38 $, innerhalb von 205,65–217,10 $. Dein Plan: 3 Aktien kaufen."),
+    "es": ("miércoles, 14 de octubre", "ahora", "NVDA entró en tu zona de compra", "Ahora 211,38 $, dentro de 205,65–217,10 $. Tu plan: comprar 3 acciones."),
+    "fr": ("mercredi 14 octobre", "maintenant", "NVDA est dans ta zone d'achat", "Maintenant 211,38 $, entre 205,65 et 217,10 $. Ton plan : acheter 3 actions."),
+    "it": ("mercoledì 14 ottobre", "ora", "NVDA è nella tua zona d'acquisto", "Ora 211,38 $, dentro 205,65–217,10 $. Il tuo piano: comprare 3 azioni."),
+    "pt-BR": ("quarta-feira, 14 de outubro", "agora", "NVDA entrou na sua zona de compra", "Agora US$ 211,38, dentro de US$ 205,65–217,10. Seu plano: comprar 3 ações."),
+    "ja": ("10月14日 水曜日", "今", "NVDAが買いゾーンに入りました", "現在 $211.38、ゾーン $205.65〜$217.10 の中です。プラン：3株購入。"),
+    "ko": ("10월 14일 수요일", "지금", "NVDA가 매수 구간에 들어왔어요", "현재 $211.38, $205.65–$217.10 구간 안이에요. 계획: 3주 매수."),
+}
+
+
+def text_font_for(lang, size, weight):
+    if lang in ("ja", "ko"):
+        return lang_font(lang, size)
+    return font(TEXT, size, weight)
+
+
+def localized_lock_screen(raw, raw_dir, lang):
+    """The lock screen from the app, with its date and alerts taken off and the date redrawn in the language, so
+    nothing on the phone is in the wrong language. Each column is refilled from the wallpaper just above and below."""
+    screen = raw("scene-lock").convert("RGB")
+    W, H = screen.size
+    px = screen.load()
+
+    def refill(y0, y1):
+        for x in range(W):
+            a, b = px[x, y0 - 1], px[x, min(y1, H - 1)]
+            for y in range(y0, y1):
+                t = (y - y0) / max(1, y1 - y0)
+                px[x, y] = tuple(round(a[c] + (b[c] - a[c]) * t) for c in range(3))
+
+    refill(262, 338)
+    # Below the clock, the wallpaper fades evenly to its bottom color; the alerts are gone.
+    bottom = [px[x, H - 6] for x in range(W)]
+    for x in range(W):
+        a = px[x, 640]
+        for y in range(641, H):
+            t = (y - 640) / (H - 640)
+            px[x, y] = tuple(round(a[c] + (bottom[x][c] - a[c]) * t) for c in range(3))
+    screen = screen.convert("RGBA")
+    draw = ImageDraw.Draw(screen)
+    date = LOCK_ALERT[lang][0]
+    date_font = text_font_for(lang, 60, "Semibold")
+    draw.text((W / 2, 299), date, font=date_font, fill=(255, 255, 255, 220), anchor="mm")
+    return screen
+
+
+def lock_alert_card(raw_dir, lang, width=1236):
+    """iOS's lock screen notification, drawn at 3x in the language: the light platter, the icon, the title, "now", and
+    the body, the same colors as the app's own render."""
+    _, now, title, body = LOCK_ALERT[lang]
+    k = width / 412
+    pad_x, pad_y, icon = 14 * k, 12 * k, 38 * k
+    title_font = text_font_for(lang, 15 * k, "Semibold")
+    body_font = text_font_for(lang, 15 * k, "Regular")
+    now_font = text_font_for(lang, 13 * k, "Regular")
+    measure = ImageDraw.Draw(Image.new("RGBA", (1, 1)))
+    text_x = pad_x + icon + 12 * k
+    text_w = width - text_x - pad_x
+    lines, line = [], ""
+    for word in (body.split(" ") if lang not in ("ja",) else list(body)):
+        candidate = (line + (" " if line and lang != "ja" else "") + word) if line else word
+        if measure.textlength(candidate, font=body_font) <= text_w:
+            line = candidate
+        else:
+            lines.append(line)
+            line = word
+    lines.append(line)
+    line_h = 20 * k
+    height = round(pad_y * 2 + line_h * (1 + len(lines)))
+    card = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    ImageDraw.Draw(card).rounded_rectangle((0, 0, width - 1, height - 1), radius=24 * k, fill=(242, 242, 247, 255))
+    tile = Image.open(raw_dir / "app-icon.png").convert("RGBA").resize((round(icon), round(icon)), Image.LANCZOS)
+    mask = rounded_mask(tile.size, round(9 * k))
+    card.paste(tile, (round(pad_x), round(pad_y)), mask)
+    d = ImageDraw.Draw(card)
+    ink, gray = (15, 15, 15, 255), (115, 115, 115, 255)
+    d.text((width - pad_x, pad_y + 2 * k), now, font=now_font, fill=gray, anchor="ra")
+    d.text((text_x, pad_y), title, font=title_font, fill=ink)
+    for row, text in enumerate(lines):
+        d.text((text_x, pad_y + line_h * (row + 1)), text, font=body_font, fill=ink)
+    return card
+
+
 def search_asset(raw, raw_dir, size, lang="en"):
-    """The search results asset, built on Apple's guidance: say what the app does at a glance and show it firsthand.
-    The real iPhone holds the lock screen with the dip alert lifting off it, Dippy on top, his forest behind."""
+    """The search results asset, the header's sibling: the same night forest, the same big line with the moon as a
+    letter, and then the app itself, as Apple asks for search: what it does at a glance, shown firsthand. A real iPhone
+    rises from the bottom edge the way Dippy does on the header, its dip alert lifted off the lock screen, large enough
+    to read even as a small search result, with Dippy perched on top. Everything is in the asset's language."""
     W, H = size
     u = H / 1080
     cx = W / 2
-    canvas = forest(size, cx, eyes=True, moon=False)
+    canvas = header_scene(size)
+    moonlit_line(canvas, SEARCH_LINES[lang], cx, 0, lang, H * 0.1, min(W * 0.88, H * 1.42), u, middle=H * 0.13)
 
-    bottom = rich_text(canvas, SEARCH_LINES[lang], cx, H * 0.06, lang, H * 0.1, min(W * 0.9, H * 1.4), u)
     phone = Bezel("iphone-18-pro-max")
-    top = bottom + H * 0.17
-    device, k = phone.device(raw("scene-lock"), H * 1.05)
+    top = H * 0.39
+    device, k = phone.device(localized_lock_screen(raw, raw_dir, lang), H * 1.25)
     left = round(cx - device.width / 2)
-    shadowed(canvas, device, left, top, blur=round(40 * u), offset=round(26 * u), opacity=160)
+    shadowed(canvas, device, left, round(top), blur=round(40 * u), offset=round(26 * u), opacity=170)
     bx, by = phone.box[0], phone.box[1]
     at = lambda px, py: (left + (bx + px) * k, top + (by + py) * k)
-    lift_over(canvas, raw("notification-card"), at, k, (42, 708, 1278, 936), scale=1.24)
-    perch(canvas, raw_dir, "wings", cx + device.width / 2 - 130 * u, top + 6 * u, H * 0.13)
+    card = lock_alert_card(raw_dir, lang)
+    lift_over(canvas, card, at, k, (42, 708, 1278, 708 + card.height), scale=1.5)
+    perch(canvas, raw_dir, "idle", cx + device.width / 2 - 150 * u, top + 10 * u, H * 0.13)
     return canvas
 
 
