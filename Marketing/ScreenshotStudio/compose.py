@@ -632,7 +632,7 @@ class Bezel:
         return layer.resize((round(layer.width * k), round(height)), Image.LANCZOS), k
 
 
-def watch_screen(content, title="Dipwise", time="9:41", size=(416, 496)):
+def watch_screen(content, title="Dipwise", time="9:41", size=(416, 496), scroll=0):
     """A watch page as it shows on the display, under the watchOS title bar, at Series 11's 416 × 496 shape × 4."""
     k = 4
     dw, dh = size[0] * k, size[1] * k
@@ -640,7 +640,7 @@ def watch_screen(content, title="Dipwise", time="9:41", size=(416, 496)):
     side, page_top = 16 * k, 116 * k
     page = content.convert("RGBA")
     page = page.resize((dw - side * 2, round(page.height * (dw - side * 2) / page.width)), Image.LANCZOS)
-    page = page.crop((0, 0, page.width, min(page.height, dh - page_top)))
+    page = page.crop((0, scroll, page.width, min(page.height, scroll + dh - page_top)))
     fade = Image.new("L", page.size, 255)
     fade_draw = ImageDraw.Draw(fade)
     span = 60 * k
@@ -893,6 +893,12 @@ def reflection(device, height_share=0.35, opacity=0.22):
     return flipped
 
 
+def smooth_share(t):
+    """0 for the top third of the forest, easing to 1 by its lower part."""
+    t = min(1.0, max(0.0, (t - 0.33) / 0.45))
+    return t * t * (3 - 2 * t)
+
+
 class ForestStory:
     """The App Store set drawn on one wide canvas in the header's world: the icon's navy night with its faint lines and
     stars, and Dippy's forest running along the bottom of every image without a break, so the screenshots, the
@@ -918,6 +924,14 @@ class ForestStory:
         canvas.alpha_composite(stars)
         land = forest((W, forest_height), -10 ** 9, moon=False, drop=0.1, sky=False)
         canvas.alpha_composite(land, (0, H - forest_height))
+        # The lower forest settles into shadow, so the trees read as one calm silhouette and the devices stand out.
+        settle = Image.new("L", (1, forest_height))
+        for y in range(forest_height):
+            settle.putpixel((0, y), round(235 * smooth_share(y / forest_height)))
+        settle = settle.resize((W, forest_height))
+        shade = Image.new("RGBA", (W, forest_height), (6, 16, 28, 255))
+        shade.putalpha(settle)
+        canvas.alpha_composite(shade, (0, H - forest_height))
         self.canvas = canvas
         self.count = count
 
@@ -986,6 +1000,144 @@ def fill_black_bottom(screen):
     return screen
 
 
+def odds_path(raw):
+    """NVDA's real price line from the app's odds card, traced from its render as (x, y) shares of the chart."""
+    card = raw("odds-card").convert("RGB")
+    x0, x1, y0, y1 = 54, 780, 400, 900
+    points = []
+    for px in range(x0, x1, 3):
+        ys = [py for py in range(y0, y1) if min(card.getpixel((px, py))) > 205]
+        if ys:
+            points.append(((px - x0) / (x1 - x0), (sum(ys) / len(ys) - y0) / (y1 - y0)))
+    return points
+
+
+def night_odds(story, index, raw, raw_dir):
+    """The odds with no card at all: the price line glows across the night from edge to edge, the buy zone lies under
+    it, the cone of likely paths opens into the future, and the numbers stand on the sky like the headline does."""
+    W, u = story.W, story.unit
+    ox = story.x(index, 0)
+    top, height = 700, 620
+    today = W * 0.64
+    points = [(ox + px * today, top + py * height) for px, py in odds_path(raw)]
+    # Soften the trace with a moving average, then end exactly on today's dot.
+    smoothed = []
+    for i in range(len(points)):
+        window = points[max(0, i - 2):i + 3]
+        smoothed.append((points[i][0], sum(p[1] for p in window) / len(window)))
+    # The zone's height in the card, kept exactly to scale: $206.35–$217.80 on the card's price axis.
+    zone_top, zone_bottom = top + height * 0.72, top + height * 0.9
+    canvas = story.canvas
+    zone = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+    ImageDraw.Draw(zone).rectangle((ox, zone_top, ox + W, zone_bottom), fill=MINT + (46,))
+    canvas.alpha_composite(zone)
+    dot = smoothed[-1]
+
+    # The cone of likely paths, widening from today's dot.
+    cone = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+    cd = ImageDraw.Draw(cone)
+    steps = 40
+    for reach, fill in [(1.0, (255, 255, 255, 34)), (0.52, (255, 255, 255, 54))]:
+        upper, lower = [], []
+        for k in range(steps + 1):
+            t = k / steps
+            px = dot[0] + (ox + W - dot[0]) * t
+            spread = (t ** 0.5) * height * 0.52 * reach
+            upper.append((px, dot[1] - spread))
+            lower.append((px, dot[1] + spread))
+        cd.polygon(upper + lower[::-1], fill=fill)
+    canvas.alpha_composite(cone)
+    glow_path(canvas, smoothed, WHITE, 9, 26, u)
+    draw = ImageDraw.Draw(canvas)
+    draw.line([(dot[0], top - 30), (dot[0], top + height + 10)], fill=(255, 255, 255, 110), width=3)
+    draw.ellipse((dot[0] - 20, dot[1] - 20, dot[0] + 20, dot[1] + 20), fill=WHITE)
+    label = font(ROUNDED, 44, "Semibold")
+    draw.text((dot[0], top - 44), "Today", font=label, fill=(214, 228, 238), anchor="mb")
+    draw.text((ox + W - 40, top - 44), "$262", font=label, fill=WHITE, anchor="rb")
+    draw.text((ox + W - 40, zone_top + (zone_bottom - zone_top) / 2), "Your buy zone", font=label, fill=MINT, anchor="rm")
+    draw.text((ox + W - 40, top + height + 60), "$199", font=label, fill=WHITE, anchor="rm")
+
+    # The answer, large, right on the sky.
+    number_top = top + height + 110
+    big = font(ROUNDED, 250, "Bold")
+    draw.text((ox + W / 2, number_top), "66%", font=big, fill=MINT, anchor="ma")
+    sentence = font(ROUNDED, 58, "Semibold")
+    draw.text((ox + W / 2, number_top + 280), "of likely paths reach your", font=sentence, fill=WHITE, anchor="ma")
+    draw.text((ox + W / 2, number_top + 352), "buy zone within 30 days", font=sentence, fill=WHITE, anchor="ma")
+    # Two more numbers, with a thin rule between them.
+    row = number_top + 490
+    value, caption = font(ROUNDED, 84, "Bold"), font(ROUNDED, 44, "Medium")
+    for cx, top_text, bottom_text in [(W * 0.28, "80%", "within 90 days"), (W * 0.72, "13 days", "typical wait")]:
+        draw.text((ox + cx, row), top_text, font=value, fill=WHITE, anchor="ma")
+        draw.text((ox + cx, row + 104), bottom_text, font=caption, fill=(190, 208, 222), anchor="ma")
+    draw.line([(ox + W / 2, row + 10), (ox + W / 2, row + 150)], fill=(255, 255, 255, 70), width=3)
+    # Dippy keeps watch from the bottom of the dip, as on the icon.
+    low = max(smoothed, key=lambda p: p[1])
+    perch(canvas, raw_dir, "look-right", low[0], low[1] + 10, 200)
+
+
+def night_gauge(story, index, raw_dir):
+    """The flock's fear and greed as one big gauge drawn into the sky: a glowing arc from fear to greed, the score
+    huge inside it, what the flock is doing beneath, and Dippy looking on from the forest."""
+    W = story.W
+    ox = story.x(index, 0)
+    canvas = story.canvas
+    cx, cy, r = ox + W / 2, 1420, 500
+    score = 53
+    k = 2
+    box = round(r * 2 + 240)
+    arc = Image.new("RGBA", (box * k, box * k), (0, 0, 0, 0))
+    ad = ImageDraw.Draw(arc)
+    stops = [(0.0, (238, 70, 76)), (0.5, (255, 178, 36)), (1.0, (47, 230, 160))]
+
+    def color(t):
+        for (t0, c0), (t1, c1) in zip(stops, stops[1:]):
+            if t <= t1:
+                f = (t - t0) / (t1 - t0)
+                return tuple(round(c0[i] + (c1[i] - c0[i]) * f) for i in range(3))
+        return stops[-1][1]
+
+    c = box * k / 2
+    width = 58 * k
+    outer = r * k
+    for i in range(360):
+        t = i / 359
+        start = 180 + t * 180
+        ad.arc((c - outer, c - outer, c + outer, c + outer), start, start + 1.2, fill=color(t) + (255,), width=width)
+    for t in (0.0, 1.0):
+        angle = math.pi + t * math.pi
+        ex, ey = c + (outer - width / 2) * math.cos(angle), c + (outer - width / 2) * math.sin(angle)
+        ad.ellipse((ex - width / 2, ey - width / 2, ex + width / 2, ey + width / 2), fill=color(t) + (255,))
+    arc = arc.resize((box, box), Image.LANCZOS)
+    at = (round(cx - box / 2), round(cy - box / 2))
+    glow = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+    glow.alpha_composite(arc, at)
+    alpha = glow.getchannel("A").point(lambda a: a // 2)
+    glow.putalpha(alpha)
+    canvas.alpha_composite(glow.filter(ImageFilter.GaussianBlur(38)))
+    canvas.alpha_composite(arc, at)
+    # The score's place on the arc.
+    t = score / 100
+    angle = math.pi + t * math.pi
+    knob = (cx + (r - 29) * math.cos(angle), cy + (r - 29) * math.sin(angle))
+    draw = ImageDraw.Draw(canvas)
+    draw.ellipse((knob[0] - 48, knob[1] - 48, knob[0] + 48, knob[1] + 48), fill=WHITE)
+    draw.ellipse((knob[0] - 26, knob[1] - 26, knob[0] + 26, knob[1] + 26), fill=color(t))
+    draw.text((cx, cy - 60), str(score), font=font(ROUNDED, 330, "Bold"), fill=WHITE, anchor="ms")
+    draw.text((cx, cy + 20), "Neutral", font=font(ROUNDED, 76, "Semibold"), fill=color(t), anchor="ma")
+    draw.text((cx, 780), "Flock Fear & Greed", font=font(ROUNDED, 60, "Semibold"), fill=(214, 228, 238), anchor="ma")
+    # What everyone is doing, three simple numbers.
+    row = cy + 190
+    value, caption = font(ROUNDED, 88, "Bold"), font(ROUNDED, 42, "Medium")
+    for share, text, tint in [(1 / 6, "Adding money", MINT), (1 / 2, "Holding steady", WHITE), (5 / 6, "Reducing risk", (255, 120, 120))]:
+        number = {"Adding money": "30%", "Holding steady": "28%", "Reducing risk": "12%"}[text]
+        draw.text((ox + W * share, row), number, font=value, fill=tint, anchor="ma")
+        draw.text((ox + W * share, row + 104), text, font=caption, fill=(190, 208, 222), anchor="ma")
+    draw.text((cx, row + 200), "Anonymous check-ins from the flock", font=font(ROUNDED, 42, "Medium"), fill=(150, 174, 192), anchor="ma")
+    sitter = owl_image(raw_dir, "look-up", 640)
+    paste_clipped(canvas, sitter, round(cx - sitter.width / 2), round(story.H - sitter.height * 0.72))
+
+
 def iphone_story(raw, raw_dir):
     """Ten pages, one story, told by Dippy in his forest at night, the same world as the header and the search
     results. It opens with the header's own line, the moon as the "o" of owl, and ends with Dippy asleep under the
@@ -1021,41 +1173,38 @@ def iphone_story(raw, raw_dir):
     lw = ImageDraw.Draw(story.canvas).textlength(label, font=font(ROUNDED, 52, "Bold")) + 96
     app_callout(story.canvas, label, min(hx - lw * 0.7, x(1, W - 60) - lw), hy - 250, hx)
 
-    # 3 · The odds, on their own: the card itself, large over the night, Dippy on top.
+    # 3 · The odds, drawn right into the night sky.
     story.title(2, "I'll show your\n*odds* first.", 170)
-    size = float_card(story, 2, raw("odds-card"), W / 2, 760, 1180)
-    perch(story.canvas, raw_dir, "look-down", x(2, W / 2 + 380), 768, owl_height)
+    night_odds(story, 2, raw, raw_dir)
 
     # 4 · The alert, exactly as iOS shows it, lifted off the lock screen.
     at, k = page(3, "Get alerted the\n*moment it dips*.", localized_lock_screen(raw, raw_dir, "en"), "wings")
     card = lock_alert_card(raw_dir, "en")
     lift_over(story.canvas, card, at, k, (42, 708, 1278, 708 + card.height), scale=1.2)
 
-    # 5 · The flock: who they are, and where the crowd sees the market heading, as two cards.
-    story.title(4, "See what the\n*flock* is doing.", 170)
-    flock_screen = raw("iphone-flock")
-    hero = flock_screen.crop((66, 534, 1254, 1620))
-    hero_size = float_card(story, 4, hero, W / 2, 640, 1140, radius_share=0.05)
-    float_card(story, 4, raw("sentiment-card"), W / 2, 640 + hero_size[1] + 50, 1140)
+    # 5 · The flock's fear and greed: one big gauge in the sky.
+    story.title(4, "Is the crowd\n*scared or greedy?*", 170)
+    night_gauge(story, 4, raw_dir)
 
     page(5, "*28* alerts,\nin plain words.", raw("iphone-plan-smart"), "blush")
     page(6, "I live on your\n*Home Screen*.", fill_black_bottom(raw("iphone-home-widgets")), "look-down", owl_side=-1)
 
-    # 8 · iPhone Duo standing upright on its edge like a bedside clock, straight on, Desk Mode filling its display.
+    # 8 · iPhone Duo standing on its edge like a bedside clock, straight on, with room around it.
     story.title(7, "Your stocks,\n*live on your desk*.", 170)
+    caption = font(ROUNDED, 56, "Semibold")
+    ImageDraw.Draw(story.canvas).text((x(7, W / 2), 560), "The stock tracker made for iPhone Duo", font=caption, fill=(214, 228, 238), anchor="ma")
     duo = Bezel("iphone-duo-outer-landscape", upside_down=True)
-    front, _ = duo.device(raw("desk-mode"), 1000)
-    stand_bottom = 1880
+    front, _ = duo.device(raw("desk-mode"), 800)
+    stand_bottom = 1720
     top = stand_bottom - front.height
     standing_shadow(story.canvas, x(7, W / 2), stand_bottom, front.width * 0.92)
     story.place(7, front, W / 2, top, shadow=0.45)
-    perch(story.canvas, raw_dir, "look-down", x(7, W / 2 - 300), top + 14, owl_height)
-    sticker(story.canvas, x(7, W / 2), stand_bottom + 150, ["The stock tracker made for iPhone Duo"], unit=0.86)
+    perch(story.canvas, raw_dir, "look-down", x(7, W / 2 - 280), top + 12, owl_height)
 
     # 9 · Apple Watch on its own: big, with its band running off the page, the app filling the display.
     story.title(8, "Or keep me\non your *wrist*.", 170)
     wrist = Bezel("watch-series-11")
-    watch_device, k = wrist.device(watch_screen(raw("watch-today")), 2050)
+    watch_device, k = wrist.device(watch_screen(raw("watch-today"), scroll=565), 2050)
     band_fade = Image.new("L", watch_device.size, 255)
     bf = ImageDraw.Draw(band_fade)
     span = round(watch_device.height * 0.12)
@@ -1070,7 +1219,7 @@ def iphone_story(raw, raw_dir):
     sleeper = owl_image(raw_dir, "sleep", 1150)
     sleeper_top = round(H - sleeper.height * 0.72)
     paste_clipped(story.canvas, sleeper, round(x(9, W / 2 - sleeper.width / 2)), sleeper_top)
-    sleepy_zs(story.canvas, x(9, W / 2 + 330), sleeper_top - 40, unit=1.4)
+    sleepy_zs(story.canvas, x(9, W / 2 + 400), sleeper_top - 110, unit=1.4)
 
     frames = story.frames(["01-meet-dippy", "02-buy-zone", "03-odds", "04-alert", "05-flock", "06-smart-alerts",
                            "07-widgets", "08-desk-mode", "09-apple-watch", "10-sleep-well"])
@@ -1105,7 +1254,8 @@ def ipad_story(raw, raw_dir):
     page(3, "Get alerted the\n*moment it dips*.", alert, "wings")
     full_moon(story.canvas, x(4, 300), 640, 100)
     page(4, "Sleep well.\n*I'm on watch.*", raw("ipad-night"), "sleep", time="10:42 PM")
-    sleepy_zs(story.canvas, x(4, W / 2 + 640), 680, unit=1.2)
+    # Just off the top of his head, rising up and away, the same as on iPhone.
+    sleepy_zs(story.canvas, x(4, W / 2 + 560), 690)
 
     frames = story.frames(["01-meet-dippy", "02-buy-zone", "03-odds", "04-alert", "05-sleep-well"])
     return frames, story.canvas
