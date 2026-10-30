@@ -122,7 +122,7 @@ The captures show the app as it ships with the Flock live. **Before submitting, 
 | 9 | 09-apple-watch.png | Or keep me on your wrist. | Apple Watch Series 11, large, with its band |
 | 10 | 10-sleep-well.png | Sleep well. I'm on watch. | Dippy asleep on the glowing line under the moon |
 
-Apple scales the 6.9-inch set down for every smaller iPhone. `iPhone-6.5/` has the same images at 1284 × 2778.
+Apple scales the 6.9-inch set down for every smaller iPhone. `iPhone-6.5/` has the same images at 1284 × 2778, and `iPhone-6.3/` at 1206 × 2622 for the 6.1" and 6.3" slot.
 
 ### iPad 13-inch (2064 × 2752), from `iPad-13/`
 

@@ -12,6 +12,11 @@ let imageSizes: [String: [(Int, Int)]] = [
     "Header": [(5244, 2950), (3840, 1646), (1500, 500)],
     "Search": [(3840, 2560), (5244, 2950)],
     "HeaderVideo": [(3840, 1646)],
+    "iPhone-6.9": [(1320, 2868)],
+    "iPhone-6.5": [(1284, 2778)],
+    "iPhone-6.3": [(1206, 2622)],
+    "iPad-13": [(2064, 2752)],
+    "AppleWatch-Series-11": [(416, 496)],
 ]
 
 var failures = 0

@@ -1307,10 +1307,11 @@ def save(shots, folder, size=None):
     for name, image in shots:
         image = image.convert("RGB")
         if size and image.size != size:
-            # Same layout, scaled to width and trimmed evenly top and bottom.
-            scaled = image.resize((size[0], round(image.height * size[0] / image.width)), Image.LANCZOS)
-            trim = (scaled.height - size[1]) // 2
-            image = scaled.crop((0, trim, size[0], trim + size[1]))
+            # Same layout, scaled until it covers the new shape, then trimmed evenly, so no empty edge is ever left.
+            k = max(size[0] / image.width, size[1] / image.height)
+            scaled = image.resize((math.ceil(image.width * k), math.ceil(image.height * k)), Image.LANCZOS)
+            left, top = (scaled.width - size[0]) // 2, (scaled.height - size[1]) // 2
+            image = scaled.crop((left, top, left + size[0], top + size[1]))
         path = folder / f"{name}.png"
         image.save(path, optimize=True)
         print(path)
@@ -1859,6 +1860,7 @@ def main(raw_dir, out_dir):
     phone, phone_canvas = iphone_story(raw, raw_dir)
     save(phone, out_dir / "iPhone-6.9")
     save(phone, out_dir / "iPhone-6.5", size=(1284, 2778))
+    save(phone, out_dir / "iPhone-6.3", size=(1206, 2622))
     panorama(phone_canvas, out_dir / "preview-iphone.png")
     tablet, tablet_canvas = ipad_story(raw, raw_dir)
     save(tablet, out_dir / "iPad-13")
