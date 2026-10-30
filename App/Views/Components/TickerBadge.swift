@@ -64,7 +64,7 @@ actor StockLogoStore {
   private var memory: [String: StockLogo] = [:]
   private var missing: Set<String> = []
   private let folder: URL = {
-    let url = URL.cachesDirectory.appending(path: "Logos", directoryHint: .isDirectory)
+    let url = URL.cachesDirectory.appending(path: "LogoTiles", directoryHint: .isDirectory)
     try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
     return url
   }()
@@ -75,12 +75,15 @@ actor StockLogoStore {
     if missing.contains(key) || key.hasPrefix("^") { return nil }
     let file = folder.appending(path: "\(key).png")
     var data = try? Data(contentsOf: file)
-    if data == nil, let url = URL(string: "https://financialmodelingprep.com/image-stock/\(key).png") {
-      if let (fetched, response) = try? await URLSession.shared.data(from: url),
-         (response as? HTTPURLResponse)?.statusCode == 200, fetched.count > 200 {
-        data = fetched
-        try? fetched.write(to: file)
-      }
+    // Square, icon-like tiles first, so every logo looks the same; a plain logo second.
+    let sources = ["https://assets.parqet.com/logos/symbol/\(key)?format=png&size=256",
+                   "https://financialmodelingprep.com/image-stock/\(key).png"]
+    for source in sources where data == nil {
+      guard let url = URL(string: source),
+            let (fetched, response) = try? await URLSession.shared.data(from: url),
+            (response as? HTTPURLResponse)?.statusCode == 200, fetched.count > 200, UIImage(data: fetched) != nil else { continue }
+      data = fetched
+      try? fetched.write(to: file)
     }
     guard let data, let image = UIImage(data: data) else {
       missing.insert(key)

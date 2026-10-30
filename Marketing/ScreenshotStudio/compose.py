@@ -1032,12 +1032,11 @@ def iphone_story(raw, raw_dir):
     lift_over(story.canvas, card, at, k, (42, 708, 1278, 708 + card.height), scale=1.2)
 
     # 5 · The flock: who they are, and where the crowd sees the market heading, as two cards.
-    story.title(4, "See what *2,480*\ninvestors do.", 170)
+    story.title(4, "See what the\n*flock* is doing.", 170)
     flock_screen = raw("iphone-flock")
-    hero = flock_screen.crop((60, 528, 1260, 1626))
+    hero = flock_screen.crop((66, 534, 1254, 1620))
     hero_size = float_card(story, 4, hero, W / 2, 640, 1140, radius_share=0.05)
     float_card(story, 4, raw("sentiment-card"), W / 2, 640 + hero_size[1] + 50, 1140)
-    sticker(story.canvas, x(4, W / 2), 640 + hero_size[1] + 50 + round(1154 * 1140 / 1200) + 60, ["Anonymous", "No sign-up"], unit=0.86)
 
     page(5, "*28* alerts,\nin plain words.", raw("iphone-plan-smart"), "blush")
     page(6, "I live on your\n*Home Screen*.", fill_black_bottom(raw("iphone-home-widgets")), "look-down", owl_side=-1)
