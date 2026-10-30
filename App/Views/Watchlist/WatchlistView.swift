@@ -164,7 +164,6 @@ private struct WatchlistRow: View {
             .font(.subheadline)
             .foregroundStyle(.secondary)
             .lineLimit(1)
-            .minimumScaleFactor(0.5)
         }
         Spacer(minLength: 4)
         if let quote {
