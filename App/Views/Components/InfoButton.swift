@@ -51,7 +51,7 @@ struct HelpSheet: View {
                 .foregroundStyle(.white)
                 .frame(width: 34, height: 34)
                 .background(Palette.amber, in: .circle)
-                .overlay { Circle().strokeBorder(isNavy ? Brand.nightTop : .white, lineWidth: 3) }
+                .overlay { Circle().strokeBorder(isNavy ? Brand.nightMiddle : .white, lineWidth: 3) }
                 .offset(x: 38, y: 36)
             }
             Text("Dippy explains")
@@ -124,13 +124,9 @@ struct HelpSheet: View {
     .environment(\.colorScheme, isNavy ? .dark : .light)
   }
 
-  /// White, or, when opened from a navy card, the same blue as the card and the app icon.
+  /// White, or, when opened from a navy card, exactly the card's own navy.
   static func background(isNavy: Bool) -> some View {
-    Rectangle().fill(
-      isNavy
-        ? AnyShapeStyle(LinearGradient(colors: [Brand.nightTop, Brand.nightMiddle], startPoint: .top, endPoint: .bottom))
-        : AnyShapeStyle(Color.white)
-    )
+    Rectangle().fill(isNavy ? Brand.nightMiddle : Color.white)
   }
 
   private var cardFill: AnyShapeStyle {

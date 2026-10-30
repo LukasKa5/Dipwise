@@ -10,6 +10,7 @@ struct AchievementsSection: View {
   @State private var equipped = DippyOutfit.equipped
   @State private var selected: Achievement?
   @State private var cheers = 0
+  @State private var showsPaywall = false
 
   /// The habits, plus Pro, which earns the top hat.
   private var items: [Achievement] {
@@ -30,8 +31,10 @@ struct AchievementsSection: View {
           tile(item)
         }
       }
+      flags
     }
     .sensoryFeedback(.success, trigger: cheers)
+    .sheet(isPresented: $showsPaywall) { PaywallView() }
     .sheet(item: $selected) { item in
       AchievementDetail(achievement: item, equipped: $equipped, onWear: wear)
         .presentationDetents([.large])
@@ -46,7 +49,9 @@ struct AchievementsSection: View {
         .frame(width: 80, height: 92)
         .id(equipped)
       VStack(alignment: .leading, spacing: 4) {
-        Text(equipped == .none ? String(localized: "Just Dippy") : String(localized: "Wearing the \(equipped.title)"))
+        Text(equipped == .none ? String(localized: "Just Dippy")
+             : equipped.flag != nil ? String(localized: "Flying the flag of \(equipped.title)")
+             : String(localized: "Wearing the \(equipped.title)"))
           .font(.headline)
         Text("Unlock an achievement to earn its outfit. Dippy wears it in the app, on widgets, and on your wrist.")
           .font(.subheadline)
@@ -75,8 +80,7 @@ struct AchievementsSection: View {
           if let reward {
             OwlMark()
               .environment(\.dippyOutfit, reward)
-              .frame(width: 42)
-              .frame(height: 64, alignment: .bottom)
+              .frame(width: 56, height: 64)
               .opacity(item.isUnlocked ? 1 : 0.35)
           } else {
             ZStack {
@@ -123,6 +127,47 @@ struct AchievementsSection: View {
     .accessibilityElement(children: .ignore)
     .accessibilityLabel(item.title)
     .accessibilityValue(item.isUnlocked ? (isWorn ? "Wearing its outfit" : "Unlocked") : "\(item.detail). \(item.progressLabel)")
+  }
+
+  /// Pro members can fly their country's flag.
+  private var flags: some View {
+    VStack(alignment: .leading, spacing: 12) {
+      SectionHeader(title: "Fly Your Flag", subtitle: "Dippy, from wherever you invest") {
+        if !subscription.isPro { ProBadge() }
+      }
+      .padding(.top, 10)
+      LazyVGrid(columns: [GridItem(.adaptive(minimum: 76), spacing: 10)], spacing: 10) {
+        ForEach(DippyOutfit.flags) { flag in
+          let isWorn = equipped == flag
+          Button {
+            if subscription.isPro {
+              wear(isWorn ? .none : flag)
+            } else {
+              showsPaywall = true
+            }
+          } label: {
+            VStack(spacing: 6) {
+              OwlMark()
+                .environment(\.dippyOutfit, flag)
+                .frame(width: 60, height: 54)
+              Text(flag.title)
+                .font(.caption2.weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+            .cardStyle(cornerRadius: 16)
+            .overlay {
+              RoundedRectangle(cornerRadius: 16).strokeBorder(isWorn ? Palette.green : .clear, lineWidth: 2.5)
+            }
+          }
+          .buttonStyle(.plain)
+          .accessibilityLabel(flag.title)
+          .accessibilityValue(isWorn ? "Wearing" : (subscription.isPro ? "" : "Pro"))
+        }
+      }
+    }
   }
 
   private func wear(_ outfit: DippyOutfit) {

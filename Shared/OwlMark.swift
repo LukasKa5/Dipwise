@@ -37,18 +37,26 @@ struct OwlMark: View, Animatable {
 
   /// The owl's body (including feet), in icon coordinates.
   private static let bounds = CGRect(x: 298, y: 290, width: 428, height: 492)
+
+  /// Dippy's bounds plus whatever he's wearing, so a hat or a flag always fits inside his frame instead of poking out
+  /// of the card or row he sits in.
+  static func bounds(for outfit: DippyOutfit) -> CGRect {
+    outfit.extent.map { bounds.union($0) } ?? bounds
+  }
   /// Extra room around the body so open wings aren't clipped.
   private static let margin: CGFloat = 0.8
 
   @Environment(\.dippyOutfit) private var outfitOverride
+  /// Read live, so every Dippy on screen changes outfit the moment one is put on.
+  @AppStorage(DippyOutfit.storageKey, store: AppGroup.defaults) private var equipped = DippyOutfit.none.rawValue
 
   var body: some View {
-    let outfit = outfitOverride ?? DippyOutfit.equipped
+    let outfit = outfitOverride ?? DippyOutfit(rawValue: equipped) ?? .none
     GeometryReader { geometry in
       let size = geometry.size
       let canvasSize = CGSize(width: size.width * (1 + Self.margin * 2), height: size.height * (1 + Self.margin))
       Canvas { context, _ in
-        let bounds = Self.bounds
+        let bounds = Self.bounds(for: outfit)
         let scale = min(size.width / bounds.width, size.height / bounds.height)
         let originX = (canvasSize.width - bounds.width * scale) / 2
         let originY = canvasSize.height - size.height + (size.height - bounds.height * scale) / 2
@@ -61,7 +69,7 @@ struct OwlMark: View, Animatable {
       .position(x: size.width / 2, y: size.height - canvasSize.height / 2)
       .allowsHitTesting(false)
     }
-    .aspectRatio(Self.bounds.width / Self.bounds.height, contentMode: .fit)
+    .aspectRatio(Self.bounds(for: outfit).width / Self.bounds(for: outfit).height, contentMode: .fit)
     .accessibilityHidden(true)
   }
 
