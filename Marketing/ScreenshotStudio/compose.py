@@ -893,31 +893,113 @@ def reflection(device, height_share=0.35, opacity=0.22):
     return flipped
 
 
+class ForestStory:
+    """The App Store set drawn on one wide canvas in the header's world: the icon's navy night with its faint lines and
+    stars, and Dippy's forest running along the bottom of every image without a break, so the screenshots, the
+    header, and the search results read as one place as people swipe."""
+
+    def __init__(self, size, count, forest_height):
+        self.W, self.H = size
+        self.unit = self.W / 1320
+        W, H = self.W * count, self.H
+        canvas = vertical_gradient((W, H), [(0, (6, 16, 30)), (0.5, (14, 40, 62)), (0.78, (26, 72, 96)), (1, (10, 28, 44))])
+        lines = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        ld = ImageDraw.Draw(lines)
+        for y in range(round(H * 0.06), H, round(130 * self.unit)):
+            ld.line([(0, y), (W, y)], fill=(160, 210, 230, 14), width=max(1, round(2 * self.unit)))
+        canvas.alpha_composite(lines)
+        rng = random.Random(19)
+        stars = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        sd = ImageDraw.Draw(stars)
+        for _ in range(count * 40):
+            x, y = rng.uniform(0, W), rng.uniform(0, H * 0.62)
+            r = rng.choice([2.0, 2.8, 3.6]) * self.unit
+            sd.ellipse((x - r, y - r, x + r, y + r), fill=(255, 255, 255, rng.randint(60, 170)))
+        canvas.alpha_composite(stars)
+        land = forest((W, forest_height), -10 ** 9, moon=False, drop=0.1, sky=False)
+        canvas.alpha_composite(land, (0, H - forest_height))
+        self.canvas = canvas
+        self.count = count
+
+    def x(self, index, local):
+        return self.W * index + local
+
+    def title(self, index, text, top, size=140):
+        return title(self.canvas, self.W * index, self.W, text, top, size)
+
+    def place(self, index, layer, cx, top, shadow=1.0):
+        x = self.W * index + cx - layer.width / 2
+        shadowed(self.canvas, layer, x, top, blur=round(60 * self.unit), offset=round(36 * self.unit), opacity=round(170 * shadow))
+        return x
+
+    def frames(self, names):
+        return [(name, self.canvas.crop((self.W * i, 0, self.W * (i + 1), self.H))) for i, name in enumerate(names)]
+
+
+def float_card(story, index, card, cx, top, width, radius_share=0.06):
+    """One of the app's cards on its own, large, over the night: rounded, with a soft shadow."""
+    card = card.convert("RGBA")
+    card = card.resize((round(width), round(card.height * width / card.width)), Image.LANCZOS)
+    mask = rounded_mask(card.size, round(card.width * radius_share))
+    card.putalpha(Image.composite(card.split()[3], Image.new("L", card.size, 0), mask))
+    story.place(index, card, cx, top)
+    return card.size
+
+
+def app_callout(canvas, text, x, y, tip_x, unit=1.0):
+    """A hint in the app's own voice: its green capsule with white type, the way the app labels a primary action, with
+    a short tail pointing down at the finger."""
+    draw = ImageDraw.Draw(canvas)
+    label_font = font(ROUNDED, 52 * unit, "Bold")
+    w = round(draw.textlength(text, font=label_font) + 96 * unit)
+    h = round(112 * unit)
+    green = (24, 184, 115)
+    layer = Image.new("RGBA", (w, h + round(36 * unit)), (0, 0, 0, 0))
+    ld = ImageDraw.Draw(layer)
+    ld.rounded_rectangle((0, 0, w - 1, h - 1), radius=h // 2, fill=green + (255,))
+    bx = min(max(tip_x - x, h / 2 + 20 * unit), w - h / 2 - 20 * unit)
+    ld.polygon([(bx - 26 * unit, h - 4), (bx + 26 * unit, h - 4), (bx, h + 32 * unit)], fill=green + (255,))
+    ld.text((w / 2, h / 2), text, font=label_font, fill=WHITE, anchor="mm")
+    shadowed(canvas, layer, x, y, blur=round(24 * unit), offset=round(12 * unit), opacity=130)
+
+
+def standing_shadow(canvas, cx, y, width, unit=1.0):
+    """The soft shadow under a device standing upright, so it rests on something instead of floating."""
+    layer = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+    ImageDraw.Draw(layer).ellipse((cx - width / 2, y - 18 * unit, cx + width / 2, y + 26 * unit), fill=(0, 0, 0, 170))
+    canvas.alpha_composite(layer.filter(ImageFilter.GaussianBlur(22 * unit)))
+
+
+def fill_black_bottom(screen):
+    """Extends the wallpaper over any black rows left at the bottom of a capture."""
+    screen = screen.convert("RGB")
+    px = screen.load()
+    W, H = screen.size
+    last = H - 1
+    while last > H * 0.8 and sum(px[W // 2, last]) < 12:
+        last -= 1
+    if last < H - 1:
+        for x in range(W):
+            color = px[x, last - 2]
+            for y in range(last - 1, H):
+                px[x, y] = color
+    return screen
+
+
 def iphone_story(raw, raw_dir):
-    """Ten pages, one story, told by Dippy on one night sky. The icon's glowing price line runs through all of them:
-    it dips under the alert, climbs through the features, and ends where Dippy falls asleep on top of your iPhone.
-    Every page holds Apple's real device, and the moment that matters lifts out of the screen, larger."""
+    """Ten pages, one story, told by Dippy in his forest at night, the same world as the header and the search
+    results. It opens with the header's own line, the moon as the "o" of owl, and ends with Dippy asleep under the
+    moon. Phones rise over the forest; where a single card says it better, the card stands on its own."""
     W, H = 1320, 2868
-    story = Story((W, H), 10)
+    u = W / 1320
+    story = ForestStory((W, H), 10, 1500)
     phone = Bezel("iphone-18-pro-max")
     phone_height, phone_top, owl_height = 1990, 740, 230
     x = story.x
-    line = story.line([
-        (-200, 2330), (300, 2400), (760, 2470), (1180, 2450),
-        (1600, 2540), (2050, 2610), (2480, 2600),
-        (2900, 2680), (3320, 2700), (3760, 2770),
-        (4250, 2810), (4620, 2818), (5000, 2770),
-        (5450, 2690), (5900, 2640), (6380, 2560),
-        (6850, 2520), (7260, 2440), (7720, 2380),
-        (8180, 2330), (8580, 2290), (9020, 2240),
-        (9500, 2150), (9900, 2120), (10320, 2130),
-        (10800, 2120), (11250, 2080), (11660, 2050),
-        (12100, 2020), (12520, 1985), (12920, 2010), (13500, 2110),
-    ])
 
     def page(index, text, screen, pose, owl_side=1, top=phone_top, height=phone_height, cx=W / 2, owl=True):
         if text:
-            story.title(index, text, 170, 140)
+            story.title(index, text, 170)
         device, k = phone.device(screen, height)
         left = story.place(index, device, cx, top)
         if owl:
@@ -925,47 +1007,54 @@ def iphone_story(raw, raw_dir):
         bx, by = phone.box[0], phone.box[1]
         return lambda px, py: (left + (bx + px) * k, top + (by + py) * k), k
 
-    # 1 · Hello, with the promises right under the headline.
-    page(0, "Hi, I'm *Dippy*.\nI watch the dips.", raw("iphone-home"), "wave", top=900, height=1900)
-    promises(story.canvas, x(0, W / 2), 520, ["No login", "No ads", "Any broker"], unit=0.86)
+    # 1 · The header's line, moon and all, then the app itself.
+    moonlit_line(story.canvas, "Your *stock-watching*", x(0, W / 2), 0, "en", 118, W * 0.9, 1, middle=232)
+    moonlit_line(story.canvas, "{o}wl.", x(0, W / 2), 0, "en", 200, W * 0.9, 1, middle=420)
+    promises(story.canvas, x(0, W / 2), 560, ["No login", "No ads", "Any broker"], unit=0.86)
+    page(0, None, raw("iphone-home"), "wave", top=900, height=1900)
 
-    # 2 · Drag the zone: a finger on the handle and a callout in the app's own style.
-    at, _ = page(1, "Show me where\nyou'd *buy*.", fix_iphone_clock(raw("iphone-plan")), "look-down", owl_side=-1)
-    hx, hy = at(1041, 2049)
+    # 2 · Drag the zone: a finger on the handle and a hint in the app's own green.
+    at, _ = page(1, "Show me where\nyou'd *buy*.", raw("iphone-plan"), "look-down", owl_side=-1)
+    hx, hy = at(1045, 2050)
     fingertip(story.canvas, hx, hy)
-    callout(story.canvas, "Drag to your price", min(hx - 360, x(1, W - 140) - 620), hy - 230, hx, hy)
+    label = "Drag to your price"
+    lw = ImageDraw.Draw(story.canvas).textlength(label, font=font(ROUNDED, 52, "Bold")) + 96
+    app_callout(story.canvas, label, min(hx - lw * 0.7, x(1, W - 60) - lw), hy - 250, hx)
 
-    # 3 · The odds card, lifting off the stock screen.
-    at, k = page(2, "I'll show your\n*odds* first.", raw("iphone-odds"), "look-left")
-    lift_over(story.canvas, raw("odds-card"), at, k, (60, 384, 1260, 2205), scale=1.12)
+    # 3 · The odds, on their own: the card itself, large over the night, Dippy on top.
+    story.title(2, "I'll show your\n*odds* first.", 170)
+    size = float_card(story, 2, raw("odds-card"), W / 2, 760, 1180)
+    perch(story.canvas, raw_dir, "look-down", x(2, W / 2 + 380), 768, owl_height)
 
     # 4 · The alert, exactly as iOS shows it, lifted off the lock screen.
-    at, k = page(3, "Get alerted the\n*moment it dips*.", raw("scene-lock"), "wings")
-    lift_over(story.canvas, raw("notification-card"), at, k, (42, 708, 1278, 936), scale=1.18)
-    line.dot(x(3, 660), rings=True)
+    at, k = page(3, "Get alerted the\n*moment it dips*.", localized_lock_screen(raw, raw_dir, "en"), "wings")
+    card = lock_alert_card(raw_dir, "en")
+    lift_over(story.canvas, card, at, k, (42, 708, 1278, 708 + card.height), scale=1.2)
 
-    # 5 · The flock's mood, lifted out of the Flock.
-    at, k = page(4, "Meet the *flock*.\nAll anonymous.", raw("iphone-flock"), "wink", owl_side=-1)
-    lift_over(story.canvas, raw("sentiment-card"), at, k, (60, 1710, 1260, 2868), scale=1.1, align="top")
+    # 5 · The flock: who they are, and where the crowd sees the market heading, as two cards.
+    story.title(4, "See what *2,480*\ninvestors do.", 170)
+    flock_screen = raw("iphone-flock")
+    hero = flock_screen.crop((60, 528, 1260, 1626))
+    hero_size = float_card(story, 4, hero, W / 2, 640, 1140, radius_share=0.05)
+    float_card(story, 4, raw("sentiment-card"), W / 2, 640 + hero_size[1] + 50, 1140)
+    sticker(story.canvas, x(4, W / 2), 640 + hero_size[1] + 50 + round(1154 * 1140 / 1200) + 60, ["Anonymous", "No sign-up"], unit=0.86)
 
-    page(5, "*28* alerts,\nin plain words.", fix_iphone_clock(raw("iphone-plan-smart")), "blush")
-    page(6, "I live on your\n*Home Screen*.", raw("iphone-home-widgets"), "look-down", owl_side=-1)
+    page(5, "*28* alerts,\nin plain words.", raw("iphone-plan-smart"), "blush")
+    page(6, "I live on your\n*Home Screen*.", fill_black_bottom(raw("iphone-home-widgets")), "look-down", owl_side=-1)
 
-    # 8 · iPhone Duo standing on the desk, turned a little like a product photo, reflected in the desk.
-    story.title(7, "Your stocks,\n*live on your desk*.", 170, 140)
+    # 8 · iPhone Duo standing upright on its edge like a bedside clock, straight on, Desk Mode filling its display.
+    story.title(7, "Your stocks,\n*live on your desk*.", 170)
     duo = Bezel("iphone-duo-outer-landscape", upside_down=True)
-    front, _ = duo.device(raw("desk-mode"), 960)
-    stand = yawed(front, depth=0.08, squeeze=0.96)
-    stand_bottom = 1720
-    top = stand_bottom - stand.height
-    shine = reflection(stand)
-    paste_clipped(story.canvas, shine, round(x(7, (W - shine.width) / 2)), round(stand_bottom + 6))
-    story.place(7, stand, W / 2, top, shadow=0.55)
+    front, _ = duo.device(raw("desk-mode"), 1000)
+    stand_bottom = 1880
+    top = stand_bottom - front.height
+    standing_shadow(story.canvas, x(7, W / 2), stand_bottom, front.width * 0.92)
+    story.place(7, front, W / 2, top, shadow=0.45)
     perch(story.canvas, raw_dir, "look-down", x(7, W / 2 - 300), top + 14, owl_height)
-    sticker(story.canvas, x(7, W / 2), stand_bottom + 380, ["Optimized for iPhone Duo"])
+    sticker(story.canvas, x(7, W / 2), stand_bottom + 150, ["The stock tracker made for iPhone Duo"], unit=0.86)
 
     # 9 · Apple Watch on its own: big, with its band running off the page, the app filling the display.
-    story.title(8, "Or keep me\non your *wrist*.", 170, 140)
+    story.title(8, "Or keep me\non your *wrist*.", 170)
     wrist = Bezel("watch-series-11")
     watch_device, k = wrist.device(watch_screen(raw("watch-today")), 2050)
     band_fade = Image.new("L", watch_device.size, 255)
@@ -976,12 +1065,13 @@ def iphone_story(raw, raw_dir):
     watch_device.putalpha(Image.composite(watch_device.split()[3], Image.new("L", watch_device.size, 0), band_fade))
     story.place(8, watch_device, W / 2 - 16, 600)
 
-    # 10 · Asleep under the moon, on the same glowing line.
-    sky = story.canvas_sky
-    sky.moon(round(x(9, W - 250)), 690, 96)
-    story.title(9, "Sleep well.\n*I'm on watch.*", 170, 140)
-    line.owl(raw_dir, "sleep", x(9, 640), 760)
-    sleepy_zs(story.canvas, x(9, 880), 1240)
+    # 10 · Asleep under the moon, rising from the bottom edge like on the header.
+    story.title(9, "Sleep well.\n*I'm on watch.*", 170)
+    full_moon(story.canvas, x(9, W - 260), 760, 92)
+    sleeper = owl_image(raw_dir, "sleep", 1150)
+    sleeper_top = round(H - sleeper.height * 0.72)
+    paste_clipped(story.canvas, sleeper, round(x(9, W / 2 - sleeper.width / 2)), sleeper_top)
+    sleepy_zs(story.canvas, x(9, W / 2 + 330), sleeper_top - 40, unit=1.4)
 
     frames = story.frames(["01-meet-dippy", "02-buy-zone", "03-odds", "04-alert", "05-flock", "06-smart-alerts",
                            "07-widgets", "08-desk-mode", "09-apple-watch", "10-sleep-well"])
@@ -991,36 +1081,30 @@ def iphone_story(raw, raw_dir):
 # MARK: - iPad
 
 def ipad_story(raw, raw_dir):
-    """The same story on iPad, on one continuous night: the real iPad Pro, Dippy on top, the same glowing line."""
+    """The same story on iPad, in the same forest at night as the iPhone set and the header: the real iPad Pro, Dippy on
+    top, opening with the header's own line."""
     W, H = 2064, 2752
     icon = Image.open(raw_dir / "app-icon.png")
-    story = Story((W, H), 5)
+    story = ForestStory((W, H), 5, 1300)
     tablet = Bezel("ipad-pro-13")
     height, top, owl_height = 1830, 820, 230
     x = story.x
-    line = story.line([
-        (-200, 2380), (500, 2450), (1300, 2520), (1900, 2500),
-        (2500, 2580), (3300, 2620), (3950, 2600),
-        (4500, 2560), (5300, 2470), (6000, 2400),
-        (6600, 2560), (7230, 2600), (7900, 2560),
-        (8600, 2300), (9180, 2240), (9800, 2270), (10600, 2360),
-    ])
 
     def page(index, text, screen, pose, owl_side=1, top=top, height=height, time="9:41 AM"):
-        story.title(index, text, 160, 170)
+        if text:
+            story.title(index, text, 160, 170)
         device, _ = tablet.device(fix_ipad_status(screen, time), height)
         story.place(index, device, W / 2, top)
         perch(story.canvas, raw_dir, pose, x(index, W / 2 + owl_side * (device.width / 2 - 260)), top + 10, owl_height)
 
-    page(0, "Hi, I'm *Dippy*.\nI watch the dips.", raw("ipad-home"), "wave", top=960, height=1720)
-    promises(story.canvas, x(0, W / 2), 560, ["No login", "No ads", "Any broker"], unit=1.15)
+    moonlit_line(story.canvas, "Your *stock-watching* {o}wl.", x(0, W / 2), 0, "en", 150, W * 0.9, 1, middle=260)
+    promises(story.canvas, x(0, W / 2), 470, ["No login", "No ads", "Any broker"], unit=1.15)
+    page(0, None, raw("ipad-home"), "wave", top=900, height=1760)
     page(1, "Show me where\nyou'd *buy*.", raw("ipad-stock"), "look-down", owl_side=-1)
     page(2, "I'll show your\n*odds* first.", raw("ipad-odds"), "look-left")
     alert = banner_on(raw("ipad-alerts"), icon, 1160, 90, ALERT_TITLE, ALERT_BODY)
     page(3, "Get alerted the\n*moment it dips*.", alert, "wings")
-    line.dot(x(3, W / 2 + 200), rings=True)
-    sky = story.canvas_sky
-    sky.moon(round(x(4, 260)), 640, 110)
+    full_moon(story.canvas, x(4, 300), 640, 100)
     page(4, "Sleep well.\n*I'm on watch.*", raw("ipad-night"), "sleep", time="10:42 PM")
     sleepy_zs(story.canvas, x(4, W / 2 + 640), 680, unit=1.2)
 

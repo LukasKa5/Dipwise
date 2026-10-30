@@ -224,13 +224,8 @@ private struct OddsCone: View {
     Chart {
       RectangleMark(xStart: .value("Start", 0), xEnd: .value("End", today + days),
                     yStart: .value("Zone low", rule.lower), yEnd: .value("Zone high", upper))
+        // Named in the legend below, so the price line never runs through a label.
         .foregroundStyle(color.opacity(0.24))
-        .annotation(position: .overlay, alignment: .leading) {
-          Text(rule.kind.side == .sell ? "Your sell zone" : "Your buy zone")
-            .font(.caption2.weight(.bold))
-            .foregroundStyle(color)
-            .padding(.leading, 4)
-        }
       ForEach(bands) { band in
         AreaMark(x: .value("Day", band.day), yStart: .value("Low", band.low), yEnd: .value("High", band.high), series: .value("Band", "outer"))
           .foregroundStyle(OddsCone.possible)

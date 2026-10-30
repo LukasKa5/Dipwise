@@ -73,6 +73,7 @@ struct PlanBuilderForm: View {
   }
 
   var body: some View {
+    ScrollViewReader { reader in
     Form {
       Group {
         if isNewStock {
@@ -210,11 +211,21 @@ struct PlanBuilderForm: View {
               InfoButton(topic: .category(category))
             }
           }
+          .id(category)
         }
       }
       .dipwiseRows()
     }
     .dipwiseListStyle()
+    #if DEBUG
+    .task {
+      // Development only: `-scrollToSmart` opens on the smart alerts, for screenshots.
+      guard ProcessInfo.processInfo.arguments.contains("-scrollToSmart") else { return }
+      try? await Task.sleep(for: .seconds(0.8))
+      reader.scrollTo(AlertCategory.allCases.first { $0 != .zones }, anchor: .top)
+    }
+    #endif
+    }
     .navigationTitle(isNewStock ? "Set Alerts" : "Alerts for \(holding.symbol)")
     .navigationBarTitleDisplayMode(.inline)
     .toolbar {
